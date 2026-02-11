@@ -34,7 +34,14 @@ export function LoginView() {
                 }
             }
         } catch (err: any) {
-            setError(err.message || 'Something went wrong');
+            console.error('Login error:', err);
+            let errorMessage = err.message || 'Something went wrong';
+
+            if (errorMessage.includes('Failed to fetch')) {
+                errorMessage = 'Network error: Unable to connect to the server. Please check your internet connection or try again later.';
+            }
+
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -147,8 +154,8 @@ export function LoginView() {
                                     key={m}
                                     onClick={() => { setMode(m); setError(''); }}
                                     className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${mode === m
-                                            ? 'bg-gradient-to-r from-action to-purple-500 text-white shadow-lg shadow-action/30'
-                                            : 'text-secondary hover:text-white'
+                                        ? 'bg-gradient-to-r from-action to-purple-500 text-white shadow-lg shadow-action/30'
+                                        : 'text-secondary hover:text-white'
                                         }`}
                                 >
                                     {m === 'signin' ? 'Sign In' : 'Sign Up'}
