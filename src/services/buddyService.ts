@@ -1,4 +1,4 @@
-import { supabaseUntyped as supabase } from '../lib/supabase';
+import { supabaseUntyped as supabase, isSupabaseAvailable } from '../lib/supabase';
 import type { BuddyRequest } from '../types/database.types';
 
 interface CreateBuddyRequestData {
@@ -19,6 +19,9 @@ interface CreateBuddyRequestData {
 export const buddyService = {
     // Create a buddy request
     async createRequest(userId: string, data: CreateBuddyRequestData): Promise<{ data: BuddyRequest | null; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: null, error: new Error('Database not available') };
+        }
         try {
             const { data: request, error } = await supabase
                 .from('buddy_requests')
@@ -42,6 +45,9 @@ export const buddyService = {
 
     // Find matching buddy requests
     async findMatches(destination: string, _travelDates?: { start: string; end: string }): Promise<{ data: BuddyRequest[]; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: [], error: null };
+        }
         try {
             let query = supabase
                 .from('buddy_requests')
@@ -61,6 +67,9 @@ export const buddyService = {
 
     // Get user's buddy requests
     async getUserRequests(userId: string): Promise<{ data: BuddyRequest[]; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: [], error: null };
+        }
         try {
             const { data, error } = await supabase
                 .from('buddy_requests')
@@ -78,6 +87,9 @@ export const buddyService = {
 
     // Update request status
     async updateRequestStatus(id: string, status: 'open' | 'matched' | 'closed'): Promise<{ error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { error: new Error('Database not available') };
+        }
         try {
             const { error } = await supabase
                 .from('buddy_requests')
@@ -94,6 +106,9 @@ export const buddyService = {
 
     // Cancel a buddy request
     async cancelRequest(id: string): Promise<{ error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { error: new Error('Database not available') };
+        }
         try {
             const { error } = await supabase
                 .from('buddy_requests')

@@ -1,9 +1,12 @@
-import { supabaseUntyped as supabase } from '../lib/supabase';
+import { supabaseUntyped as supabase, isSupabaseAvailable } from '../lib/supabase';
 import type { Guide } from '../types/database.types';
 
 export const guidesService = {
     // Get guides for a destination
     async getGuides(destination?: string): Promise<{ data: Guide[]; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: [], error: null };
+        }
         try {
             let query = supabase
                 .from('guides')
@@ -27,6 +30,9 @@ export const guidesService = {
 
     // Get a single guide by ID
     async getGuide(id: string): Promise<{ data: Guide | null; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: null, error: null };
+        }
         try {
             const { data, error } = await supabase
                 .from('guides')
@@ -44,6 +50,9 @@ export const guidesService = {
 
     // Search guides by specialty
     async searchBySpecialty(specialty: string): Promise<{ data: Guide[]; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: [], error: null };
+        }
         try {
             const { data, error } = await supabase
                 .from('guides')

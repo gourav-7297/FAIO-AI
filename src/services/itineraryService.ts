@@ -1,4 +1,4 @@
-import { supabaseUntyped as supabase } from '../lib/supabase';
+import { supabaseUntyped as supabase, isSupabaseAvailable } from '../lib/supabase';
 import type { Itinerary } from '../types/database.types';
 
 interface SaveItineraryData {
@@ -15,6 +15,9 @@ interface SaveItineraryData {
 export const itineraryService = {
     // Save a new itinerary
     async saveItinerary(userId: string, data: SaveItineraryData): Promise<{ data: Itinerary | null; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: null, error: new Error('Database not available') };
+        }
         try {
             const { data: itinerary, error } = await supabase
                 .from('itineraries')
@@ -43,6 +46,9 @@ export const itineraryService = {
 
     // Get user's itineraries
     async getUserItineraries(userId: string): Promise<{ data: Itinerary[]; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: [], error: null };
+        }
         try {
             const { data, error } = await supabase
                 .from('itineraries')
@@ -60,6 +66,9 @@ export const itineraryService = {
 
     // Get a single itinerary by ID
     async getItinerary(id: string): Promise<{ data: Itinerary | null; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: null, error: null };
+        }
         try {
             const { data, error } = await supabase
                 .from('itineraries')
@@ -77,6 +86,9 @@ export const itineraryService = {
 
     // Delete an itinerary
     async deleteItinerary(id: string): Promise<{ error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { error: new Error('Database not available') };
+        }
         try {
             const { error } = await supabase
                 .from('itineraries')
@@ -93,6 +105,9 @@ export const itineraryService = {
 
     // Share an itinerary (make public)
     async shareItinerary(id: string): Promise<{ shareUrl: string | null; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { shareUrl: null, error: new Error('Database not available') };
+        }
         try {
             const { error } = await supabase
                 .from('itineraries')
@@ -111,6 +126,9 @@ export const itineraryService = {
 
     // Get a public itinerary
     async getPublicItinerary(id: string): Promise<{ data: Itinerary | null; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: null, error: null };
+        }
         try {
             const { data, error } = await supabase
                 .from('itineraries')

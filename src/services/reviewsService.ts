@@ -1,4 +1,4 @@
-import { supabaseUntyped as supabase } from '../lib/supabase';
+import { supabaseUntyped as supabase, isSupabaseAvailable } from '../lib/supabase';
 import type { Review } from '../types/database.types';
 
 interface CreateReviewData {
@@ -10,6 +10,9 @@ interface CreateReviewData {
 export const reviewsService = {
     // Get reviews for a place
     async getReviews(placeId: string): Promise<{ data: Review[]; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: [], error: null };
+        }
         try {
             const { data, error } = await supabase
                 .from('reviews')
@@ -27,6 +30,9 @@ export const reviewsService = {
 
     // Create a review
     async createReview(userId: string, data: CreateReviewData): Promise<{ data: Review | null; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: null, error: new Error('Database not available') };
+        }
         try {
             const { data: review, error } = await supabase
                 .from('reviews')
@@ -49,6 +55,9 @@ export const reviewsService = {
 
     // Get user's reviews
     async getUserReviews(userId: string): Promise<{ data: Review[]; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: [], error: null };
+        }
         try {
             const { data, error } = await supabase
                 .from('reviews')
@@ -66,6 +75,9 @@ export const reviewsService = {
 
     // Delete a review
     async deleteReview(id: string): Promise<{ error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { error: new Error('Database not available') };
+        }
         try {
             const { error } = await supabase
                 .from('reviews')
@@ -82,6 +94,9 @@ export const reviewsService = {
 
     // Get average rating for a place
     async getAverageRating(placeId: string): Promise<{ rating: number; count: number }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { rating: 0, count: 0 };
+        }
         try {
             const { data, error } = await supabase
                 .from('reviews')

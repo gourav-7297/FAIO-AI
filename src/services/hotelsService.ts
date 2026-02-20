@@ -1,4 +1,4 @@
-import { supabaseUntyped as supabase } from '../lib/supabase';
+import { supabaseUntyped as supabase, isSupabaseAvailable } from '../lib/supabase';
 import type { Hotel } from '../types/database.types';
 
 interface HotelFilters {
@@ -14,6 +14,9 @@ interface HotelFilters {
 export const hotelsService = {
     // Search hotels with filters
     async searchHotels(filters: HotelFilters = {}): Promise<{ data: Hotel[]; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: [], error: null };
+        }
         try {
             let query = supabase.from('hotels').select('*');
 
@@ -51,6 +54,9 @@ export const hotelsService = {
 
     // Get a single hotel by ID
     async getHotel(id: string): Promise<{ data: Hotel | null; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: null, error: null };
+        }
         try {
             const { data, error } = await supabase
                 .from('hotels')

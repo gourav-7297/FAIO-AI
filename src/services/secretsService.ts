@@ -1,4 +1,4 @@
-import { supabaseUntyped as supabase } from '../lib/supabase';
+import { supabaseUntyped as supabase, isSupabaseAvailable } from '../lib/supabase';
 import type { LocalSecret } from '../types/database.types';
 
 interface SubmitSecretData {
@@ -13,6 +13,9 @@ interface SubmitSecretData {
 export const secretsService = {
     // Get secrets for a destination
     async getSecrets(destination?: string): Promise<{ data: LocalSecret[]; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: [], error: null };
+        }
         try {
             let query = supabase
                 .from('local_secrets')
@@ -35,6 +38,9 @@ export const secretsService = {
 
     // Submit a new local secret
     async submitSecret(userId: string, data: SubmitSecretData): Promise<{ data: LocalSecret | null; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: null, error: new Error('Database not available') };
+        }
         try {
             const { data: secret, error } = await supabase
                 .from('local_secrets')
@@ -62,6 +68,9 @@ export const secretsService = {
 
     // Upvote a secret
     async upvoteSecret(id: string): Promise<{ error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { error: new Error('Database not available') };
+        }
         try {
             // Get current upvotes
             const { data: secret, error: fetchError } = await supabase
@@ -88,6 +97,9 @@ export const secretsService = {
 
     // Get user's submitted secrets
     async getUserSecrets(userId: string): Promise<{ data: LocalSecret[]; error: Error | null }> {
+        if (!isSupabaseAvailable || !supabase) {
+            return { data: [], error: null };
+        }
         try {
             const { data, error } = await supabase
                 .from('local_secrets')

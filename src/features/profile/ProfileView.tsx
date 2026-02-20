@@ -7,7 +7,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { AuthModal } from '../../components/ui/AuthModal';
-import { supabase } from '../../lib/supabase';
+import { supabase, isSupabaseAvailable } from '../../lib/supabase';
 import type { Itinerary } from '../../types/database.types';
 import { cn } from '../../lib/utils';
 
@@ -26,7 +26,7 @@ export function ProfileView() {
     }, [user]);
 
     const fetchSavedTrips = async () => {
-        if (!user) return;
+        if (!user || !isSupabaseAvailable || !supabase) return;
         setIsLoadingTrips(true);
         try {
             const { data, error } = await supabase

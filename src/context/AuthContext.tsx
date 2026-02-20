@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
-import { supabaseUntyped as supabase } from '../lib/supabase';
+import { supabaseUntyped as supabase, isSupabaseAvailable } from '../lib/supabase';
 import type { Profile } from '../types/database.types';
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -30,40 +30,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Fetch user profile
     const fetchProfile = useCallback(async (userId: string) => {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
+        if (!isSupabaseAvailable || !supabase) return null;
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
 
-        if (error) {
-            console.error('Error fetching profile:', error);
+            if (error) {
+                console.error('Error fetching profile:', error);
+                return null;
+            }
+            return data;
+        } catch (err) {
+            console.warn('Supabase fetch profile failed:', err);
             return null;
         }
-        return data;
     }, []);
 
     // Create profile for new user
     const createProfile = useCallback(async (userId: string, username?: string) => {
-        const { data, error } = await supabase
-            .from('profiles')
-            .insert({
-                id: userId,
-                username: username || `traveler_${userId.slice(0, 8)}`,
-                preferences: {},
-            } as any)
-            .select()
-            .single();
+        if (!isSupabaseAvailable || !supabase) return null;
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .insert({
+                    id: userId,
+                    username: username || `traveler_${userId.slice(0, 8)}`,
+                    preferences: {},
+                } as any)
+                .select()
+                .single();
 
-        if (error) {
-            console.error('Error creating profile:', error);
+            if (error) {
+                console.error('Error creating profile:', error);
+                return null;
+            }
+            return data;
+        } catch (err) {
+            console.warn('Supabase create profile failed:', err);
             return null;
         }
-        return data;
     }, []);
 
     // Initialize auth state
     useEffect(() => {
+        if (!isSupabaseAvailable || !supabase) {
+            // Supabase not available — skip auth init, just stop loading
+            setIsLoading(false);
+            return;
+        }
+
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
@@ -71,6 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (session?.user) {
                 fetchProfile(session.user.id).then(setProfile);
             }
+            setIsLoading(false);
+        }).catch((err) => {
+            console.warn('Supabase getSession failed:', err);
             setIsLoading(false);
         });
 
@@ -81,12 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(session?.user ?? null);
 
                 if (session?.user) {
-                    setIsGuest(false); // Disable guest mode if user logs in
+                    setIsGuest(false);
                     const existingProfile = await fetchProfile(session.user.id);
                     if (existingProfile) {
                         setProfile(existingProfile);
                     } else if (event === 'SIGNED_IN') {
-                        // Create profile for new users
                         const newProfile = await createProfile(session.user.id);
                         setProfile(newProfile);
                     }
@@ -99,63 +119,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => subscription.unsubscribe();
     }, [fetchProfile, createProfile]);
 
-    // Sign up
+    // Sign up (Supabase email/password)
     const signUp = async (email: string, password: string, username?: string) => {
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-        });
-
-        if (error) {
-            return { error };
+        if (!isSupabaseAvailable || !supabase) {
+            return { error: new Error('Supabase is not configured. Please use Google sign-in or guest mode.') };
         }
+        try {
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+            });
 
-        // Create profile after signup
-        if (data.user) {
-            await createProfile(data.user.id, username);
+            if (error) {
+                return { error };
+            }
+
+            if (data.user) {
+                await createProfile(data.user.id, username);
+            }
+
+            return { error: null };
+        } catch (err: any) {
+            return { error: new Error(err.message || 'Sign up failed. Please try again.') };
         }
-
-        return { error: null };
     };
 
-    // Sign in
+    // Sign in (Supabase email/password)
     const signIn = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
-        return { error };
+        if (!isSupabaseAvailable || !supabase) {
+            return { error: new Error('Supabase is not configured. Please use Google sign-in or guest mode.') };
+        }
+        try {
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+            return { error };
+        } catch (err: any) {
+            return { error: new Error(err.message || 'Sign in failed. Please try again.') };
+        }
     };
 
-    // Sign in with Google (Firebase)
+    // Sign in with Google (Firebase only — no Supabase dependency)
     const signInWithGoogle = async () => {
         try {
             const { signInWithPopup } = await import('firebase/auth');
             const { auth: firebaseAuth, googleProvider } = await import('../lib/firebase');
             const result = await signInWithPopup(firebaseAuth, googleProvider);
 
-            // User signed in successfully via Firebase
             const firebaseUser = result.user;
             console.log('Firebase Google sign-in successful:', firebaseUser.email);
 
-            // Also try to sign the user into Supabase for profile/data consistency
-            // If you only want Firebase auth, you can remove this block
-            if (firebaseUser.email) {
-                try {
-                    // Try signing in with Supabase using email (best-effort)
-                    await supabase.auth.signInWithOAuth({
-                        provider: 'google',
-                        options: {
-                            redirectTo: window.location.origin,
-                            skipBrowserRedirect: true,
-                        },
-                    });
-                } catch (supabaseErr) {
-                    console.warn('Supabase sync skipped:', supabaseErr);
-                }
-            }
-
-            // Set user info from Firebase as a fallback
+            // Set user info from Firebase
             setUser({
                 id: firebaseUser.uid,
                 email: firebaseUser.email,
@@ -183,7 +198,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Sign out
     const signOut = async () => {
-        await supabase.auth.signOut();
+        // Sign out of Supabase if available
+        if (isSupabaseAvailable && supabase) {
+            try {
+                await supabase.auth.signOut();
+            } catch (err) {
+                console.warn('Supabase sign-out failed:', err);
+            }
+        }
+        // Sign out of Firebase if user was logged in via Google
+        try {
+            const { signOut: firebaseSignOut } = await import('firebase/auth');
+            const { auth: firebaseAuth } = await import('../lib/firebase');
+            await firebaseSignOut(firebaseAuth);
+        } catch (err) {
+            // Firebase sign-out failed or wasn't needed
+        }
         setUser(null);
         setProfile(null);
         setSession(null);
@@ -195,17 +225,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!user) {
             return { error: new Error('Not authenticated') };
         }
-
-        const { error } = await supabase
-            .from('profiles')
-            .update(updates as any)
-            .eq('id', user.id);
-
-        if (!error) {
+        if (!isSupabaseAvailable || !supabase) {
+            // Just update local state
             setProfile(prev => prev ? { ...prev, ...updates } : null);
+            return { error: null };
         }
 
-        return { error };
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update(updates as any)
+                .eq('id', user.id);
+
+            if (!error) {
+                setProfile(prev => prev ? { ...prev, ...updates } : null);
+            }
+
+            return { error };
+        } catch (err: any) {
+            return { error: new Error(err.message || 'Profile update failed') };
+        }
     };
 
     return (
