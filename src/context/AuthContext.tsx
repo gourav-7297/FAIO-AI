@@ -8,9 +8,11 @@ interface AuthContextType {
     profile: Profile | null;
     session: Session | null;
     isLoading: boolean;
+    isGuest: boolean;
     signUp: (email: string, password: string, username?: string) => Promise<{ error: Error | null }>;
     signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
     signInWithGoogle: () => Promise<{ error: Error | null }>;
+    loginAsGuest: () => void;
     signOut: () => Promise<void>;
     updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
 }
@@ -22,6 +24,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Guest mode
+    const [isGuest, setIsGuest] = useState(false);
 
     // Fetch user profile
     const fetchProfile = useCallback(async (userId: string) => {
@@ -76,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(session?.user ?? null);
 
                 if (session?.user) {
+                    setIsGuest(false); // Disable guest mode if user logs in
                     const existingProfile = await fetchProfile(session.user.id);
                     if (existingProfile) {
                         setProfile(existingProfile);
@@ -121,38 +127,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error };
     };
 
-    // Sign in with Google
+    // Sign in with Google (Firebase)
     const signInWithGoogle = async () => {
         try {
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: window.location.origin,
-                    queryParams: {
-                        access_type: 'offline',
-                        prompt: 'consent',
-                    },
+            const { signInWithPopup } = await import('firebase/auth');
+            const { auth: firebaseAuth, googleProvider } = await import('../lib/firebase');
+            const result = await signInWithPopup(firebaseAuth, googleProvider);
+
+            // User signed in successfully via Firebase
+            const firebaseUser = result.user;
+            console.log('Firebase Google sign-in successful:', firebaseUser.email);
+
+            // Also try to sign the user into Supabase for profile/data consistency
+            // If you only want Firebase auth, you can remove this block
+            if (firebaseUser.email) {
+                try {
+                    // Try signing in with Supabase using email (best-effort)
+                    await supabase.auth.signInWithOAuth({
+                        provider: 'google',
+                        options: {
+                            redirectTo: window.location.origin,
+                            skipBrowserRedirect: true,
+                        },
+                    });
+                } catch (supabaseErr) {
+                    console.warn('Supabase sync skipped:', supabaseErr);
+                }
+            }
+
+            // Set user info from Firebase as a fallback
+            setUser({
+                id: firebaseUser.uid,
+                email: firebaseUser.email,
+                app_metadata: {},
+                user_metadata: {
+                    full_name: firebaseUser.displayName,
+                    avatar_url: firebaseUser.photoURL,
                 },
-            });
-
-            if (error) {
-                console.error('Google OAuth error:', error);
-                return { error };
-            }
-
-            // signInWithOAuth returns a URL to redirect to
-            // If data.url exists, the redirect should happen automatically
-            // If not, something went wrong
-            if (!data?.url) {
-                console.error('Google OAuth: No redirect URL returned', data);
-                return { error: new Error('Google sign-in is not configured. Please contact the administrator.') };
-            }
+                aud: 'authenticated',
+                created_at: firebaseUser.metadata.creationTime || '',
+            } as any);
+            setIsGuest(false);
 
             return { error: null };
         } catch (err: any) {
-            console.error('Google OAuth unexpected error:', err);
+            console.error('Firebase Google sign-in error:', err);
             return { error: err instanceof Error ? err : new Error(err.message || 'Google sign-in failed') };
         }
+    };
+
+    // Sign as Guest
+    const loginAsGuest = () => {
+        setIsGuest(true);
     };
 
     // Sign out
@@ -161,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setProfile(null);
         setSession(null);
+        setIsGuest(false);
     };
 
     // Update profile
@@ -188,9 +215,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 profile,
                 session,
                 isLoading,
+                isGuest,
                 signUp,
                 signIn,
                 signInWithGoogle,
+                loginAsGuest,
                 signOut,
                 updateProfile,
             }}

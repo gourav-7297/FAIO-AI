@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 type Mode = 'signin' | 'signup';
 
 export function LoginView() {
-    const { signIn, signUp, signInWithGoogle } = useAuth();
+    const { signIn, signUp, signInWithGoogle, loginAsGuest } = useAuth();
     const [mode, setMode] = useState<Mode>('signin');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -296,6 +296,17 @@ export function LoginView() {
                                 {mode === 'signin' ? 'Sign up' : 'Sign in'}
                             </button>
                         </p>
+
+                        {/* Guest Mode */}
+                        <div className="mt-8 pt-6 border-t border-white/10 text-center">
+                            <button
+                                onClick={loginAsGuest}
+                                className="text-sm font-medium text-secondary hover:text-white transition-colors flex items-center justify-center gap-2 mx-auto group"
+                            >
+                                <span>Skip Login</span>
+                                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                        </div>
                     </div>
                 </div>
 

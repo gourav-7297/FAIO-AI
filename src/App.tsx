@@ -19,7 +19,7 @@ import { AIChat, AIFloatingButton } from './components/AIChat';
 import { OfflineIndicator } from './components/ui/OfflineManager';
 
 function AppContent() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isGuest } = useAuth();
   const [activeTab, setActiveTab] = useState<'home' | 'explore' | 'community' | 'planner' | 'wallet' | 'safety' | 'profile' | 'guides' | 'cabs'>('home');
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -36,7 +36,7 @@ function AppContent() {
   }
 
   // Not authenticated — show login
-  if (!user) {
+  if (!user && !isGuest) {
     return <LoginView />;
   }
 
