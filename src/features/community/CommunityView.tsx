@@ -1,34 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     MapPin, Star, Sparkles, Calendar, Users,
     ArrowRight, Plus, Globe, MessageCircle, Heart, Share2,
-    Bookmark, MoreHorizontal, BadgeCheck, Clock
+    Bookmark, MoreHorizontal, BadgeCheck, Clock, Loader2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { communityService } from '../../services/communityService';
+import type { TravelStory, GroupTrip as ServiceGroupTrip } from '../../services/communityService';
 
 // ============================
-// TYPES
+// TYPES (GroupTrip extends the service type with view-specific fields)
 // ============================
-
-interface TravelStory {
-    id: string;
-    user: {
-        name: string;
-        avatar: string;
-        verified: boolean;
-    };
-    location: string;
-    country: string;
-    images: string[];
-    caption: string;
-    likes: number;
-    comments: number;
-    saves: number;
-    postedAt: string;
-    tags: string[];
-}
 
 interface GroupTrip {
     id: string;
@@ -52,151 +36,16 @@ interface GroupTrip {
     includes: string[];
 }
 
-// ============================
-// MOCK DATA
-// ============================
-
-const TRAVEL_STORIES: TravelStory[] = [
-    {
-        id: '1',
-        user: { name: 'Sarah Chen', avatar: 'https://i.pravatar.cc/150?u=sarah', verified: true },
-        location: 'Kyoto',
-        country: 'Japan',
-        images: ['https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=800'],
-        caption: 'Found this hidden bamboo path at 6AM. Zero tourists, pure magic. The light filtering through the stalks was absolutely ethereal ✨',
-        likes: 2847,
-        comments: 142,
-        saves: 523,
-        postedAt: '2h ago',
-        tags: ['Nature', 'Photography', 'HiddenGem']
-    },
-    {
-        id: '2',
-        user: { name: 'Marco Rossi', avatar: 'https://i.pravatar.cc/150?u=marco', verified: true },
-        location: 'Positano',
-        country: 'Italy',
-        images: ['https://images.unsplash.com/photo-1616036740257-9449ea1f6605?q=80&w=800'],
-        caption: 'This cliffside café changed my life. Order the lemon spritz and watch the sun paint the sky. Best decision of my trip 🍋',
-        likes: 4521,
-        comments: 234,
-        saves: 892,
-        postedAt: '5h ago',
-        tags: ['Foodie', 'Views', 'Sunset']
-    },
-    {
-        id: '3',
-        user: { name: 'Priya Sharma', avatar: 'https://i.pravatar.cc/150?u=priya', verified: false },
-        location: 'Ubud',
-        country: 'Bali',
-        images: ['https://images.unsplash.com/photo-1555126634-323283e090fa?q=80&w=800'],
-        caption: 'Night market secrets: Skip the main road, find the blue tent. Best satay I\'ve ever had for $2. Thank me later 🍢',
-        likes: 1923,
-        comments: 89,
-        saves: 445,
-        postedAt: '1d ago',
-        tags: ['Foodie', 'Budget', 'LocalEats']
-    },
-    {
-        id: '4',
-        user: { name: 'Alex Nordstrom', avatar: 'https://i.pravatar.cc/150?u=alex', verified: true },
-        location: 'Reykjavik',
-        country: 'Iceland',
-        images: ['https://images.unsplash.com/photo-1476610182048-b716b8518aae?q=80&w=800'],
-        caption: 'Drove 40 mins out of the city, found this spot. The aurora dance lasted 3 hours. Worth every frozen finger 💚',
-        likes: 8234,
-        comments: 567,
-        saves: 2341,
-        postedAt: '2d ago',
-        tags: ['Adventure', 'Nature', 'NorthernLights']
-    }
-];
-
-const GROUP_TRIPS: GroupTrip[] = [
-    {
-        id: '1',
-        host: {
-            name: 'Jessica Wong',
-            avatar: 'https://i.pravatar.cc/150?u=jessica',
-            verified: true,
-            rating: 4.9,
-            tripsHosted: 23
-        },
-        destination: 'Ha Giang Loop',
-        country: 'Vietnam',
-        image: 'https://images.unsplash.com/photo-1557750255-c76072a7bbca?q=80&w=800',
-        title: 'Epic Motorbike Adventure',
-        description: 'Join us for the most scenic motorbike route in Southeast Asia. Winding mountain roads, homestays with local families, and unforgettable sunrises.',
-        dates: { start: 'Mar 10', end: 'Mar 14' },
-        duration: '5 days',
-        vibes: ['Adventure', 'Budget', 'Nature'],
-        spots: { filled: 3, total: 5 },
-        price: { amount: 320, currency: 'USD' },
-        includes: ['Bike rental', 'Fuel', 'Homestays', 'Local guide']
-    },
-    {
-        id: '2',
-        host: {
-            name: 'David Park',
-            avatar: 'https://i.pravatar.cc/150?u=david',
-            verified: true,
-            rating: 4.8,
-            tripsHosted: 15
-        },
-        destination: 'Seoul',
-        country: 'South Korea',
-        image: 'https://images.unsplash.com/photo-1517154421773-0529f29ea451?q=80&w=800',
-        title: 'K-Food & Cherry Blossoms',
-        description: 'Experience Seoul like a local! Hidden BBQ spots, cherry blossom walks, cafe hopping, and late-night karaoke sessions.',
-        dates: { start: 'Apr 2', end: 'Apr 8' },
-        duration: '7 days',
-        vibes: ['Foodie', 'City', 'Culture'],
-        spots: { filled: 4, total: 6 },
-        price: { amount: 850, currency: 'USD' },
-        includes: ['Accommodation', 'Food tours', 'Transport card', 'Experiences']
-    },
-    {
-        id: '3',
-        host: {
-            name: 'Emma & Ryan',
-            avatar: 'https://i.pravatar.cc/150?u=emma',
-            verified: false,
-            rating: 4.7,
-            tripsHosted: 8
-        },
-        destination: 'Patagonia',
-        country: 'Chile',
-        image: 'https://images.unsplash.com/photo-1518182170546-0766be6f5a56?q=80&w=800',
-        title: 'W Trek Hiking Group',
-        description: 'Tackle one of the world\'s most beautiful hikes together. Glaciers, turquoise lakes, and the famous Torres del Paine.',
-        dates: { start: 'Nov 15', end: 'Nov 20' },
-        duration: '6 days',
-        vibes: ['Hiking', 'Challenging', 'Nature'],
-        spots: { filled: 2, total: 4 },
-        price: { amount: 1200, currency: 'USD' },
-        includes: ['Permits', 'Refugio stays', 'Meals on trek', 'Transfers']
-    },
-    {
-        id: '4',
-        host: {
-            name: 'Yuki Tanaka',
-            avatar: 'https://i.pravatar.cc/150?u=yuki',
-            verified: true,
-            rating: 5.0,
-            tripsHosted: 31
-        },
-        destination: 'Tokyo → Osaka',
-        country: 'Japan',
-        image: 'https://images.unsplash.com/photo-1480796927426-f609979314bd?q=80&w=800',
-        title: 'Japan Rail Explorer',
-        description: 'A local\'s guide to Japan! Secret ramen spots, onsen villages, shrine hikes, and everything in between.',
-        dates: { start: 'May 5', end: 'May 14' },
-        duration: '10 days',
-        vibes: ['Culture', 'Foodie', 'Photography'],
-        spots: { filled: 5, total: 8 },
-        price: { amount: 2100, currency: 'USD' },
-        includes: ['JR Pass', 'Ryokan nights', 'Local experiences', 'City transport']
-    }
-];
+// Map service GroupTrip to view GroupTrip
+function mapServiceTrip(st: ServiceGroupTrip): GroupTrip {
+    return {
+        ...st,
+        country: '',
+        image: `https://images.unsplash.com/photo-1557750255-c76072a7bbca?q=80&w=800`,
+        title: `Trip to ${st.destination}`,
+        description: `Join a group trip to ${st.destination}`,
+    };
+}
 
 // ============================
 // UTILITY FUNCTIONS
@@ -232,11 +81,29 @@ export function CommunityView() {
     const [activeTab, setActiveTab] = useState<'stories' | 'trips'>('stories');
     const [likedPosts, setLikedPosts] = useState<string[]>([]);
     const [savedPosts, setSavedPosts] = useState<string[]>([]);
+    const [stories, setStories] = useState<TravelStory[]>([]);
+    const [trips, setTrips] = useState<GroupTrip[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        async function load() {
+            setIsLoading(true);
+            const [storiesRes, tripsRes] = await Promise.all([
+                communityService.getStories(),
+                communityService.getGroupTrips(),
+            ]);
+            setStories(storiesRes.data);
+            setTrips(tripsRes.data.map(mapServiceTrip));
+            setIsLoading(false);
+        }
+        load();
+    }, []);
 
     const toggleLike = (id: string) => {
         setLikedPosts(prev =>
             prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
         );
+        communityService.toggleLike(id); // fire-and-forget
     };
 
     const toggleSave = (id: string) => {
@@ -308,57 +175,64 @@ export function CommunityView() {
 
             {/* Content */}
             <div className="px-5 pt-4">
-                <AnimatePresence mode="wait">
-                    {activeTab === 'stories' ? (
-                        <motion.div
-                            key="stories"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            className="space-y-6"
-                        >
-                            {TRAVEL_STORIES.map((story, i) => (
-                                <StoryCard
-                                    key={story.id}
-                                    story={story}
-                                    index={i}
-                                    isLiked={likedPosts.includes(story.id)}
-                                    isSaved={savedPosts.includes(story.id)}
-                                    onLike={() => toggleLike(story.id)}
-                                    onSave={() => toggleSave(story.id)}
-                                />
-                            ))}
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            key="trips"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="space-y-5"
-                        >
-                            {/* Quick Stats */}
-                            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-5 px-5 pb-2">
-                                <div className="flex-shrink-0 px-4 py-3 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl">
-                                    <span className="text-2xl font-bold text-emerald-400 font-heading">24</span>
-                                    <p className="text-xs text-secondary">Open trips</p>
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <Loader2 className="w-8 h-8 text-action animate-spin mb-3" />
+                        <p className="text-secondary text-sm">Loading community...</p>
+                    </div>
+                ) : (
+                    <AnimatePresence mode="wait">
+                        {activeTab === 'stories' ? (
+                            <motion.div
+                                key="stories"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                className="space-y-6"
+                            >
+                                {stories.map((story, i) => (
+                                    <StoryCard
+                                        key={story.id}
+                                        story={story}
+                                        index={i}
+                                        isLiked={likedPosts.includes(story.id)}
+                                        isSaved={savedPosts.includes(story.id)}
+                                        onLike={() => toggleLike(story.id)}
+                                        onSave={() => toggleSave(story.id)}
+                                    />
+                                ))}
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="trips"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="space-y-5"
+                            >
+                                {/* Quick Stats */}
+                                <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-5 px-5 pb-2">
+                                    <div className="flex-shrink-0 px-4 py-3 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl">
+                                        <span className="text-2xl font-bold text-emerald-400 font-heading">{trips.length}</span>
+                                        <p className="text-xs text-secondary">Open trips</p>
+                                    </div>
+                                    <div className="flex-shrink-0 px-4 py-3 bg-gradient-to-r from-action/10 to-cyan-500/10 border border-action/20 rounded-xl">
+                                        <span className="text-2xl font-bold text-action font-heading">{trips.reduce((sum, t) => sum + t.spots.filled, 0)}</span>
+                                        <p className="text-xs text-secondary">Travelers</p>
+                                    </div>
+                                    <div className="flex-shrink-0 px-4 py-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl">
+                                        <span className="text-2xl font-bold text-purple-400 font-heading">{new Set(trips.map(t => t.destination)).size}</span>
+                                        <p className="text-xs text-secondary">Destinations</p>
+                                    </div>
                                 </div>
-                                <div className="flex-shrink-0 px-4 py-3 bg-gradient-to-r from-action/10 to-cyan-500/10 border border-action/20 rounded-xl">
-                                    <span className="text-2xl font-bold text-action font-heading">156</span>
-                                    <p className="text-xs text-secondary">Travelers</p>
-                                </div>
-                                <div className="flex-shrink-0 px-4 py-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl">
-                                    <span className="text-2xl font-bold text-purple-400 font-heading">12</span>
-                                    <p className="text-xs text-secondary">Countries</p>
-                                </div>
-                            </div>
 
-                            {GROUP_TRIPS.map((trip, i) => (
-                                <TripCard key={trip.id} trip={trip} index={i} />
-                            ))}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                                {trips.map((trip, i) => (
+                                    <TripCard key={trip.id} trip={trip} index={i} />
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                )}
             </div>
 
             {/* Create FAB */}

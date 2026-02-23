@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, MapPin, Star, ShieldCheck, Heart, Sparkles,
     Eye, Utensils, Home, Map, Zap, Camera, Coffee,
-    TreePine, Sun, Moon, DollarSign, Filter, Plus
+    TreePine, Sun, Moon, DollarSign, Filter, Plus, Loader2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { SubmitSecretModal } from '../../components/SubmitSecretModal';
+import { secretsService } from '../../services/secretsService';
+import type { LocalSecret } from '../../types/database.types';
 
 type Mood = 'All' | 'Calm' | 'Energetic' | 'Aesthetic' | 'Foodie' | 'Local';
 type Category = 'All' | 'Viewpoints' | 'Food' | 'Stays' | 'Shortcuts' | 'Activities';
@@ -28,7 +30,36 @@ interface Place {
     description?: string;
 }
 
-const PLACES: Place[] = [
+// Map Supabase LocalSecret → component Place shape
+function mapSecretCategoryToCategory(type: string): Category {
+    switch (type) {
+        case 'viewpoint': return 'Viewpoints';
+        case 'food': case 'cafe': return 'Food';
+        case 'stay': return 'Stays';
+        case 'shortcut': return 'Shortcuts';
+        case 'activity': return 'Activities';
+        default: return 'Activities';
+    }
+}
+
+function mapDbSecret(db: LocalSecret): Place {
+    return {
+        id: db.id,
+        name: db.name,
+        type: db.type.charAt(0).toUpperCase() + db.type.slice(1),
+        category: mapSecretCategoryToCategory(db.type),
+        moods: ['Local'] as Mood[],
+        rating: Math.min(5, 4.0 + (db.upvotes / 100)),
+        image: db.image_url || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=500',
+        isSecret: true,
+        distance: db.destination || '',
+        aiVerified: db.is_verified,
+        description: db.description || undefined,
+    };
+}
+
+// Fallback mock data for when Supabase is unavailable
+const FALLBACK_PLACES: Place[] = [
     {
         id: '1',
         name: 'Hidden Alley Café',
@@ -83,20 +114,6 @@ const PLACES: Place[] = [
     },
     {
         id: '5',
-        name: 'Budget Zen Hostel',
-        type: 'Hostel',
-        category: 'Stays',
-        moods: ['Calm', 'Local'],
-        rating: 4.4,
-        distance: '0.5 km',
-        image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&q=80&w=500',
-        isSecret: true,
-        price: '$',
-        aiVerified: true,
-        description: 'Safe, clean & cheap. Verified by travelers'
-    },
-    {
-        id: '6',
         name: 'Temple Back Route',
         type: 'Shortcut',
         category: 'Shortcuts',
@@ -106,32 +123,6 @@ const PLACES: Place[] = [
         image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&q=80&w=500',
         isSecret: true,
         description: 'Skip crowds, beautiful stone path'
-    },
-    {
-        id: '7',
-        name: 'Rooftop Photo Spot',
-        type: 'Viewpoint',
-        category: 'Viewpoints',
-        moods: ['Aesthetic', 'Local'],
-        rating: 4.8,
-        distance: '0.6 km',
-        image: 'https://images.unsplash.com/photo-1480796927426-f609979314bd?auto=format&fit=crop&q=80&w=500',
-        isSecret: true,
-        bestTime: 'Golden Hour',
-        aiVerified: true,
-        description: 'Perfect cityscape shot, Insta famous'
-    },
-    {
-        id: '8',
-        name: 'Morning Yoga Garden',
-        type: 'Activity',
-        category: 'Activities',
-        moods: ['Calm', 'Local'],
-        rating: 4.7,
-        distance: '0.4 km',
-        image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=500',
-        price: '$',
-        bestTime: 'Morning'
     },
 ];
 
@@ -160,8 +151,25 @@ export function ExploreView() {
     const [savedPlaces, setSavedPlaces] = useState<string[]>([]);
     const [showFilters, setShowFilters] = useState(false);
     const [showSubmitModal, setShowSubmitModal] = useState(false);
+    const [places, setPlaces] = useState<Place[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const filteredPlaces = PLACES.filter(p =>
+    const loadSecrets = async () => {
+        setIsLoading(true);
+        const { data, error } = await secretsService.getSecrets();
+        if (error || data.length === 0) {
+            setPlaces(FALLBACK_PLACES);
+        } else {
+            setPlaces(data.map(mapDbSecret));
+        }
+        setIsLoading(false);
+    };
+
+    useEffect(() => {
+        loadSecrets();
+    }, []);
+
+    const filteredPlaces = places.filter(p =>
         (activeMood === 'All' || p.moods.includes(activeMood)) &&
         (activeCategory === 'All' || p.category === activeCategory) &&
         (p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -307,46 +315,56 @@ export function ExploreView() {
                 )}
             </div>
 
-            {/* Places Grid */}
-            <div className="space-y-4">
-                <AnimatePresence mode="popLayout">
-                    {filteredPlaces.map((place, i) => (
-                        <motion.div
-                            layout
-                            key={place.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ delay: i * 0.05 }}
-                        >
-                            <PlaceCard
-                                place={place}
-                                isSaved={savedPlaces.includes(place.id)}
-                                onToggleSave={() => toggleSaved(place.id)}
-                            />
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
+            {/* Loading State */}
+            {isLoading && (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 text-action animate-spin mb-3" />
+                    <p className="text-secondary text-sm">Discovering hidden gems...</p>
+                </div>
+            )}
 
-                {filteredPlaces.length === 0 && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="py-20 text-center"
-                    >
-                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-surface/50 flex items-center justify-center">
-                            <Search className="w-8 h-8 text-secondary" />
-                        </div>
-                        <p className="text-secondary mb-2">No spots found for this vibe</p>
-                        <button
-                            onClick={() => { setActiveMood('All'); setActiveCategory('All'); }}
-                            className="text-action hover:underline"
+            {/* Places Grid */}
+            {!isLoading && (
+                <div className="space-y-4">
+                    <AnimatePresence mode="popLayout">
+                        {filteredPlaces.map((place, i) => (
+                            <motion.div
+                                layout
+                                key={place.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ delay: i * 0.05 }}
+                            >
+                                <PlaceCard
+                                    place={place}
+                                    isSaved={savedPlaces.includes(place.id)}
+                                    onToggleSave={() => toggleSaved(place.id)}
+                                />
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+
+                    {filteredPlaces.length === 0 && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="py-20 text-center"
                         >
-                            Clear filters
-                        </button>
-                    </motion.div>
-                )}
-            </div>
+                            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-surface/50 flex items-center justify-center">
+                                <Search className="w-8 h-8 text-secondary" />
+                            </div>
+                            <p className="text-secondary mb-2">No spots found for this vibe</p>
+                            <button
+                                onClick={() => { setActiveMood('All'); setActiveCategory('All'); }}
+                                className="text-action hover:underline"
+                            >
+                                Clear filters
+                            </button>
+                        </motion.div>
+                    )}
+                </div>
+            )}
 
             {/* Submit Secret FAB */}
             <motion.button
@@ -364,7 +382,7 @@ export function ExploreView() {
                 isOpen={showSubmitModal}
                 onClose={() => setShowSubmitModal(false)}
                 onSuccess={() => {
-                    // Could refresh secrets here
+                    loadSecrets(); // Refresh after new submission
                 }}
             />
         </div>
@@ -427,15 +445,17 @@ function PlaceCard({ place, isSaved, onToggleSave }: PlaceCardProps) {
                         </div>
                         <div className="flex items-center gap-1 px-2 py-1 bg-black/30 backdrop-blur rounded-lg">
                             <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                            <span className="text-xs font-bold text-white">{place.rating}</span>
+                            <span className="text-xs font-bold text-white">{place.rating.toFixed(1)}</span>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3 text-sm text-white/80 flex-wrap">
-                        <span className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" /> {place.distance}
-                        </span>
-                        <span className="w-1 h-1 rounded-full bg-white/40" />
+                        {place.distance && (
+                            <span className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3" /> {place.distance}
+                            </span>
+                        )}
+                        {place.distance && <span className="w-1 h-1 rounded-full bg-white/40" />}
                         <span>{place.type}</span>
                         {place.price && (
                             <>

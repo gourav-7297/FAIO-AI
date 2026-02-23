@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // Sign in with Google (Firebase only — no Supabase dependency)
+    // Sign in with Google (via Firebase popup)
     const signInWithGoogle = async () => {
         try {
             const { signInWithPopup } = await import('firebase/auth');

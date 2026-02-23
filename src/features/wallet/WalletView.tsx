@@ -1,34 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     TrendingUp, TrendingDown, Leaf, DollarSign,
     AlertTriangle, Target, Plus, Book, Camera,
     ChevronRight, Sparkles, Utensils, Hotel, Bus,
-    Coffee, ShoppingBag, Ticket, ArrowUpDown
+    Coffee, ShoppingBag, Ticket, ArrowUpDown, Loader2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useAIAgents } from '../../context/AIAgentContext';
 import { CurrencyConverter } from '../../components/ui/CurrencyConverter';
-
-interface Expense {
-    id: string;
-    category: string;
-    name: string;
-    amount: number;
-    date: string;
-    carbonKg?: number;
-    isEcoOption?: boolean;
-}
-
-const MOCK_EXPENSES: Expense[] = [
-    { id: '1', category: 'Transport', name: 'Airport Taxi', amount: 35, date: 'Today', carbonKg: 4.2 },
-    { id: '2', category: 'Food', name: 'Sushi Restaurant', amount: 45, date: 'Today', carbonKg: 0.8, isEcoOption: true },
-    { id: '3', category: 'Stay', name: 'Eco Hotel Night 1', amount: 120, date: 'Yesterday', carbonKg: 2.1, isEcoOption: true },
-    { id: '4', category: 'Activity', name: 'Temple Entry', amount: 10, date: 'Yesterday', carbonKg: 0.1, isEcoOption: true },
-    { id: '5', category: 'Transport', name: 'Metro Card', amount: 15, date: '2 days ago', carbonKg: 0.5, isEcoOption: true },
-    { id: '6', category: 'Food', name: 'Street Food', amount: 8, date: '2 days ago', carbonKg: 0.3 },
-];
+import { expenseService } from '../../services/expenseService';
+import type { Expense } from '../../services/expenseService';
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
     Transport: Bus,
@@ -43,12 +26,36 @@ export function WalletView() {
     const [activeTab, setActiveTab] = useState<'expenses' | 'eco' | 'journal'>('expenses');
     const [showConverter, setShowConverter] = useState(false);
     const { tripData } = useAIAgents();
+    const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const totalSpent = MOCK_EXPENSES.reduce((sum, e) => sum + e.amount, 0);
+    useEffect(() => {
+        async function load() {
+            setIsLoading(true);
+            const { data } = await expenseService.getExpenses();
+            setExpenses(data);
+            setIsLoading(false);
+        }
+        load();
+    }, []);
+
+    const handleAddExpense = async () => {
+        const name = prompt('Expense name:');
+        if (!name) return;
+        const amountStr = prompt('Amount ($):');
+        if (!amountStr) return;
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount)) return;
+        const category = prompt('Category (Transport, Food, Stay, Activity, Shopping, Coffee):') || 'Food';
+        const { data } = await expenseService.addExpense(undefined, { category, name, amount });
+        if (data) setExpenses(prev => [data, ...prev]);
+    };
+
+    const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
     const totalBudget = tripData?.totalCost || 1500;
     const budgetPercent = Math.min((totalSpent / totalBudget) * 100, 100);
-    const totalCarbon = MOCK_EXPENSES.reduce((sum, e) => sum + (e.carbonKg || 0), 0);
-    const ecoChoices = MOCK_EXPENSES.filter(e => e.isEcoOption).length;
+    const totalCarbon = expenses.reduce((sum, e) => sum + (e.carbonKg || 0), 0);
+    const ecoChoices = expenses.filter(e => e.isEcoOption).length;
 
     return (
         <div className="p-5 pt-12 min-h-screen pb-32">
@@ -128,8 +135,8 @@ export function WalletView() {
             <div className="grid grid-cols-3 gap-3 mb-6">
                 <GlassCard className="p-3 text-center">
                     <TrendingUp className="w-5 h-5 mx-auto text-emerald-400 mb-2" />
-                    <p className="text-lg font-bold">${(totalSpent / MOCK_EXPENSES.length).toFixed(0)}</p>
-                    <p className="text-[10px] text-secondary">Avg/Day</p>
+                    <p className="text-lg font-bold">${expenses.length > 0 ? (totalSpent / expenses.length).toFixed(0) : 0}</p>
+                    <p className="text-[10px] text-secondary">Avg/Expense</p>
                 </GlassCard>
                 <GlassCard className="p-3 text-center">
                     <Leaf className="w-5 h-5 mx-auto text-teal-400 mb-2" />
@@ -176,16 +183,28 @@ export function WalletView() {
                         exit={{ opacity: 0, y: -10 }}
                         className="space-y-3"
                     >
-                        <button className="w-full">
+                        <button className="w-full" onClick={handleAddExpense}>
                             <GlassCard className="p-4 flex items-center justify-center gap-2 border-dashed border-2 border-slate-700 hover:border-action transition-colors">
                                 <Plus className="w-5 h-5 text-action" />
                                 <span className="text-action font-medium">Add Expense</span>
                             </GlassCard>
                         </button>
 
-                        {MOCK_EXPENSES.map((expense, i) => (
-                            <ExpenseCard key={expense.id} expense={expense} delay={i * 0.05} />
-                        ))}
+                        {isLoading ? (
+                            <div className="flex flex-col items-center justify-center py-10">
+                                <Loader2 className="w-6 h-6 text-action animate-spin mb-2" />
+                                <p className="text-secondary text-sm">Loading expenses...</p>
+                            </div>
+                        ) : expenses.length === 0 ? (
+                            <GlassCard className="p-8 text-center">
+                                <DollarSign className="w-10 h-10 text-secondary/30 mx-auto mb-3" />
+                                <p className="text-secondary text-sm">No expenses yet. Tap "Add Expense" to start tracking.</p>
+                            </GlassCard>
+                        ) : (
+                            expenses.map((expense, i) => (
+                                <ExpenseCard key={expense.id} expense={expense} delay={i * 0.05} />
+                            ))
+                        )}
                     </motion.div>
                 )}
 
@@ -198,7 +217,7 @@ export function WalletView() {
                         className="space-y-4"
                     >
                         <EcoImpactCard totalCarbon={totalCarbon} ecoChoices={ecoChoices} />
-                        <CarbonBreakdown expenses={MOCK_EXPENSES} />
+                        <CarbonBreakdown expenses={expenses} />
                         <EcoAlternatives />
                     </motion.div>
                 )}

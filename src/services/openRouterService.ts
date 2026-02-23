@@ -1,27 +1,23 @@
 import OpenAI from 'openai';
 
-const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
-// OpenRouter uses OpenAI's SDK but with a different base URL
-let openRouter: OpenAI | null = null;
+// Groq uses the OpenAI-compatible API with a different base URL
+let groqClient: OpenAI | null = null;
 
-function getOpenAI() {
-    if (!openRouter && API_KEY) {
-        openRouter = new OpenAI({
+function getGroqClient() {
+    if (!groqClient && API_KEY) {
+        groqClient = new OpenAI({
             apiKey: API_KEY,
-            baseURL: 'https://openrouter.ai/api/v1',
+            baseURL: 'https://api.groq.com/openai/v1',
             dangerouslyAllowBrowser: true, // For client-side use
-            defaultHeaders: {
-                'HTTP-Referer': 'https://faio.ai', // Required by OpenRouter
-                'X-Title': 'FAIO Travel Assistant', // Optional
-            }
         });
     }
-    return openRouter;
+    return groqClient;
 }
 
-// Low-cost, reliable model
-const DEFAULT_MODEL = 'google/gemini-2.0-flash-001';
+// Fast, high-quality model on Groq
+const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
 
 export interface TripGenerationParams {
     destination: string;
@@ -95,7 +91,7 @@ IMPORTANT: Respond ONLY with valid JSON. No markdown. No explanations.
 Input:
 - Destination: {destination}
 - Dates: {startDate} to {endDate}
-- Budget: ${"{budget}"} USD
+- Budget: $\{budget\} USD
 - Travel Style: {travelStyles}
 - Travelers: {travelers}
 
@@ -143,10 +139,10 @@ Generate a JSON response with this EXACT structure:
 Make it detailed, specific, and tailored to the travel style.`;
 
 export async function generateTripWithAI(params: TripGenerationParams): Promise<GeneratedTrip | null> {
-    const ai = getOpenAI();
+    const ai = getGroqClient();
 
     if (!ai) {
-        console.warn('OpenRouter not configured, using fallback');
+        console.warn('Groq AI not configured, using fallback');
         return generateFallbackTrip(params);
     }
 
@@ -163,7 +159,7 @@ export async function generateTripWithAI(params: TripGenerationParams): Promise<
             model: DEFAULT_MODEL,
             messages: [{ role: 'user', content: prompt }],
             temperature: 0.7,
-            max_tokens: 4000, // Increased for detailed response
+            max_tokens: 4000,
         });
 
         const text = response.choices[0]?.message?.content || '';
@@ -175,7 +171,7 @@ export async function generateTripWithAI(params: TripGenerationParams): Promise<
 
         return JSON.parse(jsonText.trim()) as GeneratedTrip;
     } catch (error) {
-        console.error('Error generating trip with OpenRouter:', error);
+        console.error('Error generating trip with Groq:', error);
         return generateFallbackTrip(params);
     }
 }
@@ -205,10 +201,8 @@ INTERACTION RULES:
 - Be concise but comprehensive. Focus on value.
 - You are FAIO (Future AI Organizer). Make travel magical.`;
 
-// Simplified Chat Function (re-implementation of previous logic or simplified import)
-// Since we are replacing the whole file, we need to keep chatWithAI
 export async function chatWithAI(messages: ChatMessage[], userMessage: string): Promise<string> {
-    const ai = getOpenAI();
+    const ai = getGroqClient();
     if (!ai) return getFallbackChatResponse(userMessage);
 
     try {

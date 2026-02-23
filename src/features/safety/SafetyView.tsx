@@ -32,6 +32,30 @@ const MOCK_ALERTS: SafetyAlert[] = [
     { id: '3', type: 'info', title: 'Safe Zone Verified', description: 'This hotel area is community verified', area: 'City Center', time: '1d ago' },
 ];
 
+// ============================
+// EMERGENCY CONTACT PERSISTENCE
+// ============================
+
+const CONTACTS_STORAGE_KEY = 'faio_emergency_contacts';
+
+function loadContacts(): EmergencyContact[] {
+    try {
+        const raw = localStorage.getItem(CONTACTS_STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    // Default contacts if nothing saved
+    return [
+        { id: '1', name: 'Mom', phone: '+1 234 567 8900', relation: 'Family' },
+        { id: '2', name: 'Hotel Concierge', phone: '+81 3 1234 5678', relation: 'Local' },
+    ];
+}
+
+function saveContacts(contacts: EmergencyContact[]): void {
+    try {
+        localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(contacts));
+    } catch { /* ignore */ }
+}
+
 export function SafetyView() {
     const { isEmergency, toggleEmergency } = useEnvironment();
     const [holding, setHolding] = useState(false);
@@ -40,10 +64,20 @@ export function SafetyView() {
     const controls = useAnimation();
     const timeoutRef = useRef<any>(null);
 
-    const [contacts, setContacts] = useState<EmergencyContact[]>([
-        { id: '1', name: 'Mom', phone: '+1 234 567 8900', relation: 'Family' },
-        { id: '2', name: 'Hotel Concierge', phone: '+81 3 1234 5678', relation: 'Local' },
-    ]);
+    const [contacts, setContacts] = useState<EmergencyContact[]>(loadContacts);
+
+    // Persist contacts whenever they change
+    useEffect(() => {
+        saveContacts(contacts);
+    }, [contacts]);
+
+    const addContact = (contact: EmergencyContact) => {
+        setContacts(prev => [...prev, contact]);
+    };
+
+    const removeContact = (id: string) => {
+        setContacts(prev => prev.filter(c => c.id !== id));
+    };
 
     const startHold = () => {
         if (isEmergency) return;
@@ -299,7 +333,8 @@ export function SafetyView() {
                     <EmergencyContactsModal
                         contacts={contacts}
                         onClose={() => setShowContacts(false)}
-                        onAdd={(contact) => setContacts([...contacts, contact])}
+                        onAdd={addContact}
+                        onRemove={removeContact}
                     />
                 )}
             </AnimatePresence>
@@ -422,11 +457,13 @@ function EmergencyScreen({ onCancel, contacts }: { onCancel: () => void; contact
 function EmergencyContactsModal({
     contacts,
     onClose,
-    onAdd
+    onAdd,
+    onRemove
 }: {
     contacts: EmergencyContact[];
     onClose: () => void;
     onAdd: (contact: EmergencyContact) => void;
+    onRemove: (id: string) => void;
 }) {
     const [showForm, setShowForm] = useState(false);
     const [newContact, setNewContact] = useState({ name: '', phone: '', relation: '' });
@@ -474,7 +511,15 @@ function EmergencyContactsModal({
                                     <p className="text-xs text-secondary">{contact.phone}</p>
                                 </div>
                             </div>
-                            <span className="text-xs text-secondary px-2 py-1 bg-surface rounded-full">{contact.relation}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-secondary px-2 py-1 bg-surface rounded-full">{contact.relation}</span>
+                                <button
+                                    onClick={() => onRemove(contact.id)}
+                                    className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors"
+                                >
+                                    <X className="w-4 h-4 text-red-400" />
+                                </button>
+                            </div>
                         </GlassCard>
                     ))}
                 </div>

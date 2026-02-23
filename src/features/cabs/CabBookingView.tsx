@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     MapPin, Navigation, CreditCard, Star,
@@ -6,111 +6,43 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { GlassCard } from '../../components/ui/GlassCard';
-
-// ============================
-// TYPES
-// ============================
-
-interface RideOption {
-    id: string;
-    type: 'Economy' | 'Comfort' | 'Premium' | 'Van';
-    name: string;
-    image: string;
-    price: number;
-    currency: string;
-    eta: number; // minutes
-    capacity: number;
-    description: string;
-}
-
-interface Driver {
-    name: string;
-    rating: number;
-    carModel: string;
-    plateNumber: string;
-    phone: string;
-    avatar: string;
-}
-
-// ============================
-// MOCK DATA
-// ============================
-
-const RIDE_OPTIONS: RideOption[] = [
-    {
-        id: '1',
-        type: 'Economy',
-        name: 'Eco Saver',
-        image: 'https://cdn-icons-png.flaticon.com/512/3097/3097180.png', // Placeholder icon
-        price: 12.50,
-        currency: 'USD',
-        eta: 4,
-        capacity: 4,
-        description: 'Affordable everyday rides'
-    },
-    {
-        id: '2',
-        type: 'Comfort',
-        name: 'Comfort',
-        image: 'https://cdn-icons-png.flaticon.com/512/3097/3097136.png',
-        price: 18.20,
-        currency: 'USD',
-        eta: 6,
-        capacity: 4,
-        description: 'Newer cars with extra legroom'
-    },
-    {
-        id: '3',
-        type: 'Premium',
-        name: 'Exec Black',
-        image: 'https://cdn-icons-png.flaticon.com/512/3097/3097166.png',
-        price: 28.00,
-        currency: 'USD',
-        eta: 8,
-        capacity: 3,
-        description: 'Luxury rides with top-rated drivers'
-    },
-    {
-        id: '4',
-        type: 'Van',
-        name: 'Van XL',
-        image: 'https://cdn-icons-png.flaticon.com/512/3097/3097186.png',
-        price: 35.00,
-        currency: 'USD',
-        eta: 12,
-        capacity: 6,
-        description: 'Rides for groups up to 6'
-    }
-];
-
-const MOCK_DRIVER: Driver = {
-    name: "Miguel Santos",
-    rating: 4.8,
-    carModel: "Toyota Camry (White)",
-    plateNumber: "GH-882-KL",
-    phone: "+1 555 0123",
-    avatar: "https://i.pravatar.cc/150?u=miguel"
-};
-
-// ============================
-// COMPONENT
-// ============================
+import { cabsService } from '../../services/cabsService';
+import type { RideOption, Driver } from '../../services/cabsService';
 
 export function CabBookingView() {
     const [pickup, setPickup] = useState('Current Location');
     const [dropoff, setDropoff] = useState('');
     const [step, setStep] = useState<'input' | 'selection' | 'searching' | 'arriving'>('input');
     const [selectedRide, setSelectedRide] = useState<RideOption | null>(null);
+    const [rideOptions, setRideOptions] = useState<RideOption[]>([]);
+    const [driver, setDriver] = useState<Driver | null>(null);
+
+    // Load dynamic ride options
+    const loadRides = useCallback(() => {
+        setRideOptions(cabsService.getRideOptions());
+    }, []);
+
+    useEffect(() => {
+        loadRides();
+    }, [loadRides]);
 
     // Simulate "Searching for Driver"
     useEffect(() => {
         if (step === 'searching') {
             const timer = setTimeout(() => {
+                setDriver(cabsService.getAssignedDriver());
                 setStep('arriving');
             }, 3000);
             return () => clearTimeout(timer);
         }
     }, [step]);
+
+    // Refresh prices when entering selection step
+    useEffect(() => {
+        if (step === 'selection') {
+            loadRides();
+        }
+    }, [step, loadRides]);
 
     return (
         <div className="min-h-screen bg-slate-900 relative overflow-hidden">
@@ -202,7 +134,7 @@ export function CabBookingView() {
                             </div>
                             <h3 className="text-lg font-bold text-white mb-4">Choose a ride</h3>
                             <div className="space-y-2 max-h-[40vh] overflow-y-auto no-scrollbar mb-4">
-                                {RIDE_OPTIONS.map((ride) => (
+                                {rideOptions.map((ride) => (
                                     <div
                                         key={ride.id}
                                         onClick={() => setSelectedRide(ride)}
@@ -302,34 +234,36 @@ export function CabBookingView() {
                             </div>
 
                             {/* Driver Card */}
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="relative">
-                                    <img
-                                        src={MOCK_DRIVER.avatar}
-                                        alt={MOCK_DRIVER.name}
-                                        className="w-14 h-14 rounded-full border-2 border-white/20"
-                                    />
-                                    <div className="absolute -bottom-1 -right-1 bg-white text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                                        <Star className="w-2.5 h-2.5 fill-black" />
-                                        {MOCK_DRIVER.rating}
+                            {driver && (
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="relative">
+                                        <img
+                                            src={driver.avatar}
+                                            alt={driver.name}
+                                            className="w-14 h-14 rounded-full border-2 border-white/20"
+                                        />
+                                        <div className="absolute -bottom-1 -right-1 bg-white text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                                            <Star className="w-2.5 h-2.5 fill-black" />
+                                            {driver.rating}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-white text-lg">{driver.name}</h4>
+                                        <p className="text-secondary text-sm">{driver.carModel}</p>
+                                        <div className="inline-block mt-1 px-2 py-0.5 bg-white/10 rounded text-xs font-mono text-white/80">
+                                            {driver.plateNumber}
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <button className="w-10 h-10 rounded-full bg-action/20 flex items-center justify-center text-action">
+                                            <MessageSquare className="w-5 h-5" />
+                                        </button>
+                                        <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white">
+                                            <Phone className="w-5 h-5" />
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="flex-1">
-                                    <h4 className="font-bold text-white text-lg">{MOCK_DRIVER.name}</h4>
-                                    <p className="text-secondary text-sm">{MOCK_DRIVER.carModel}</p>
-                                    <div className="inline-block mt-1 px-2 py-0.5 bg-white/10 rounded text-xs font-mono text-white/80">
-                                        {MOCK_DRIVER.plateNumber}
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <button className="w-10 h-10 rounded-full bg-action/20 flex items-center justify-center text-action">
-                                        <MessageSquare className="w-5 h-5" />
-                                    </button>
-                                    <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white">
-                                        <Phone className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </div>
+                            )}
 
                             {/* Trip Details */}
                             <div className="space-y-4 border-t border-white/10 pt-4">

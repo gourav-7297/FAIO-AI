@@ -11,49 +11,10 @@ import { cn } from '../../lib/utils';
 
 type HotelTypeFilter = 'all' | 'hotel' | 'hostel' | 'eco-stay' | 'homestay';
 
-// Mock data for when Supabase tables don't exist yet
-const mockHotels: HotelType[] = [
-    {
-        id: '1', destination: 'Tokyo', name: 'Sakura Inn', type: 'hotel',
-        price_per_night: 120, rating: 4.8, safety_verified: true, women_friendly: true,
-        eco_certified: true, amenities: ['WiFi', 'Breakfast', 'AC'],
-        image_url: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=400',
-        location: null
-    },
-    {
-        id: '2', destination: 'Tokyo', name: 'Shibuya Hostel', type: 'hostel',
-        price_per_night: 45, rating: 4.5, safety_verified: true, women_friendly: true,
-        eco_certified: false, amenities: ['WiFi', 'Locker', 'Common Kitchen'],
-        image_url: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400',
-        location: null
-    },
-    {
-        id: '3', destination: 'Tokyo', name: 'Zen Garden Stay', type: 'eco-stay',
-        price_per_night: 180, rating: 4.9, safety_verified: true, women_friendly: true,
-        eco_certified: true, amenities: ['WiFi', 'Breakfast', 'Garden', 'Onsen'],
-        image_url: 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=400',
-        location: null
-    },
-    {
-        id: '4', destination: 'Bali', name: 'Ubud Eco Resort', type: 'eco-stay',
-        price_per_night: 95, rating: 4.9, safety_verified: true, women_friendly: true,
-        eco_certified: true, amenities: ['Pool', 'Yoga', 'Organic Food'],
-        image_url: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400',
-        location: null
-    },
-    {
-        id: '5', destination: 'Paris', name: 'Le Petit Hotel', type: 'hotel',
-        price_per_night: 150, rating: 4.7, safety_verified: true, women_friendly: true,
-        eco_certified: false, amenities: ['WiFi', 'Breakfast', 'City View'],
-        image_url: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400',
-        location: null
-    },
-];
-
 export function HotelsView() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [hotels, setHotels] = useState<HotelType[]>(mockHotels);
-    const [, setIsLoading] = useState(false);
+    const [hotels, setHotels] = useState<HotelType[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [showFilters, setShowFilters] = useState(false);
     const [selectedType, setSelectedType] = useState<HotelTypeFilter>('all');
     const [filters, setFilters] = useState({
@@ -72,10 +33,8 @@ export function HotelsView() {
         const { data, error } = await hotelsService.searchHotels();
         if (!error && data.length > 0) {
             setHotels(data);
-        } else {
-            // Use mock data if no real data
-            setHotels(mockHotels);
         }
+        // If Supabase has no data, the list will simply be empty
         setIsLoading(false);
     };
 
@@ -198,99 +157,106 @@ export function HotelsView() {
             </AnimatePresence>
 
             {/* Hotels List */}
-            <div className="space-y-4">
-                {filteredHotels.map((hotel, index) => (
-                    <motion.div
-                        key={hotel.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                    >
-                        <GlassCard className="overflow-hidden">
-                            {/* Image */}
-                            <div className="relative h-40">
-                                <img
-                                    src={hotel.image_url || 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400'}
-                                    alt={hotel.name}
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <Hotel className="w-8 h-8 text-action animate-pulse mb-3" />
+                    <p className="text-secondary text-sm">Loading stays...</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {filteredHotels.map((hotel, index) => (
+                        <motion.div
+                            key={hotel.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                        >
+                            <GlassCard className="overflow-hidden">
+                                {/* Image */}
+                                <div className="relative h-40">
+                                    <img
+                                        src={hotel.image_url || 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400'}
+                                        alt={hotel.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
-                                {/* Badges */}
-                                <div className="absolute top-3 left-3 flex gap-2">
-                                    {hotel.safety_verified && (
-                                        <span className="px-2 py-1 bg-emerald-500/90 text-white text-xs font-bold rounded-full flex items-center gap-1">
-                                            <ShieldCheck className="w-3 h-3" /> Verified
-                                        </span>
-                                    )}
-                                    {hotel.eco_certified && (
-                                        <span className="px-2 py-1 bg-green-500/90 text-white text-xs font-bold rounded-full flex items-center gap-1">
-                                            <Leaf className="w-3 h-3" /> Eco
-                                        </span>
-                                    )}
+                                    {/* Badges */}
+                                    <div className="absolute top-3 left-3 flex gap-2">
+                                        {hotel.safety_verified && (
+                                            <span className="px-2 py-1 bg-emerald-500/90 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                                                <ShieldCheck className="w-3 h-3" /> Verified
+                                            </span>
+                                        )}
+                                        {hotel.eco_certified && (
+                                            <span className="px-2 py-1 bg-green-500/90 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                                                <Leaf className="w-3 h-3" /> Eco
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Price */}
+                                    <div className="absolute bottom-3 right-3 px-3 py-1 bg-black/60 rounded-lg backdrop-blur-sm">
+                                        <span className="text-white font-bold">${hotel.price_per_night}</span>
+                                        <span className="text-white/70 text-xs">/night</span>
+                                    </div>
                                 </div>
 
-                                {/* Price */}
-                                <div className="absolute bottom-3 right-3 px-3 py-1 bg-black/60 rounded-lg backdrop-blur-sm">
-                                    <span className="text-white font-bold">${hotel.price_per_night}</span>
-                                    <span className="text-white/70 text-xs">/night</span>
-                                </div>
-                            </div>
-
-                            {/* Details */}
-                            <div className="p-4">
-                                <div className="flex items-start justify-between mb-2">
-                                    <div>
-                                        <h3 className="font-bold text-lg">{hotel.name}</h3>
-                                        <div className="flex items-center gap-1 text-secondary text-sm">
-                                            <MapPin className="w-3 h-3" />
-                                            {hotel.destination}
+                                {/* Details */}
+                                <div className="p-4">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div>
+                                            <h3 className="font-bold text-lg">{hotel.name}</h3>
+                                            <div className="flex items-center gap-1 text-secondary text-sm">
+                                                <MapPin className="w-3 h-3" />
+                                                {hotel.destination}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 rounded-lg">
+                                            <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                                            <span className="font-bold text-amber-400">{hotel.rating}</span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 rounded-lg">
-                                        <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                                        <span className="font-bold text-amber-400">{hotel.rating}</span>
+
+                                    {/* Amenities */}
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                        {hotel.amenities?.slice(0, 4).map((amenity, i) => (
+                                            <span key={i} className="px-2 py-1 bg-white/5 text-secondary text-xs rounded-md">
+                                                {amenity}
+                                            </span>
+                                        ))}
                                     </div>
+
+                                    {/* Women Friendly Badge */}
+                                    {hotel.women_friendly && (
+                                        <div className="flex items-center gap-2 text-pink-400 text-sm">
+                                            <Heart className="w-4 h-4" />
+                                            <span>Women-safety verified</span>
+                                        </div>
+                                    )}
+
+                                    {/* Book Button */}
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="w-full mt-4 py-3 bg-action text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                                    >
+                                        View Details
+                                        <ChevronRight className="w-4 h-4" />
+                                    </motion.button>
                                 </div>
+                            </GlassCard>
+                        </motion.div>
+                    ))}
 
-                                {/* Amenities */}
-                                <div className="flex flex-wrap gap-2 mb-3">
-                                    {hotel.amenities?.slice(0, 4).map((amenity, i) => (
-                                        <span key={i} className="px-2 py-1 bg-white/5 text-secondary text-xs rounded-md">
-                                            {amenity}
-                                        </span>
-                                    ))}
-                                </div>
-
-                                {/* Women Friendly Badge */}
-                                {hotel.women_friendly && (
-                                    <div className="flex items-center gap-2 text-pink-400 text-sm">
-                                        <Heart className="w-4 h-4" />
-                                        <span>Women-safety verified</span>
-                                    </div>
-                                )}
-
-                                {/* Book Button */}
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className="w-full mt-4 py-3 bg-action text-white font-bold rounded-xl flex items-center justify-center gap-2"
-                                >
-                                    View Details
-                                    <ChevronRight className="w-4 h-4" />
-                                </motion.button>
-                            </div>
-                        </GlassCard>
-                    </motion.div>
-                ))}
-
-                {filteredHotels.length === 0 && (
-                    <div className="py-12 text-center">
-                        <Hotel className="w-12 h-12 mx-auto text-secondary mb-4" />
-                        <p className="text-secondary">No hotels found matching your criteria</p>
-                    </div>
-                )}
-            </div>
+                    {filteredHotels.length === 0 && (
+                        <div className="py-12 text-center">
+                            <Hotel className="w-12 h-12 mx-auto text-secondary mb-4" />
+                            <p className="text-secondary">No hotels found matching your criteria</p>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

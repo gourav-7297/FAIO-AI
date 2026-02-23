@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, MapPin, Star, Languages, BadgeCheck, X,
-    User, ChevronRight, Calendar
+    User, ChevronRight, Calendar, Loader2
 } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { guidesService } from '../../services/guidesService';
+import type { Guide as DbGuide } from '../../types/database.types';
 
 // ============================
 // TYPES
@@ -25,11 +27,26 @@ interface Guide {
     image: string;
 }
 
-// ============================
-// MOCK DATA
-// ============================
+// Map Supabase Guide → component Guide shape
+function mapDbGuide(db: DbGuide): Guide {
+    return {
+        id: db.id,
+        name: db.name,
+        avatar: db.avatar_url || `https://i.pravatar.cc/150?u=${db.id}`,
+        location: db.destination,
+        rating: db.rating ?? 5.0,
+        reviewCount: 0, // not in DB schema yet
+        verified: db.is_verified,
+        hourlyRate: db.price_per_day ? Math.round(db.price_per_day / 8) : 30,
+        languages: db.languages || [],
+        specialties: db.specialties || [],
+        bio: db.bio || '',
+        image: db.avatar_url || `https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&q=80&w=800`,
+    };
+}
 
-const GUIDES: Guide[] = [
+// Fallback mock data when Supabase is unavailable
+const FALLBACK_GUIDES: Guide[] = [
     {
         id: '1',
         name: 'Elena Rossi',
@@ -58,34 +75,6 @@ const GUIDES: Guide[] = [
         bio: 'Professional photographer and food lover. Let me take you to the best photo spots and hidden izakayas that only locals know about.',
         image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&q=80&w=800'
     },
-    {
-        id: '3',
-        name: 'Sarah Jenkins',
-        avatar: 'https://i.pravatar.cc/150?u=sarah',
-        location: 'London, UK',
-        rating: 4.8,
-        reviewCount: 210,
-        verified: true,
-        hourlyRate: 40,
-        languages: ['English', 'Spanish'],
-        specialties: ['Architecture', 'Harry Potter', 'Pubs'],
-        bio: 'Architecture student and certified Blue Badge guide. I love sharing the architectural history of London, from Roman ruins to modern skyscrapers.',
-        image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&q=80&w=800'
-    },
-    {
-        id: '4',
-        name: 'Carlos Mendez',
-        avatar: 'https://i.pravatar.cc/150?u=carlos',
-        location: 'Barcelona, Spain',
-        rating: 4.7,
-        reviewCount: 156,
-        verified: false,
-        hourlyRate: 35,
-        languages: ['English', 'Spanish', 'Catalan'],
-        specialties: ['Foodie', 'Nightlife', 'Beaches'],
-        bio: 'Local culinary expert. Join me for a tapas tour you will never forget! I know the best spots for authentic Catalan cuisine.',
-        image: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?auto=format&fit=crop&q=80&w=800'
-    }
 ];
 
 // ============================
@@ -95,8 +84,25 @@ const GUIDES: Guide[] = [
 export function GuidesView() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
+    const [guides, setGuides] = useState<Guide[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const filteredGuides = GUIDES.filter(guide =>
+    useEffect(() => {
+        async function loadGuides() {
+            setIsLoading(true);
+            const { data, error } = await guidesService.getGuides();
+            if (error || data.length === 0) {
+                // Use fallback when DB is empty or unavailable
+                setGuides(FALLBACK_GUIDES);
+            } else {
+                setGuides(data.map(mapDbGuide));
+            }
+            setIsLoading(false);
+        }
+        loadGuides();
+    }, []);
+
+    const filteredGuides = guides.filter(guide =>
         guide.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         guide.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
         guide.specialties.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -132,27 +138,37 @@ export function GuidesView() {
                 </GlassCard>
             </div>
 
-            {/* Guides Grid */}
-            <div className="px-5 space-y-4">
-                {filteredGuides.map((guide, index) => (
-                    <motion.div
-                        key={guide.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        onClick={() => setSelectedGuide(guide)}
-                    >
-                        <GuideCard guide={guide} />
-                    </motion.div>
-                ))}
+            {/* Loading State */}
+            {isLoading && (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 text-action animate-spin mb-3" />
+                    <p className="text-secondary text-sm">Loading guides...</p>
+                </div>
+            )}
 
-                {filteredGuides.length === 0 && (
-                    <div className="text-center py-10">
-                        <User className="w-12 h-12 text-secondary/30 mx-auto mb-3" />
-                        <p className="text-secondary">No guides found matching your search.</p>
-                    </div>
-                )}
-            </div>
+            {/* Guides Grid */}
+            {!isLoading && (
+                <div className="px-5 space-y-4">
+                    {filteredGuides.map((guide, index) => (
+                        <motion.div
+                            key={guide.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            onClick={() => setSelectedGuide(guide)}
+                        >
+                            <GuideCard guide={guide} />
+                        </motion.div>
+                    ))}
+
+                    {filteredGuides.length === 0 && (
+                        <div className="text-center py-10">
+                            <User className="w-12 h-12 text-secondary/30 mx-auto mb-3" />
+                            <p className="text-secondary">No guides found matching your search.</p>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Booking Modal */}
             <AnimatePresence>
@@ -341,4 +357,3 @@ function BookingModal({ guide, onClose }: { guide: Guide; onClose: () => void })
         </motion.div>
     );
 }
-
