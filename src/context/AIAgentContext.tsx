@@ -58,43 +58,56 @@ export const AGENTS: Record<AgentType, AgentInfo> = {
     }
 };
 
-interface TripData {
-    destination: string;
-    startDate: string;
-    endDate: string;
-    budget: number;
-    styles: string[];
-    itinerary: ItineraryDay[];
-    totalCost: number;
-    carbonFootprint: number;
-    safetyScore: number;
-    packingList?: string[];
-    safetyTips?: string[];
-    localSecrets?: string[];
-    overview?: string;
-    topPlaces?: { name: string; type: string; description: string; bestTime: string }[];
-    dining?: { name: string; cuisine: string; price: string; description: string; specialty: string }[];
-}
+// ============================
+// DATA TYPES
+// ============================
 
-interface ItineraryDay {
-    day: number;
-    date: string;
-    activities: Activity[];
-}
-
-interface Activity {
+export interface Activity {
     id: string;
     time: string;
     title: string;
     type: string;
     duration: string;
     cost: number;
+    location?: string;
+    description?: string;
     travelTime?: string;
     isOutdoor?: boolean;
     backup?: string;
     isSecret?: boolean;
     carbonImpact?: number;
     safetyNote?: string;
+    isEcoFriendly?: boolean;
+}
+
+export interface ItineraryDay {
+    day: number;
+    date: string;
+    theme?: string;
+    activities: Activity[];
+}
+
+export interface TripData {
+    destination: string;
+    startDate: string;
+    endDate: string;
+    budget: number;
+    styles: string[];
+    travelers?: number;
+    itinerary: ItineraryDay[];
+    totalCost: number;
+    carbonFootprint: number;
+    sustainabilityScore: number;
+    packingList?: string[];
+    safetyTips?: string[];
+    localSecrets?: string[];
+    overview?: string;
+    bestTimeToVisit?: string;
+    currency?: string;
+    language?: string;
+    topPlaces?: { name: string; type: string; description: string; bestTime: string; estimatedCost?: string; rating?: number }[];
+    dining?: { name: string; cuisine: string; price: string; description: string; specialty: string; rating?: number; neighborhood?: string }[];
+    transportTips?: string[];
 }
 
 interface AgentMessage {
@@ -104,27 +117,22 @@ interface AgentMessage {
 }
 
 interface AIAgentContextType {
-    // Agent States
     agentStatuses: Record<AgentType, AgentStatus>;
     activeAgent: AgentType | null;
     agentMessages: AgentMessage[];
-
-    // Trip Data
     tripData: TripData | null;
-
-    // Actions
     setAgentStatus: (agent: AgentType, status: AgentStatus) => void;
     addAgentMessage: (agent: AgentType, message: string) => void;
-    generateTrip: (destination: string, dates: { start: string; end: string }, budget: number, styles: string[]) => Promise<TripData>;
+    generateTrip: (destination: string, dates: { start: string; end: string }, budget: number, styles: string[], travelers?: number) => Promise<TripData>;
     clearTrip: () => void;
-
-    // AI Chat
     chatMessages: ChatMessage[];
     sendChatMessage: (message: string) => Promise<void>;
     isAITyping: boolean;
-
-    // AI Status
     isAIConfigured: boolean;
+    savedTrips: TripData[];
+    saveCurrentTrip: () => void;
+    loadTrip: (index: number) => void;
+    deleteTrip: (index: number) => void;
 }
 
 interface ChatMessage {
@@ -137,21 +145,41 @@ interface ChatMessage {
 
 const AIAgentContext = createContext<AIAgentContextType | undefined>(undefined);
 
+// ============================
+// TRIP PERSISTENCE
+// ============================
+
+const TRIPS_STORAGE_KEY = 'faio_saved_trips';
+
+function loadSavedTrips(): TripData[] {
+    try {
+        const raw = localStorage.getItem(TRIPS_STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return [];
+}
+
+function persistTrips(trips: TripData[]): void {
+    try {
+        localStorage.setItem(TRIPS_STORAGE_KEY, JSON.stringify(trips));
+    } catch { /* ignore */ }
+}
+
 // Mock itinerary generation
 const generateMockItinerary = (destination: string, styles: string[]): ItineraryDay[] => {
     const activities: Activity[] = [
-        { id: '1', time: '08:00', title: 'Breakfast at Local Café', type: 'food', duration: '1h', cost: 15, carbonImpact: 2 },
-        { id: '2', time: '10:00', title: `${destination} Heritage Walk`, type: 'culture', duration: '2h', cost: 0, travelTime: '15 min', isOutdoor: true, backup: 'Museum Visit', carbonImpact: 5 },
-        { id: '3', time: '13:00', title: 'Hidden Gem Restaurant', type: 'food', duration: '1.5h', cost: 25, travelTime: '10 min', isSecret: true, carbonImpact: 3 },
-        { id: '4', time: '15:00', title: styles.includes('adventure') ? 'Adventure Activity' : 'Scenic Viewpoint', type: styles.includes('adventure') ? 'adventure' : 'nature', duration: '2h', cost: 45, travelTime: '20 min', isOutdoor: true, backup: 'Indoor Activity Center', carbonImpact: 15 },
-        { id: '5', time: '18:00', title: 'Sunset Spot', type: 'view', duration: '1h', cost: 0, travelTime: '15 min', isOutdoor: true, isSecret: true, carbonImpact: 5 },
-        { id: '6', time: '20:00', title: styles.includes('nightlife') ? 'Nightlife District' : 'Cozy Dinner', type: styles.includes('nightlife') ? 'nightlife' : 'food', duration: '2h', cost: 40, travelTime: '10 min', carbonImpact: 8 },
+        { id: '1', time: '08:00', title: 'Breakfast at Local Café', type: 'food', duration: '1h', cost: 15, carbonImpact: 2, location: `${destination} Old Town`, description: 'Start the day with authentic local coffee and pastries.' },
+        { id: '2', time: '10:00', title: `${destination} Heritage Walk`, type: 'culture', duration: '2h', cost: 0, travelTime: '15 min', isOutdoor: true, backup: 'Museum Visit', carbonImpact: 5, location: 'Historic District', description: 'Explore iconic landmarks and learn the city\'s rich history.' },
+        { id: '3', time: '12:30', title: 'Street Food Lunch', type: 'food', duration: '1.5h', cost: 12, travelTime: '10 min', carbonImpact: 3, location: 'Central Market', description: 'Taste the best local street food — noodles, grilled meats, and more.' },
+        { id: '4', time: '14:30', title: 'Hidden Gem Discovery', type: 'culture', duration: '1.5h', cost: 10, travelTime: '15 min', isSecret: true, carbonImpact: 2, location: 'Secret Garden', description: 'A hidden courtyard that most tourists never find.' },
+        { id: '5', time: '16:30', title: styles.includes('adventure') ? 'Adventure Activity' : 'Scenic Viewpoint', type: styles.includes('adventure') ? 'adventure' : 'nature', duration: '2h', cost: 45, travelTime: '20 min', isOutdoor: true, backup: 'Indoor Activity Center', carbonImpact: 15, location: 'City Hilltop', description: 'Take in breathtaking panoramic views of the city.' },
+        { id: '6', time: '19:00', title: 'Sunset & Dinner', type: 'food', duration: '2h', cost: 40, travelTime: '10 min', carbonImpact: 8, location: 'Waterfront', description: 'Enjoy an incredible dinner with sunset views at a top-rated restaurant.' },
     ];
 
     return [
-        { day: 1, date: 'Day 1', activities: activities.slice(0, 4) },
-        { day: 2, date: 'Day 2', activities },
-        { day: 3, date: 'Day 3', activities: activities.slice(0, 5) },
+        { day: 1, date: 'Day 1', theme: 'Cultural Immersion', activities: activities.slice(0, 5) },
+        { day: 2, date: 'Day 2', theme: 'Adventure & Discovery', activities },
+        { day: 3, date: 'Day 3', theme: 'Local Flavors', activities: activities.slice(0, 5) },
     ];
 };
 
@@ -169,6 +197,7 @@ export function AIAgentProvider({ children }: { children: ReactNode }) {
     const [tripData, setTripData] = useState<TripData | null>(null);
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [isAITyping, setIsAITyping] = useState(false);
+    const [savedTrips, setSavedTrips] = useState<TripData[]>(loadSavedTrips);
 
     const setAgentStatus = useCallback((agent: AgentType, status: AgentStatus) => {
         setAgentStatuses(prev => ({ ...prev, [agent]: status }));
@@ -187,41 +216,40 @@ export function AIAgentProvider({ children }: { children: ReactNode }) {
         destination: string,
         dates: { start: string; end: string },
         budget: number,
-        styles: string[]
+        styles: string[],
+        travelers?: number
     ): Promise<TripData> => {
-        // Show multi-agent processing animation
         const agents: AgentType[] = ['itinerary', 'localSecrets', 'budget', 'safety', 'sustainability'];
 
-        // Start all agents thinking
         for (const agent of agents) {
             setAgentStatus(agent, 'thinking');
             addAgentMessage(agent, `${AGENTS[agent].emoji} ${AGENTS[agent].name} analyzing...`);
         }
 
-        // Call real Gemini AI
         const aiTrip = await generateTripWithAI({
             destination,
             startDate: dates.start,
             endDate: dates.end,
             budget,
             travelStyles: styles,
+            travelers: travelers || 1,
         });
 
-        // Animate agent completion one by one
+        // Animate agent completion
         for (const agent of agents) {
             setAgentStatus(agent, 'responding');
             await new Promise(r => setTimeout(r, 300));
 
-            const agentMessages: Record<AgentType, string> = {
-                itinerary: aiTrip ? `Created ${aiTrip.totalDays}-day optimized itinerary for ${destination}` : 'Itinerary generated',
-                localSecrets: aiTrip?.localSecrets ? `Found ${aiTrip.localSecrets.length} hidden gems` : 'Found local secrets',
-                budget: aiTrip ? `Estimated total: $${aiTrip.totalCost.toFixed(0)}` : 'Budget calculated',
-                safety: aiTrip?.safetyTips ? `${aiTrip.safetyTips.length} safety tips compiled` : 'Safety assessed',
-                sustainability: aiTrip ? `Carbon footprint: ${aiTrip.carbonFootprint.toFixed(0)}kg CO2` : 'Sustainability scored',
+            const msgs: Record<AgentType, string> = {
+                itinerary: aiTrip ? `Created ${aiTrip.totalDays}-day detailed itinerary with ${aiTrip.days.reduce((sum, d) => sum + d.activities.length, 0)} activities` : 'Itinerary generated',
+                localSecrets: aiTrip?.localSecrets ? `Discovered ${aiTrip.localSecrets.length} hidden gems & insider tips` : 'Found local secrets',
+                budget: aiTrip ? `Total estimated: $${aiTrip.totalCost.toFixed(0)} across ${aiTrip.totalDays} days` : 'Budget calculated',
+                safety: aiTrip?.safetyTips ? `${aiTrip.safetyTips.length} safety tips + ${aiTrip.transportTips?.length || 0} transport tips` : 'Safety assessed',
+                sustainability: aiTrip ? `Carbon: ${aiTrip.carbonFootprint.toFixed(0)}kg CO2 | Score: ${aiTrip.sustainabilityScore}/100` : 'Sustainability scored',
                 liveUpdate: 'Monitoring conditions...'
             };
 
-            addAgentMessage(agent, agentMessages[agent]);
+            addAgentMessage(agent, msgs[agent]);
             setAgentStatus(agent, 'complete');
         }
 
@@ -229,15 +257,20 @@ export function AIAgentProvider({ children }: { children: ReactNode }) {
         const itinerary: ItineraryDay[] = aiTrip?.days.map((day, index) => ({
             day: index + 1,
             date: day.date,
+            theme: day.theme,
             activities: day.activities.map(act => ({
                 id: act.id,
                 time: act.time,
                 title: act.name,
-                type: 'activity',
+                type: act.type || 'activity',
                 duration: act.duration,
                 cost: act.cost,
+                location: act.location,
+                description: act.description,
                 backup: act.backupOption,
+                isOutdoor: act.isOutdoor,
                 isSecret: false,
+                isEcoFriendly: act.isEcoFriendly,
                 carbonImpact: act.carbonKg,
             }))
         })) || generateMockItinerary(destination, styles);
@@ -248,22 +281,25 @@ export function AIAgentProvider({ children }: { children: ReactNode }) {
             endDate: dates.end,
             budget,
             styles,
+            travelers,
             itinerary,
             totalCost: aiTrip?.totalCost || budget * 0.85,
             carbonFootprint: aiTrip?.carbonFootprint || 420,
-            safetyScore: aiTrip?.sustainabilityScore ? aiTrip.sustainabilityScore / 10 : 8.5,
+            sustainabilityScore: aiTrip?.sustainabilityScore || 78,
             packingList: aiTrip?.packingList,
             safetyTips: aiTrip?.safetyTips,
             localSecrets: aiTrip?.localSecrets,
-            // New Detailed Sections
             overview: aiTrip?.overview,
+            bestTimeToVisit: aiTrip?.bestTimeToVisit,
+            currency: aiTrip?.currency,
+            language: aiTrip?.language,
             topPlaces: aiTrip?.topPlaces,
             dining: aiTrip?.dining,
+            transportTips: aiTrip?.transportTips,
         };
 
         setTripData(newTripData);
 
-        // Activate live update agent
         setAgentStatus('liveUpdate', 'idle');
         addAgentMessage('liveUpdate', '⚡ Live Update Agent now monitoring your trip');
 
@@ -278,6 +314,25 @@ export function AIAgentProvider({ children }: { children: ReactNode }) {
         });
     }, [agentStatuses, setAgentStatus]);
 
+    const saveCurrentTrip = useCallback(() => {
+        if (!tripData) return;
+        const updated = [tripData, ...savedTrips].slice(0, 10); // max 10 trips
+        setSavedTrips(updated);
+        persistTrips(updated);
+    }, [tripData, savedTrips]);
+
+    const loadTrip = useCallback((index: number) => {
+        if (savedTrips[index]) {
+            setTripData(savedTrips[index]);
+        }
+    }, [savedTrips]);
+
+    const deleteTrip = useCallback((index: number) => {
+        const updated = savedTrips.filter((_, i) => i !== index);
+        setSavedTrips(updated);
+        persistTrips(updated);
+    }, [savedTrips]);
+
     const sendChatMessage = useCallback(async (message: string) => {
         const userMessage: ChatMessage = {
             id: Date.now().toString(),
@@ -288,7 +343,6 @@ export function AIAgentProvider({ children }: { children: ReactNode }) {
         setChatMessages(prev => [...prev, userMessage]);
         setIsAITyping(true);
 
-        // Call real Gemini AI for chat
         const chatHistory = chatMessages.map(m => ({
             role: m.role,
             content: m.content,
@@ -296,7 +350,6 @@ export function AIAgentProvider({ children }: { children: ReactNode }) {
 
         const aiResponse = await chatWithAI(chatHistory, message);
 
-        // Determine which agent should respond based on message content
         const lowerMessage = message.toLowerCase();
         let responseAgent: AgentType = 'itinerary';
         if (lowerMessage.includes('food') || lowerMessage.includes('eat') || lowerMessage.includes('restaurant')) {
@@ -335,6 +388,10 @@ export function AIAgentProvider({ children }: { children: ReactNode }) {
             sendChatMessage,
             isAITyping,
             isAIConfigured: isAIConfigured(),
+            savedTrips,
+            saveCurrentTrip,
+            loadTrip,
+            deleteTrip,
         }}>
             {children}
         </AIAgentContext.Provider>
@@ -348,4 +405,3 @@ export function useAIAgents() {
     }
     return context;
 }
-

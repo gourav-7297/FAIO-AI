@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    ArrowRight, MapPin, Sparkles, Navigation, CloudRain,
+    ArrowRight, ArrowLeft, MapPin, Sparkles, Navigation, CloudRain,
     Package2, SquareCheck, X, Clock, Leaf, DollarSign,
-    ChevronDown, Star, AlertTriangle
+    ChevronDown, Star, AlertTriangle, Users, Copy, Check,
+    BookmarkPlus, RotateCcw, Trash2, Globe, Languages, Coins,
+    Bus, Utensils, Map, Shield, Eye, Calendar
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEnvironment } from '../../context/EnvironmentContext';
@@ -11,14 +13,17 @@ import { useAIAgents, AGENTS, type AgentType } from '../../context/AIAgentContex
 import { GlassCard } from '../../components/ui/GlassCard';
 import { AgentMessage } from '../../components/ui/AgentAvatar';
 
-type Step = 'destination' | 'dates' | 'budget' | 'style' | 'generating' | 'result';
+type Step = 'destination' | 'dates' | 'travelers' | 'budget' | 'style' | 'generating' | 'result';
 
 interface TripData {
     destination: string;
     dates: { start: string; end: string };
     budget: 1 | 2 | 3 | 4;
     styles: string[];
+    travelers: number;
 }
+
+const STEPS: Step[] = ['destination', 'dates', 'travelers', 'budget', 'style'];
 
 export function PlannerView() {
     const [step, setStep] = useState<Step>('destination');
@@ -27,24 +32,56 @@ export function PlannerView() {
         dates: { start: '', end: '' },
         budget: 2,
         styles: [],
+        travelers: 1,
     });
-    const { generateTrip, agentMessages, tripData } = useAIAgents();
+    const { generateTrip, agentMessages, tripData, savedTrips, saveCurrentTrip, loadTrip, deleteTrip } = useAIAgents();
+    const [showHistory, setShowHistory] = useState(false);
+
+    const currentStepIndex = STEPS.indexOf(step as any);
+
+    const goBack = () => {
+        const idx = STEPS.indexOf(step as any);
+        if (idx > 0) setStep(STEPS[idx - 1]);
+    };
 
     const nextStep = async () => {
         if (step === 'destination') setStep('dates');
-        else if (step === 'dates') setStep('budget');
+        else if (step === 'dates') setStep('travelers');
+        else if (step === 'travelers') setStep('budget');
         else if (step === 'budget') setStep('style');
         else if (step === 'style') {
             setStep('generating');
-            const budgetAmounts = { 1: 500, 2: 1000, 3: 2000, 4: 5000 };
+            const budgetAmounts = { 1: 500, 2: 1500, 3: 3000, 4: 5000 };
             await generateTrip(
                 data.destination,
                 data.dates,
                 budgetAmounts[data.budget],
-                data.styles
+                data.styles,
+                data.travelers
             );
             setStep('result');
         }
+    };
+
+    const setQuickDuration = (days: number) => {
+        const today = new Date();
+        const end = new Date(today);
+        end.setDate(today.getDate() + days - 1);
+        setData({
+            ...data,
+            dates: {
+                start: today.toISOString().split('T')[0],
+                end: end.toISOString().split('T')[0]
+            }
+        });
+    };
+
+    const canProceed = () => {
+        if (step === 'destination') return !!data.destination;
+        if (step === 'dates') return !!data.dates.start && !!data.dates.end;
+        if (step === 'travelers') return data.travelers >= 1;
+        if (step === 'style') return data.styles.length > 0;
+        return true;
     };
 
     return (
@@ -58,27 +95,72 @@ export function PlannerView() {
                         exit={{ opacity: 0, y: -20 }}
                         className="mb-6"
                     >
-                        <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-5 h-5 text-action" />
-                            <span className="text-xs text-action font-bold uppercase tracking-wider">AI Experience Builder</span>
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="w-5 h-5 text-action" />
+                                <span className="text-xs text-action font-bold uppercase tracking-wider">AI Experience Builder</span>
+                            </div>
+                            {savedTrips.length > 0 && (
+                                <button
+                                    onClick={() => setShowHistory(!showHistory)}
+                                    className="text-xs text-secondary hover:text-white flex items-center gap-1 transition-colors"
+                                >
+                                    <Calendar className="w-3.5 h-3.5" />
+                                    {savedTrips.length} saved
+                                </button>
+                            )}
                         </div>
                         <h2 className="text-3xl font-bold">
                             {step === 'destination' && "Where to?"}
                             {step === 'dates' && "When works?"}
+                            {step === 'travelers' && "Who's coming?"}
                             {step === 'budget' && "What's the budget?"}
                             {step === 'style' && "Your travel vibe?"}
                         </h2>
+
+                        {/* Progress bar */}
                         <div className="flex gap-2 mt-4">
-                            {['destination', 'dates', 'budget', 'style'].map((s, i) => (
+                            {STEPS.map((s, i) => (
                                 <div
                                     key={s}
                                     className={cn(
                                         "h-1.5 flex-1 rounded-full transition-all duration-500",
-                                        ['destination', 'dates', 'budget', 'style'].indexOf(step) >= i
+                                        currentStepIndex >= i
                                             ? "bg-gradient-to-r from-action to-purple-500"
                                             : "bg-slate-800"
                                     )}
                                 />
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Saved Trips History Panel */}
+            <AnimatePresence>
+                {showHistory && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden mb-4"
+                    >
+                        <div className="space-y-2">
+                            {savedTrips.map((trip, i) => (
+                                <GlassCard key={i} className="p-3 flex items-center justify-between">
+                                    <button onClick={() => { loadTrip(i); setStep('result'); setShowHistory(false); }} className="flex items-center gap-3 flex-1 text-left">
+                                        <div className="w-10 h-10 rounded-xl bg-action/20 flex items-center justify-center">
+                                            <MapPin className="w-5 h-5 text-action" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-sm">{trip.destination}</p>
+                                            <p className="text-xs text-secondary">{trip.startDate} — {trip.endDate} · ${trip.totalCost.toFixed(0)}</p>
+                                        </div>
+                                    </button>
+                                    <button onClick={() => deleteTrip(i)} className="p-2 hover:bg-red-500/10 rounded-lg transition-colors">
+                                        <Trash2 className="w-4 h-4 text-red-400" />
+                                    </button>
+                                </GlassCard>
                             ))}
                         </div>
                     </motion.div>
@@ -110,13 +192,15 @@ export function PlannerView() {
                             </GlassCard>
 
                             <div className="space-y-3">
-                                <p className="text-xs text-secondary uppercase tracking-wider font-bold">AI Recommended</p>
+                                <p className="text-xs text-secondary uppercase tracking-wider font-bold">🔥 Trending Destinations</p>
                                 <div className="grid grid-cols-2 gap-3">
                                     {[
-                                        { city: 'Tokyo', country: 'Japan', emoji: '🗼' },
-                                        { city: 'Bali', country: 'Indonesia', emoji: '🏝️' },
-                                        { city: 'Paris', country: 'France', emoji: '🗼' },
-                                        { city: 'Reykjavik', country: 'Iceland', emoji: '🌋' },
+                                        { city: 'Tokyo', country: 'Japan', emoji: '🗼', tag: 'Culture & Tech' },
+                                        { city: 'Bali', country: 'Indonesia', emoji: '🏝️', tag: 'Beach & Wellness' },
+                                        { city: 'Paris', country: 'France', emoji: '🥐', tag: 'Romance & Art' },
+                                        { city: 'Iceland', country: 'Northern Lights', emoji: '🌋', tag: 'Adventure' },
+                                        { city: 'Dubai', country: 'UAE', emoji: '🏙️', tag: 'Luxury & Shopping' },
+                                        { city: 'Goa', country: 'India', emoji: '🎉', tag: 'Beaches & Nightlife' },
                                     ].map(place => (
                                         <motion.button
                                             key={place.city}
@@ -132,7 +216,7 @@ export function PlannerView() {
                                         >
                                             <span className="text-2xl mb-2 block">{place.emoji}</span>
                                             <p className="font-bold">{place.city}</p>
-                                            <p className="text-xs text-secondary">{place.country}</p>
+                                            <p className="text-[10px] text-secondary">{place.tag}</p>
                                         </motion.button>
                                     ))}
                                 </div>
@@ -168,14 +252,57 @@ export function PlannerView() {
                             </GlassCard>
 
                             {/* Quick Duration Buttons */}
+                            <p className="text-xs text-secondary font-bold uppercase tracking-wider">Quick Pick</p>
                             <div className="flex gap-2 flex-wrap">
-                                {['3 days', '5 days', '1 week', '2 weeks'].map(duration => (
+                                {[
+                                    { label: '3 days', days: 3 },
+                                    { label: '5 days', days: 5 },
+                                    { label: '1 week', days: 7 },
+                                    { label: '2 weeks', days: 14 },
+                                ].map(d => (
                                     <button
-                                        key={duration}
-                                        className="px-4 py-2 bg-surface/50 border border-slate-800 rounded-full text-sm hover:border-action transition-colors"
+                                        key={d.label}
+                                        onClick={() => setQuickDuration(d.days)}
+                                        className="px-4 py-2 bg-surface/50 border border-slate-800 rounded-full text-sm hover:border-action hover:text-action transition-colors"
                                     >
-                                        {duration}
+                                        {d.label}
                                     </button>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {step === 'travelers' && (
+                        <motion.div
+                            key="step-travelers"
+                            initial={{ x: 50, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: -50, opacity: 0 }}
+                            className="space-y-4"
+                        >
+                            <div className="grid grid-cols-2 gap-4">
+                                {[
+                                    { val: 1, label: 'Solo', emoji: '🧑', desc: 'Just me' },
+                                    { val: 2, label: 'Couple', emoji: '👫', desc: 'Two travelers' },
+                                    { val: 4, label: 'Family', emoji: '👨‍👩‍👧‍👦', desc: '3-5 people' },
+                                    { val: 6, label: 'Group', emoji: '🎉', desc: '6+ people' },
+                                ].map(item => (
+                                    <motion.button
+                                        key={item.val}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => setData({ ...data, travelers: item.val })}
+                                        className={cn(
+                                            "p-5 rounded-2xl border transition-all duration-300 flex flex-col items-center gap-2",
+                                            data.travelers === item.val
+                                                ? "bg-action/10 border-action shadow-lg shadow-action/10"
+                                                : "bg-surface border-slate-800 hover:border-slate-600"
+                                        )}
+                                    >
+                                        <span className="text-3xl">{item.emoji}</span>
+                                        <span className="font-bold">{item.label}</span>
+                                        <span className="text-xs text-secondary">{item.desc}</span>
+                                    </motion.button>
                                 ))}
                             </div>
                         </motion.div>
@@ -277,26 +404,50 @@ export function PlannerView() {
                             data={data}
                             tripData={tripData}
                             onReset={() => setStep('destination')}
+                            onSave={saveCurrentTrip}
+                            onRegenerate={async () => {
+                                setStep('generating');
+                                const budgetAmounts = { 1: 500, 2: 1500, 3: 3000, 4: 5000 };
+                                await generateTrip(
+                                    data.destination,
+                                    data.dates,
+                                    budgetAmounts[data.budget],
+                                    data.styles,
+                                    data.travelers
+                                );
+                                setStep('result');
+                            }}
                         />
                     )}
                 </AnimatePresence>
             </div>
 
+            {/* Navigation Buttons */}
             {step !== 'generating' && step !== 'result' && (
                 <motion.div
                     className="fixed bottom-24 left-0 right-0 p-5 z-40 bg-gradient-to-t from-background via-background to-transparent"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                 >
-                    <div className="max-w-md mx-auto">
+                    <div className="max-w-md mx-auto flex gap-3">
+                        {currentStepIndex > 0 && (
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={goBack}
+                                className="py-4 px-6 rounded-2xl font-bold bg-surface border border-slate-700 text-secondary hover:text-white transition-colors"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                            </motion.button>
+                        )}
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={nextStep}
-                            disabled={step === 'destination' && !data.destination}
+                            disabled={!canProceed()}
                             className={cn(
-                                "w-full py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all",
-                                step === 'destination' && !data.destination
+                                "flex-1 py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all",
+                                !canProceed()
                                     ? "bg-slate-800 text-slate-500 cursor-not-allowed"
                                     : "bg-gradient-to-r from-action to-purple-500 text-white hover:shadow-xl hover:shadow-action/30"
                             )}
@@ -339,10 +490,9 @@ function GeneratingView({ messages }: { messages: { agent: AgentType; message: s
                     <div className="absolute inset-0 rounded-full border-4 border-action/30 border-t-action animate-spin" />
                 </div>
                 <h3 className="text-2xl font-bold mb-2">AI Agents Working...</h3>
-                <p className="text-secondary">6 agents collaborating on your perfect trip</p>
+                <p className="text-secondary">6 agents building your perfect trip</p>
             </div>
 
-            {/* Agent Status */}
             <div className="flex justify-center gap-3 mb-8">
                 {agents.map((agent, i) => (
                     <motion.div
@@ -358,7 +508,6 @@ function GeneratingView({ messages }: { messages: { agent: AgentType; message: s
                 ))}
             </div>
 
-            {/* Agent Messages */}
             <div className="space-y-3 max-h-64 overflow-y-auto">
                 {messages.map((msg, i) => (
                     <AgentMessage key={i} agent={msg.agent} message={msg.message} />
@@ -368,18 +517,53 @@ function GeneratingView({ messages }: { messages: { agent: AgentType; message: s
     );
 }
 
+// ============================
+// RESULT VIEW
+// ============================
+
 interface ItineraryResultProps {
     data: TripData;
     tripData: any;
     onReset: () => void;
+    onSave: () => void;
+    onRegenerate: () => void;
 }
 
-function ItineraryResult({ data, tripData, onReset }: ItineraryResultProps) {
+type ResultTab = 'daily' | 'places' | 'dining' | 'essentials';
+
+function ItineraryResult({ data, tripData, onReset, onSave, onRegenerate }: ItineraryResultProps) {
     const { isRaining, isHighTraffic } = useEnvironment();
     const [localBackupMode, setLocalBackupMode] = useState(false);
     const [expandedDay, setExpandedDay] = useState<number>(1);
+    const [activeTab, setActiveTab] = useState<ResultTab>('daily');
+    const [copied, setCopied] = useState(false);
+    const [saved, setSaved] = useState(false);
 
     const showBackups = localBackupMode || isRaining;
+
+    const totalActivities = tripData.itinerary?.reduce((sum: number, day: any) => sum + day.activities.length, 0) || 0;
+    const perDayCost = tripData.totalCost / (tripData.itinerary?.length || 1);
+
+    const handleCopyTrip = () => {
+        const text = generateTripText(data, tripData);
+        navigator.clipboard.writeText(text).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    };
+
+    const handleSave = () => {
+        onSave();
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+    };
+
+    const TABS: { id: ResultTab; label: string; icon: any }[] = [
+        { id: 'daily', label: 'Daily Plan', icon: Calendar },
+        { id: 'places', label: 'Top Places', icon: Map },
+        { id: 'dining', label: 'Dining', icon: Utensils },
+        { id: 'essentials', label: 'Essentials', icon: Shield },
+    ];
 
     return (
         <motion.div
@@ -387,80 +571,126 @@ function ItineraryResult({ data, tripData, onReset }: ItineraryResultProps) {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-5"
         >
-            {/* Header */}
-            <div className="flex justify-between items-start">
-                <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <Sparkles className="w-4 h-4 text-action" />
-                        <span className="text-xs text-action font-bold">AI Generated</span>
+            {/* Hero Header */}
+            <div className="relative rounded-2xl overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-action/30 via-purple-500/20 to-blue-500/10" />
+                <div className="relative p-6">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Sparkles className="w-4 h-4 text-action" />
+                                <span className="text-xs text-action font-bold uppercase tracking-wider">AI Generated</span>
+                            </div>
+                            <h1 className="text-3xl font-bold mb-1">{data.destination}</h1>
+                            <div className="flex items-center gap-3 text-sm text-secondary">
+                                <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {data.dates.start} — {data.dates.end}</span>
+                                <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {data.travelers}</span>
+                            </div>
+                        </div>
+                        <button onClick={onReset} className="text-sm text-action hover:underline">Edit</button>
                     </div>
-                    <h1 className="text-3xl font-bold">{data.destination}</h1>
-                    <p className="text-secondary">{data.dates.start || 'Oct 24'} — {data.dates.end || 'Oct 29'}</p>
+
+                    {/* Quick Info */}
+                    {(tripData.currency || tripData.language || tripData.bestTimeToVisit) && (
+                        <div className="flex gap-3 flex-wrap mt-3">
+                            {tripData.currency && (
+                                <span className="flex items-center gap-1 text-xs bg-white/5 px-2.5 py-1 rounded-full"><Coins className="w-3 h-3 text-amber-400" /> {tripData.currency}</span>
+                            )}
+                            {tripData.language && (
+                                <span className="flex items-center gap-1 text-xs bg-white/5 px-2.5 py-1 rounded-full"><Languages className="w-3 h-3 text-blue-400" /> {tripData.language}</span>
+                            )}
+                            {tripData.bestTimeToVisit && (
+                                <span className="flex items-center gap-1 text-xs bg-white/5 px-2.5 py-1 rounded-full"><Globe className="w-3 h-3 text-emerald-400" /> Best: {tripData.bestTimeToVisit}</span>
+                            )}
+                        </div>
+                    )}
                 </div>
-                <button onClick={onReset} className="text-sm text-action hover:underline">Edit</button>
             </div>
 
-            {/* Overview Section */}
+            {/* Overview */}
             {tripData.overview && (
                 <GlassCard className="p-4 bg-action/5 border-action/20">
-                    <p className="text-lg italic leading-relaxed text-white/90">"{tripData.overview}"</p>
+                    <p className="text-sm leading-relaxed text-white/90">{tripData.overview}</p>
                 </GlassCard>
             )}
 
-            {/* Detail Tabs */}
+            {/* Stats Grid */}
+            <div className="grid grid-cols-4 gap-2">
+                <GlassCard className="p-3 text-center">
+                    <DollarSign className="w-4 h-4 mx-auto text-emerald-400 mb-1" />
+                    <p className="text-base font-bold">${tripData.totalCost.toFixed(0)}</p>
+                    <p className="text-[9px] text-secondary">Total</p>
+                </GlassCard>
+                <GlassCard className="p-3 text-center">
+                    <Clock className="w-4 h-4 mx-auto text-blue-400 mb-1" />
+                    <p className="text-base font-bold">{tripData.itinerary?.length || 0}d</p>
+                    <p className="text-[9px] text-secondary">{totalActivities} activities</p>
+                </GlassCard>
+                <GlassCard className="p-3 text-center">
+                    <Leaf className="w-4 h-4 mx-auto text-teal-400 mb-1" />
+                    <p className="text-base font-bold">{tripData.carbonFootprint}kg</p>
+                    <p className="text-[9px] text-secondary">CO2</p>
+                </GlassCard>
+                <GlassCard className="p-3 text-center">
+                    <Star className="w-4 h-4 mx-auto text-amber-400 mb-1" />
+                    <p className="text-base font-bold">{tripData.sustainabilityScore}</p>
+                    <p className="text-[9px] text-secondary">Eco Score</p>
+                </GlassCard>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+                <motion.button whileTap={{ scale: 0.95 }} onClick={handleSave}
+                    className={cn("flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all border",
+                        saved ? "bg-emerald-500/10 border-emerald-500 text-emerald-400" : "bg-surface border-slate-700 text-secondary hover:text-white"
+                    )}
+                >
+                    {saved ? <Check className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
+                    {saved ? 'Saved!' : 'Save Trip'}
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.95 }} onClick={handleCopyTrip}
+                    className={cn("flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all border",
+                        copied ? "bg-action/10 border-action text-action" : "bg-surface border-slate-700 text-secondary hover:text-white"
+                    )}
+                >
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied ? 'Copied!' : 'Share'}
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.95 }} onClick={onRegenerate}
+                    className="py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-surface border border-slate-700 text-secondary hover:text-white transition-all"
+                >
+                    <RotateCcw className="w-4 h-4" />
+                </motion.button>
+            </div>
+
+            {/* Tab Navigation */}
             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                {['Daily Plan', 'Top Places', 'Dining', 'Essentials'].map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setExpandedDay(tab === 'Daily Plan' ? 1 : -1)} // Reset day expansion logic reuse
-                        className={cn(
-                            "px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all",
-                            (tab === 'Daily Plan' && expandedDay > 0) || (tab === 'Top Places' && expandedDay === -2) || (tab === 'Dining' && expandedDay === -3) || (tab === 'Essentials' && expandedDay === -4)
-                                ? "bg-white text-black"
-                                : "bg-surface border border-slate-700 text-secondary hover:text-white"
-                        )}
-                        onClickCapture={(e) => {
-                            e.preventDefault();
-                            if (tab === 'Daily Plan') setExpandedDay(1);
-                            if (tab === 'Top Places') setExpandedDay(-2);
-                            if (tab === 'Dining') setExpandedDay(-3);
-                            if (tab === 'Essentials') setExpandedDay(-4);
-                        }}
-                    >
-                        {tab}
-                    </button>
-                ))}
+                {TABS.map((tab) => {
+                    const Icon = tab.icon;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={cn(
+                                "px-4 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2",
+                                activeTab === tab.id
+                                    ? "bg-white text-black"
+                                    : "bg-surface border border-slate-700 text-secondary hover:text-white"
+                            )}
+                        >
+                            <Icon className="w-3.5 h-3.5" />
+                            {tab.label}
+                        </button>
+                    );
+                })}
             </div>
 
-            {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-3">
-                <GlassCard className="p-3 text-center">
-                    <DollarSign className="w-5 h-5 mx-auto text-emerald-400 mb-1" />
-                    <p className="text-lg font-bold">${tripData.totalCost.toFixed(0)}</p>
-                    <p className="text-[10px] text-secondary">Est. Cost</p>
-                </GlassCard>
-                <GlassCard className="p-3 text-center">
-                    <Leaf className="w-5 h-5 mx-auto text-teal-400 mb-1" />
-                    <p className="text-lg font-bold">{tripData.carbonFootprint}kg</p>
-                    <p className="text-[10px] text-secondary">CO2</p>
-                </GlassCard>
-                <GlassCard className="p-3 text-center">
-                    <Star className="w-5 h-5 mx-auto text-amber-400 mb-1" />
-                    <p className="text-lg font-bold">{tripData.safetyScore}/10</p>
-                    <p className="text-[10px] text-secondary">Safety</p>
-                </GlassCard>
-            </div>
-
-            <SmartPackingModal isRaining={isRaining} />
+            <SmartPackingModal tripData={tripData} isRaining={isRaining} />
 
             {/* Environmental Alerts */}
             <AnimatePresence>
                 {isRaining && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                    >
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
                         <GlassCard gradient="blue" className="p-3 flex items-center gap-3">
                             <CloudRain className="w-5 h-5 text-blue-400" />
                             <div className="flex-1">
@@ -470,13 +700,8 @@ function ItineraryResult({ data, tripData, onReset }: ItineraryResultProps) {
                         </GlassCard>
                     </motion.div>
                 )}
-
                 {isHighTraffic && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                    >
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
                         <GlassCard gradient="orange" className="p-3 flex items-center gap-3">
                             <Navigation className="w-5 h-5 text-amber-400" />
                             <div className="flex-1">
@@ -506,8 +731,10 @@ function ItineraryResult({ data, tripData, onReset }: ItineraryResultProps) {
                 </button>
             </GlassCard>
 
-            {/* Daily Plan View */}
-            {expandedDay >= -1 && (
+            {/* ====== TAB CONTENT ====== */}
+
+            {/* Daily Plan */}
+            {activeTab === 'daily' && (
                 <div className="space-y-4">
                     {tripData.itinerary.map((day: any) => (
                         <GlassCard key={day.day} className="overflow-hidden">
@@ -516,12 +743,15 @@ function ItineraryResult({ data, tripData, onReset }: ItineraryResultProps) {
                                 className="w-full p-4 flex items-center justify-between"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-action/20 flex items-center justify-center">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-action/30 to-purple-500/30 flex items-center justify-center">
                                         <span className="font-bold text-action">{day.day}</span>
                                     </div>
                                     <div className="text-left">
                                         <p className="font-bold">{day.date}</p>
-                                        <p className="text-xs text-secondary">{day.activities.length} activities</p>
+                                        <div className="flex items-center gap-2">
+                                            {day.theme && <span className="text-[10px] text-action font-bold">{day.theme}</span>}
+                                            <span className="text-[10px] text-secondary">• {day.activities.length} activities</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <ChevronDown className={cn(
@@ -538,15 +768,22 @@ function ItineraryResult({ data, tripData, onReset }: ItineraryResultProps) {
                                         exit={{ height: 0 }}
                                         className="overflow-hidden"
                                     >
-                                        <div className="px-4 pb-4 space-y-3">
-                                            {day.activities.map((activity: any) => (
-                                                <ActivityCard
-                                                    key={activity.id}
-                                                    activity={activity}
-                                                    showBackup={showBackups}
-                                                    isRaining={isRaining}
-                                                />
-                                            ))}
+                                        <div className="px-4 pb-4">
+                                            {/* Timeline */}
+                                            <div className="relative">
+                                                <div className="absolute left-[18px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-action via-purple-500 to-action/20" />
+                                                <div className="space-y-1">
+                                                    {day.activities.map((activity: any, idx: number) => (
+                                                        <ActivityCard
+                                                            key={activity.id}
+                                                            activity={activity}
+                                                            showBackup={showBackups}
+                                                            isRaining={isRaining}
+                                                            isLast={idx === day.activities.length - 1}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     </motion.div>
                                 )}
@@ -556,60 +793,103 @@ function ItineraryResult({ data, tripData, onReset }: ItineraryResultProps) {
                 </div>
             )}
 
-            {/* Top Places View */}
-            {expandedDay === -2 && tripData.topPlaces && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Top Places */}
+            {activeTab === 'places' && tripData.topPlaces && (
+                <div className="space-y-3">
                     {tripData.topPlaces.map((place: any, i: number) => (
-                        <GlassCard key={i} className="p-4" gradient="blue">
-                            <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-bold text-lg">{place.name}</h3>
-                                <span className="px-2 py-1 rounded-full bg-black/20 text-xs font-bold text-blue-200">{place.type}</span>
-                            </div>
-                            <p className="text-sm text-secondary mb-3">{place.description}</p>
-                            <div className="flex items-center gap-2 text-xs font-bold text-blue-300">
-                                <Clock className="w-3 h-3" />
-                                Best time: {place.bestTime}
+                        <GlassCard key={i} className="p-4 border-blue-500/10">
+                            <div className="flex gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                                    <span className="font-bold text-blue-400 text-sm">{i + 1}</span>
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-start justify-between mb-1">
+                                        <h3 className="font-bold">{place.name}</h3>
+                                        {place.rating && (
+                                            <span className="flex items-center gap-0.5 text-xs text-amber-400">
+                                                <Star className="w-3 h-3 fill-amber-400" /> {place.rating}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-[10px] font-bold text-blue-300 uppercase">{place.type}</span>
+                                    <p className="text-sm text-secondary mt-2">{place.description}</p>
+                                    <div className="flex items-center gap-4 mt-2 text-xs">
+                                        <span className="flex items-center gap-1 text-blue-300"><Clock className="w-3 h-3" /> {place.bestTime}</span>
+                                        {place.estimatedCost && <span className="text-emerald-400">{place.estimatedCost}</span>}
+                                    </div>
+                                </div>
                             </div>
                         </GlassCard>
                     ))}
                 </div>
             )}
 
-            {/* Dining View */}
-            {expandedDay === -3 && tripData.dining && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Dining */}
+            {activeTab === 'dining' && tripData.dining && (
+                <div className="space-y-3">
                     {tripData.dining.map((spot: any, i: number) => (
-                        <GlassCard key={i} className="p-4" gradient="orange">
-                            <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-bold text-lg">{spot.name}</h3>
-                                <span className="text-sm font-bold text-amber-500">{spot.price}</span>
+                        <GlassCard key={i} className="p-4 border-amber-500/10">
+                            <div className="flex items-start justify-between mb-2">
+                                <div>
+                                    <h3 className="font-bold">{spot.name}</h3>
+                                    {spot.neighborhood && <span className="text-[10px] text-secondary">{spot.neighborhood}</span>}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-amber-500">{spot.price}</span>
+                                    {spot.rating && (
+                                        <span className="flex items-center gap-0.5 text-xs text-amber-400">
+                                            <Star className="w-3 h-3 fill-amber-400" /> {spot.rating}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             <div className="flex gap-2 mb-2">
                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500 uppercase">{spot.cuisine}</span>
                             </div>
                             <p className="text-sm text-secondary mb-3">{spot.description}</p>
-                            <div className="p-2 rounded bg-surface/50 border border-slate-700">
-                                <p className="text-xs font-bold text-action">🌟 Must Try: {spot.specialty}</p>
+                            <div className="p-2.5 rounded-lg bg-gradient-to-r from-amber-500/5 to-orange-500/5 border border-amber-500/10">
+                                <p className="text-xs font-bold text-amber-400">🌟 Must Try: {spot.specialty}</p>
                             </div>
                         </GlassCard>
                     ))}
                 </div>
             )}
 
-            {/* Essentials View */}
-            {expandedDay === -4 && (
+            {/* Essentials */}
+            {activeTab === 'essentials' && (
                 <div className="space-y-6">
+                    {/* Transport Tips */}
+                    {tripData.transportTips && tripData.transportTips.length > 0 && (
+                        <div>
+                            <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+                                <Bus className="w-5 h-5 text-blue-400" />
+                                Getting Around
+                            </h3>
+                            <div className="space-y-2">
+                                {tripData.transportTips.map((tip: string, i: number) => (
+                                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-surface/50 border border-blue-500/10">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                                        <p className="text-sm text-secondary">{tip}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Local Secrets */}
                     {tripData.localSecrets && (
                         <div>
                             <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
-                                <Sparkles className="w-5 h-5 text-purple-400" />
+                                <Eye className="w-5 h-5 text-purple-400" />
                                 Local Secrets
                             </h3>
                             <div className="grid grid-cols-1 gap-3">
                                 {tripData.localSecrets.map((secret: string, i: number) => (
-                                    <GlassCard key={i} className="p-3 border-purple-500/20">
-                                        <p className="text-sm">{secret}</p>
+                                    <GlassCard key={i} className="p-3 border-purple-500/10">
+                                        <div className="flex items-start gap-3">
+                                            <span className="text-lg">🔮</span>
+                                            <p className="text-sm">{secret}</p>
+                                        </div>
                                     </GlassCard>
                                 ))}
                             </div>
@@ -625,8 +905,8 @@ function ItineraryResult({ data, tripData, onReset }: ItineraryResultProps) {
                             </h3>
                             <div className="space-y-2">
                                 {tripData.safetyTips.map((tip: string, i: number) => (
-                                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-surface/50 border border-slate-800">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2" />
+                                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-surface/50 border border-red-500/10">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0" />
                                         <p className="text-sm text-secondary">{tip}</p>
                                     </div>
                                 ))}
@@ -641,70 +921,113 @@ function ItineraryResult({ data, tripData, onReset }: ItineraryResultProps) {
     );
 }
 
-function ActivityCard({ activity, showBackup, isRaining }: { activity: any; showBackup: boolean; isRaining: boolean }) {
+// ============================
+// ACTIVITY CARD
+// ============================
+
+function ActivityCard({ activity, showBackup, isRaining, isLast }: { activity: any; showBackup: boolean; isRaining: boolean; isLast: boolean }) {
     const isBackupActive = isRaining && activity.isOutdoor && activity.backup;
     const displayTitle = isBackupActive ? activity.backup : activity.title;
 
     return (
-        <motion.div
-            layout
-            className={cn(
-                "p-3 rounded-xl border transition-all",
-                isBackupActive
-                    ? "bg-blue-500/10 border-blue-500/30"
-                    : "bg-surface/50 border-slate-800"
-            )}
-        >
-            <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-action" />
-                    <span className="text-sm font-mono text-action">{activity.time}</span>
-                    {activity.isSecret && (
-                        <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-[10px] font-bold rounded">SECRET</span>
-                    )}
-                    {isBackupActive && (
-                        <span className="px-1.5 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded">INDOOR</span>
-                    )}
-                </div>
-                <span className="text-xs text-secondary">${activity.cost}</span>
+        <div className="flex gap-3 relative pl-1">
+            {/* Timeline dot */}
+            <div className="flex flex-col items-center z-10 pt-3">
+                <div className={cn(
+                    "w-[10px] h-[10px] rounded-full border-2 flex-shrink-0",
+                    isBackupActive ? "border-blue-400 bg-blue-400" :
+                        activity.isEcoFriendly ? "border-teal-400 bg-teal-400/50" :
+                            "border-action bg-action/50"
+                )} />
             </div>
 
-            <h4 className="font-bold mb-1">{displayTitle}</h4>
+            {/* Card */}
+            <motion.div
+                layout
+                className={cn(
+                    "flex-1 p-3 rounded-xl border transition-all mb-2",
+                    isBackupActive
+                        ? "bg-blue-500/10 border-blue-500/30"
+                        : "bg-surface/50 border-slate-800"
+                )}
+            >
+                <div className="flex items-start justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-action font-bold">{activity.time}</span>
+                        {activity.isSecret && (
+                            <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-[9px] font-bold rounded">SECRET</span>
+                        )}
+                        {isBackupActive && (
+                            <span className="px-1.5 py-0.5 bg-blue-500 text-white text-[9px] font-bold rounded">INDOOR</span>
+                        )}
+                        {activity.isEcoFriendly && (
+                            <span className="px-1.5 py-0.5 bg-teal-500/20 text-teal-400 text-[9px] font-bold rounded">ECO</span>
+                        )}
+                    </div>
+                    <span className="text-xs font-bold text-emerald-400">${activity.cost}</span>
+                </div>
 
-            <div className="flex items-center gap-3 text-xs text-secondary">
-                {activity.travelTime && (
+                <h4 className="font-bold text-sm mb-1">{displayTitle}</h4>
+
+                {activity.description && (
+                    <p className="text-xs text-secondary mb-2 line-clamp-2">{activity.description}</p>
+                )}
+
+                {activity.location && (
+                    <div className="flex items-center gap-1 text-xs text-secondary mb-1.5">
+                        <MapPin className="w-3 h-3 text-action/60" />
+                        <span>{activity.location}</span>
+                    </div>
+                )}
+
+                <div className="flex items-center gap-3 text-[10px] text-secondary">
+                    {activity.travelTime && (
+                        <span className="flex items-center gap-1">
+                            <Navigation className="w-2.5 h-2.5" /> {activity.travelTime}
+                        </span>
+                    )}
                     <span className="flex items-center gap-1">
-                        <Navigation className="w-3 h-3" /> {activity.travelTime}
+                        <Clock className="w-2.5 h-2.5" /> {activity.duration}
                     </span>
-                )}
-                <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {activity.duration}
-                </span>
-                {activity.carbonImpact && (
-                    <span className="flex items-center gap-1 text-teal-400">
-                        <Leaf className="w-3 h-3" /> {activity.carbonImpact}kg
-                    </span>
-                )}
-            </div>
-
-            {showBackup && activity.backup && !isBackupActive && (
-                <div className="mt-2 pt-2 border-t border-slate-700 flex items-center gap-2 text-xs text-secondary">
-                    <CloudRain className="w-3 h-3" />
-                    <span>Backup: {activity.backup}</span>
+                    {activity.carbonImpact && (
+                        <span className="flex items-center gap-1 text-teal-400">
+                            <Leaf className="w-2.5 h-2.5" /> {activity.carbonImpact}kg
+                        </span>
+                    )}
                 </div>
-            )}
-        </motion.div>
+
+                {showBackup && activity.backup && !isBackupActive && (
+                    <div className="mt-2 pt-2 border-t border-slate-700 flex items-center gap-2 text-xs text-secondary">
+                        <CloudRain className="w-3 h-3" />
+                        <span>Backup: {activity.backup}</span>
+                    </div>
+                )}
+            </motion.div>
+        </div>
     );
 }
 
-function SmartPackingModal({ isRaining }: { isRaining: boolean }) {
+// ============================
+// SMART PACKING MODAL
+// ============================
+
+function SmartPackingModal({ tripData, isRaining }: { tripData: any; isRaining: boolean }) {
     const [isOpen, setIsOpen] = useState(false);
 
-    const items = [
-        { cat: 'Essentials', items: ['Passport', 'Wallet', 'Phone Charger'] },
-        { cat: 'Weather (Auto)', items: isRaining ? ['Raincoat / Umbrella', 'Waterproof Shoes'] : ['Sunglasses', 'Sunscreen'] },
-        { cat: 'Activities', items: ['Walking Shoes (20k steps)', 'Power Bank', 'Camera'] },
-    ];
+    // Use AI-generated packing list if available
+    const aiPackingList = tripData.packingList || [];
+    const weatherItems = isRaining ? ['Raincoat / Umbrella', 'Waterproof Shoes'] : ['Sunglasses', 'Sunscreen'];
+
+    const items = aiPackingList.length > 0
+        ? [
+            { cat: 'AI Recommended', items: aiPackingList },
+            { cat: 'Weather (Auto)', items: weatherItems },
+        ]
+        : [
+            { cat: 'Essentials', items: ['Passport', 'Wallet', 'Phone Charger', 'Medicines'] },
+            { cat: 'Weather (Auto)', items: weatherItems },
+            { cat: 'Activities', items: ['Walking Shoes', 'Power Bank', 'Camera', 'Day Backpack'] },
+        ];
 
     return (
         <>
@@ -716,7 +1039,10 @@ function SmartPackingModal({ isRaining }: { isRaining: boolean }) {
             >
                 <GlassCard gradient="purple" className="p-4 flex items-center justify-center gap-2">
                     <Package2 className="w-5 h-5 text-purple-400" />
-                    <span className="font-bold text-purple-300">Generate Smart Packing List</span>
+                    <span className="font-bold text-purple-300">Smart Packing List</span>
+                    {aiPackingList.length > 0 && (
+                        <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-[10px] rounded-full font-bold">AI</span>
+                    )}
                 </GlassCard>
             </motion.button>
 
@@ -734,14 +1060,14 @@ function SmartPackingModal({ isRaining }: { isRaining: boolean }) {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-surface border border-slate-700 w-full max-w-sm rounded-2xl p-6 relative z-10 shadow-2xl"
+                            className="bg-surface border border-slate-700 w-full max-w-sm rounded-2xl p-6 relative z-10 shadow-2xl max-h-[80vh] overflow-y-auto"
                         >
                             <button onClick={() => setIsOpen(false)} className="absolute right-4 top-4 text-secondary hover:text-white">
                                 <X className="w-5 h-5" />
                             </button>
                             <div className="flex items-center gap-2 mb-1">
                                 <Sparkles className="w-5 h-5 text-action" />
-                                <span className="text-xs text-action font-bold">AI Generated</span>
+                                <span className="text-xs text-action font-bold">{aiPackingList.length > 0 ? 'AI Generated' : 'Smart List'}</span>
                             </div>
                             <h2 className="text-2xl font-bold mb-1">Packing List</h2>
                             <p className="text-sm text-secondary mb-6">Based on forecast & itinerary</p>
@@ -774,4 +1100,38 @@ function SmartPackingModal({ isRaining }: { isRaining: boolean }) {
             </AnimatePresence>
         </>
     );
+}
+
+// ============================
+// TRIP SHARE TEXT GENERATOR
+// ============================
+
+function generateTripText(data: TripData, tripData: any): string {
+    let text = `✈️ FAIO AI Trip: ${data.destination}\n`;
+    text += `📅 ${data.dates.start} to ${data.dates.end}\n`;
+    text += `💰 Budget: $${tripData.totalCost.toFixed(0)}\n`;
+    text += `👥 Travelers: ${data.travelers}\n\n`;
+
+    if (tripData.overview) text += `${tripData.overview}\n\n`;
+
+    tripData.itinerary?.forEach((day: any) => {
+        text += `📍 Day ${day.day}${day.theme ? ` — ${day.theme}` : ''}\n`;
+        day.activities.forEach((act: any) => {
+            text += `  ${act.time} ${act.title}${act.location ? ` @ ${act.location}` : ''} ($${act.cost})\n`;
+        });
+        text += '\n';
+    });
+
+    if (tripData.topPlaces) {
+        text += '🏛️ Top Places:\n';
+        tripData.topPlaces.forEach((p: any) => { text += `  • ${p.name} (${p.type})\n`; });
+        text += '\n';
+    }
+    if (tripData.dining) {
+        text += '🍽️ Dining:\n';
+        tripData.dining.forEach((d: any) => { text += `  • ${d.name} — ${d.specialty} (${d.price})\n`; });
+    }
+
+    text += '\n— Generated by FAIO AI ✨';
+    return text;
 }
