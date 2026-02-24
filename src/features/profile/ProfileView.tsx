@@ -1,188 +1,122 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    User, Settings, LogOut, Heart, MapPin, Calendar,
-    ChevronRight, Sparkles, Edit2, Camera, Loader2
+    User, Settings, LogOut, MapPin, Globe, Star,
+    Award, Leaf, Heart, Calendar, Camera,
+    Shield, Bell, Moon, Palette, Languages,
+    ChevronRight, Edit2, Compass, TrendingUp,
+    Bookmark, Plane, CheckCircle
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { GlassCard } from '../../components/ui/GlassCard';
-import { AuthModal } from '../../components/ui/AuthModal';
-import { supabase, isSupabaseAvailable } from '../../lib/supabase';
-import type { Itinerary } from '../../types/database.types';
 import { cn } from '../../lib/utils';
+import { GlassCard } from '../../components/ui/GlassCard';
+import { useAuth } from '../../context/AuthContext';
+import { useAIAgents } from '../../context/AIAgentContext';
+
+interface Achievement {
+    id: string;
+    title: string;
+    icon: string;
+    description: string;
+    earned: boolean;
+    progress: number;
+    total: number;
+}
+
+const ACHIEVEMENTS: Achievement[] = [
+    { id: '1', title: 'First Trip', icon: '✈️', description: 'Plan your first trip', earned: true, progress: 1, total: 1 },
+    { id: '2', title: 'Eco Warrior', icon: '🌿', description: 'Keep eco score above 80%', earned: true, progress: 85, total: 80 },
+    { id: '3', title: 'Explorer', icon: '🧭', description: 'Visit 5 countries', earned: false, progress: 3, total: 5 },
+    { id: '4', title: 'Community Star', icon: '⭐', description: 'Share 10 travel stories', earned: false, progress: 4, total: 10 },
+    { id: '5', title: 'Budget Pro', icon: '💰', description: 'Stay under budget 3 trips', earned: false, progress: 1, total: 3 },
+    { id: '6', title: 'Night Owl', icon: '🦉', description: 'Explore 10 nightlife spots', earned: false, progress: 2, total: 10 },
+];
 
 export function ProfileView() {
-    const { user, profile, signOut, isLoading: authLoading } = useAuth();
-    const [showAuthModal, setShowAuthModal] = useState(false);
-    const [savedTrips, setSavedTrips] = useState<Itinerary[]>([]);
-    const [isLoadingTrips, setIsLoadingTrips] = useState(false);
-    const [activeTab, setActiveTab] = useState<'trips' | 'favorites' | 'settings'>('trips');
+    const { user, signOut } = useAuth();
+    const { tripData } = useAIAgents();
+    const [activeTab, setActiveTab] = useState<'stats' | 'achievements' | 'settings'>('stats');
+    const [savedTrips, setSavedTrips] = useState<any[]>([]);
 
-    // Fetch saved trips
     useEffect(() => {
-        if (user) {
-            fetchSavedTrips();
-        }
-    }, [user]);
-
-    const fetchSavedTrips = async () => {
-        if (!user || !isSupabaseAvailable || !supabase) return;
-        setIsLoadingTrips(true);
         try {
-            const { data, error } = await supabase
-                .from('itineraries')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false });
+            const raw = localStorage.getItem('faio_saved_trips');
+            if (raw) setSavedTrips(JSON.parse(raw));
+        } catch { /* ignore */ }
+    }, []);
 
-            if (!error && data) {
-                setSavedTrips(data);
-            }
-        } catch (err) {
-            console.error('Error fetching trips:', err);
-        } finally {
-            setIsLoadingTrips(false);
-        }
+    const stats = {
+        tripsPlanned: savedTrips.length || 3,
+        countriesVisited: 5,
+        placesExplored: 28,
+        ecoScore: 87,
+        totalDays: 42,
+        photosShared: 15,
     };
 
-    const handleSignOut = async () => {
-        await signOut();
-        setSavedTrips([]);
-    };
-
-    // Loading state
-    if (authLoading) {
-        return (
-            <div className="p-5 pt-12 min-h-screen pb-32 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-action animate-spin" />
-            </div>
-        );
-    }
-
-    // Not logged in
-    if (!user) {
-        return (
-            <div className="p-5 pt-12 min-h-screen pb-32">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center py-16"
-                >
-                    <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-action/20 to-purple-500/20 flex items-center justify-center">
-                        <User className="w-12 h-12 text-action" />
-                    </div>
-                    <h2 className="text-2xl font-bold mb-2">Sign in to FAIO</h2>
-                    <p className="text-secondary mb-8 max-w-xs mx-auto">
-                        Create an account to save your trips, discover local secrets, and connect with other travelers
-                    </p>
-
-                    <div className="space-y-3 max-w-xs mx-auto">
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => setShowAuthModal(true)}
-                            className="w-full py-4 bg-gradient-to-r from-action to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-action/30"
-                        >
-                            Sign In / Sign Up
-                        </motion.button>
-                    </div>
-
-                    {/* Features preview */}
-                    <div className="mt-12 space-y-4 max-w-sm mx-auto">
-                        <h3 className="font-bold text-sm text-secondary uppercase tracking-wider">What you get</h3>
-                        {[
-                            { icon: Heart, text: 'Save unlimited trips' },
-                            { icon: MapPin, text: 'Submit local secrets' },
-                            { icon: Sparkles, text: 'Personalized recommendations' },
-                        ].map((item, i) => (
-                            <GlassCard key={i} className="p-4 flex items-center gap-4" hover={false}>
-                                <div className="w-10 h-10 rounded-xl bg-action/10 flex items-center justify-center">
-                                    <item.icon className="w-5 h-5 text-action" />
-                                </div>
-                                <span className="font-medium">{item.text}</span>
-                            </GlassCard>
-                        ))}
-                    </div>
-                </motion.div>
-
-                <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-            </div>
-        );
-    }
-
-    // Logged in view
     return (
         <div className="p-5 pt-12 min-h-screen pb-32">
-            <motion.header
+            {/* Profile Header */}
+            <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-6"
             >
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="relative">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-action to-purple-500 flex items-center justify-center ring-4 ring-action/20">
-                            {profile?.avatar_url ? (
-                                <img
-                                    src={profile.avatar_url}
-                                    alt={profile.username || 'User'}
-                                    className="w-full h-full rounded-full object-cover"
-                                />
-                            ) : (
-                                <span className="text-3xl font-bold text-white">
-                                    {profile?.username?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'T'}
-                                </span>
-                            )}
+                <GlassCard gradient="purple" glow className="p-6 text-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-action/20 via-purple-500/20 to-pink-500/20" />
+                    <div className="relative z-10">
+                        <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-gradient-to-br from-action to-purple-500 flex items-center justify-center text-3xl font-bold text-white shadow-xl shadow-action/30">
+                            {user?.email?.[0]?.toUpperCase() || 'T'}
                         </div>
-                        <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-surface border border-slate-700 rounded-full flex items-center justify-center hover:border-action transition-colors">
-                            <Camera className="w-4 h-4 text-secondary" />
-                        </button>
-                    </div>
-                    <div className="flex-1">
-                        <h1 className="text-2xl font-bold">{profile?.username || 'Traveler'}</h1>
-                        <p className="text-secondary text-sm">{user.email}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className="px-2 py-0.5 bg-action/20 text-action text-xs font-bold rounded">
-                                Explorer
-                            </span>
-                        </div>
-                    </div>
-                    <button className="p-3 bg-surface/50 border border-slate-800 rounded-xl hover:border-slate-600 transition-colors">
-                        <Edit2 className="w-5 h-5 text-secondary" />
-                    </button>
-                </div>
+                        <h1 className="text-2xl font-bold text-white">{user?.email?.split('@')[0] || 'Traveler'}</h1>
+                        <p className="text-sm text-white/70 mb-3">{user?.email || 'explorer@faio.ai'}</p>
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-3">
-                    <GlassCard className="p-3 text-center" hover={false}>
-                        <p className="text-2xl font-bold text-action">{savedTrips.length}</p>
-                        <p className="text-xs text-secondary">Trips</p>
-                    </GlassCard>
-                    <GlassCard className="p-3 text-center" hover={false}>
-                        <p className="text-2xl font-bold text-purple-400">0</p>
-                        <p className="text-xs text-secondary">Secrets</p>
-                    </GlassCard>
-                    <GlassCard className="p-3 text-center" hover={false}>
-                        <p className="text-2xl font-bold text-emerald-400">0</p>
-                        <p className="text-xs text-secondary">Reviews</p>
-                    </GlassCard>
-                </div>
-            </motion.header>
+                        <div className="flex items-center justify-center gap-4">
+                            <div className="flex items-center gap-1 px-3 py-1 bg-white/10 rounded-full text-xs text-white/80">
+                                <Globe className="w-3 h-3" />
+                                <span>{stats.countriesVisited} countries</span>
+                            </div>
+                            <div className="flex items-center gap-1 px-3 py-1 bg-white/10 rounded-full text-xs text-white/80">
+                                <Plane className="w-3 h-3" />
+                                <span>{stats.tripsPlanned} trips</span>
+                            </div>
+                            <div className="flex items-center gap-1 px-3 py-1 bg-emerald-400/20 rounded-full text-xs text-emerald-300">
+                                <Leaf className="w-3 h-3" />
+                                <span>{stats.ecoScore}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </GlassCard>
+            </motion.div>
+
+            {/* Travel Level */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mb-5">
+                <GlassCard className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <Award className="w-5 h-5 text-amber-400" />
+                            <span className="font-bold text-sm">Explorer Level 5</span>
+                        </div>
+                        <span className="text-xs text-action font-bold">720 / 1000 XP</span>
+                    </div>
+                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: '72%' }}
+                            className="h-full bg-gradient-to-r from-action to-purple-500 rounded-full" />
+                    </div>
+                    <p className="text-[10px] text-secondary mt-1">280 XP to Level 6</p>
+                </GlassCard>
+            </motion.div>
 
             {/* Tab Navigation */}
             <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
                 {[
-                    { id: 'trips', label: 'My Trips', icon: MapPin },
-                    { id: 'favorites', label: 'Favorites', icon: Heart },
+                    { id: 'stats', label: 'Stats', icon: TrendingUp },
+                    { id: 'achievements', label: 'Achievements', icon: Award },
                     { id: 'settings', label: 'Settings', icon: Settings },
                 ].map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap",
-                            activeTab === tab.id
-                                ? "bg-action text-white"
-                                : "bg-surface/50 text-secondary hover:text-white"
+                            activeTab === tab.id ? "bg-action text-white" : "bg-surface/50 text-secondary hover:text-white"
                         )}
                     >
                         <tab.icon className="w-4 h-4" />
@@ -193,97 +127,151 @@ export function ProfileView() {
 
             {/* Tab Content */}
             <AnimatePresence mode="wait">
-                {activeTab === 'trips' && (
-                    <motion.div
-                        key="trips"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="space-y-3"
-                    >
-                        {isLoadingTrips ? (
-                            <div className="py-12 text-center">
-                                <Loader2 className="w-6 h-6 mx-auto text-action animate-spin" />
-                            </div>
-                        ) : savedTrips.length > 0 ? (
-                            savedTrips.map((trip, i) => (
-                                <motion.div
-                                    key={trip.id}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.05 }}
-                                >
+                {activeTab === 'stats' && (
+                    <motion.div key="stats" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-2 gap-3">
+                            {[
+                                { label: 'Trips Planned', value: stats.tripsPlanned, icon: Plane, color: 'text-action' },
+                                { label: 'Countries', value: stats.countriesVisited, icon: Globe, color: 'text-purple-400' },
+                                { label: 'Places Explored', value: stats.placesExplored, icon: MapPin, color: 'text-amber-400' },
+                                { label: 'Total Days', value: stats.totalDays, icon: Calendar, color: 'text-teal-400' },
+                                { label: 'Eco Score', value: `${stats.ecoScore}%`, icon: Leaf, color: 'text-emerald-400' },
+                                { label: 'Photos Shared', value: stats.photosShared, icon: Camera, color: 'text-pink-400' },
+                            ].map((stat, i) => (
+                                <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
                                     <GlassCard className="p-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-action to-purple-500 flex items-center justify-center">
-                                                <MapPin className="w-6 h-6 text-white" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h4 className="font-bold">{trip.destination}</h4>
-                                                <div className="flex items-center gap-2 text-xs text-secondary">
-                                                    <Calendar className="w-3 h-3" />
-                                                    <span>{trip.start_date} - {trip.end_date}</span>
-                                                </div>
-                                            </div>
-                                            <ChevronRight className="w-5 h-5 text-secondary" />
-                                        </div>
+                                        <stat.icon className={cn("w-5 h-5 mb-2", stat.color)} />
+                                        <p className="text-2xl font-bold">{stat.value}</p>
+                                        <p className="text-xs text-secondary">{stat.label}</p>
                                     </GlassCard>
                                 </motion.div>
-                            ))
-                        ) : (
-                            <div className="py-12 text-center">
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface/50 flex items-center justify-center">
-                                    <MapPin className="w-8 h-8 text-secondary" />
+                            ))}
+                        </div>
+
+                        {/* Saved Trips */}
+                        <div>
+                            <h3 className="font-bold mb-3 flex items-center gap-2">
+                                <Bookmark className="w-4 h-4 text-action" />
+                                Saved Trips
+                            </h3>
+                            {savedTrips.length === 0 ? (
+                                <GlassCard className="p-6 text-center">
+                                    <Compass className="w-8 h-8 text-secondary/30 mx-auto mb-2" />
+                                    <p className="text-sm text-secondary">No saved trips yet</p>
+                                    <p className="text-xs text-secondary">Plan your first trip to see it here!</p>
+                                </GlassCard>
+                            ) : (
+                                <div className="space-y-2">
+                                    {savedTrips.slice(0, 3).map((trip, i) => (
+                                        <GlassCard key={i} className="p-3 flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-action/10 flex items-center justify-center">
+                                                <MapPin className="w-5 h-5 text-action" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-bold text-sm">{trip.destination || 'Trip'}</p>
+                                                <p className="text-xs text-secondary">{trip.duration || '—'}</p>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-secondary" />
+                                        </GlassCard>
+                                    ))}
                                 </div>
-                                <p className="text-secondary mb-4">No saved trips yet</p>
-                                <p className="text-sm text-secondary">Plan your first adventure!</p>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </motion.div>
                 )}
 
-                {activeTab === 'favorites' && (
-                    <motion.div
-                        key="favorites"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="py-12 text-center"
-                    >
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface/50 flex items-center justify-center">
-                            <Heart className="w-8 h-8 text-secondary" />
-                        </div>
-                        <p className="text-secondary">Your favorite places will appear here</p>
+                {activeTab === 'achievements' && (
+                    <motion.div key="achievements" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-3">
+                        <GlassCard className="p-4 flex items-center justify-between">
+                            <div>
+                                <p className="font-bold">{ACHIEVEMENTS.filter(a => a.earned).length} / {ACHIEVEMENTS.length}</p>
+                                <p className="text-xs text-secondary">Achievements unlocked</p>
+                            </div>
+                            <div className="flex -space-x-2">
+                                {ACHIEVEMENTS.filter(a => a.earned).map(a => (
+                                    <span key={a.id} className="text-lg">{a.icon}</span>
+                                ))}
+                            </div>
+                        </GlassCard>
+
+                        {ACHIEVEMENTS.map((achievement, i) => (
+                            <motion.div key={achievement.id}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                            >
+                                <GlassCard className={cn(
+                                    "p-4 flex items-center gap-3",
+                                    achievement.earned ? "border-amber-500/20" : "opacity-70"
+                                )}>
+                                    <div className={cn(
+                                        "w-12 h-12 rounded-xl flex items-center justify-center text-2xl",
+                                        achievement.earned ? "bg-amber-500/10" : "bg-surface/50"
+                                    )}>
+                                        {achievement.icon}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-bold text-sm">{achievement.title}</p>
+                                            {achievement.earned && <CheckCircle className="w-4 h-4 text-amber-400" />}
+                                        </div>
+                                        <p className="text-xs text-secondary">{achievement.description}</p>
+                                        {!achievement.earned && (
+                                            <div className="mt-1.5">
+                                                <div className="flex items-center justify-between mb-0.5">
+                                                    <span className="text-[10px] text-secondary">{achievement.progress}/{achievement.total}</span>
+                                                </div>
+                                                <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-action rounded-full" style={{ width: `${(achievement.progress / achievement.total) * 100}%` }} />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </GlassCard>
+                            </motion.div>
+                        ))}
                     </motion.div>
                 )}
 
                 {activeTab === 'settings' && (
-                    <motion.div
-                        key="settings"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="space-y-3"
-                    >
-                        <GlassCard className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <User className="w-5 h-5 text-secondary" />
-                                <span>Edit Profile</span>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-secondary" />
+                    <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-3">
+                        {[
+                            { icon: Bell, label: 'Notifications', sublabel: 'Trip alerts & reminders', action: 'On' },
+                            { icon: Shield, label: 'Safety Settings', sublabel: 'Emergency contacts & SOS', action: '→' },
+                            { icon: Moon, label: 'Dark Mode', sublabel: 'Always on', action: 'On' },
+                            { icon: Languages, label: 'Language', sublabel: 'App language', action: 'English' },
+                            { icon: Palette, label: 'Theme', sublabel: 'Color scheme', action: 'Default' },
+                            { icon: Leaf, label: 'Eco Preferences', sublabel: 'Carbon tracking', action: 'Active' },
+                        ].map((item, i) => (
+                            <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
+                                <GlassCard className="p-4 flex items-center gap-3 cursor-pointer hover:border-slate-600 transition-colors">
+                                    <div className="w-10 h-10 rounded-xl bg-action/10 flex items-center justify-center">
+                                        <item.icon className="w-5 h-5 text-action" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="font-bold text-sm">{item.label}</p>
+                                        <p className="text-xs text-secondary">{item.sublabel}</p>
+                                    </div>
+                                    <span className="text-xs text-secondary">{item.action}</span>
+                                    <ChevronRight className="w-4 h-4 text-secondary" />
+                                </GlassCard>
+                            </motion.div>
+                        ))}
+
+                        {/* About */}
+                        <GlassCard className="p-4 text-center mt-4">
+                            <p className="text-sm font-bold">FAIO AI</p>
+                            <p className="text-xs text-secondary">v2.0 • AI-Powered Travel Companion</p>
                         </GlassCard>
-                        <GlassCard className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Settings className="w-5 h-5 text-secondary" />
-                                <span>Preferences</span>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-secondary" />
-                        </GlassCard>
-                        <button onClick={handleSignOut} className="w-full">
-                            <GlassCard className="p-4 flex items-center gap-3 text-red-400 hover:bg-red-500/10 border-red-500/20">
-                                <LogOut className="w-5 h-5" />
-                                <span>Sign Out</span>
-                            </GlassCard>
+
+                        {/* Sign Out */}
+                        <button
+                            onClick={signOut}
+                            className="w-full py-3 border border-red-500/30 text-red-400 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-500/10 transition-colors"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Sign Out
                         </button>
                     </motion.div>
                 )}

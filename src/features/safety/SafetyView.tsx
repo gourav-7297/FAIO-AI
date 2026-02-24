@@ -3,9 +3,11 @@ import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import {
     Shield, Phone, AlertTriangle, Heart, ShieldCheck,
     MapPin, Moon, Car, User, Plus, X, Navigation,
-    Bell, Eye, CheckCircle, Clock
+    Bell, Eye, CheckCircle, Clock, PhoneCall, Share2,
+    Zap, Wifi, Volume2, List, Landmark, BatteryCharging
 } from 'lucide-react';
 import { useEnvironment } from '../../context/EnvironmentContext';
+import { useAIAgents } from '../../context/AIAgentContext';
 import { cn } from '../../lib/utils';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { TravelMap } from '../../components/map/TravelMap';
@@ -30,12 +32,12 @@ const MOCK_ALERTS: SafetyAlert[] = [
     { id: '1', type: 'warning', title: 'Pickpocketing Hotspot', description: 'Increased reports in tourist areas', area: 'Temple District', time: '2h ago' },
     { id: '2', type: 'caution', title: 'Night Safety Advisory', description: 'Stick to main roads after 10 PM', area: 'Market Area', time: '5h ago' },
     { id: '3', type: 'info', title: 'Safe Zone Verified', description: 'This hotel area is community verified', area: 'City Center', time: '1d ago' },
+    { id: '4', type: 'caution', title: 'Scam Alert', description: 'Fake tour guides near major temples', area: 'Old Town', time: '3h ago' },
 ];
 
 // ============================
 // EMERGENCY CONTACT PERSISTENCE
 // ============================
-
 const CONTACTS_STORAGE_KEY = 'faio_emergency_contacts';
 
 function loadContacts(): EmergencyContact[] {
@@ -43,7 +45,6 @@ function loadContacts(): EmergencyContact[] {
         const raw = localStorage.getItem(CONTACTS_STORAGE_KEY);
         if (raw) return JSON.parse(raw);
     } catch { /* ignore */ }
-    // Default contacts if nothing saved
     return [
         { id: '1', name: 'Mom', phone: '+1 234 567 8900', relation: 'Family' },
         { id: '2', name: 'Hotel Concierge', phone: '+81 3 1234 5678', relation: 'Local' },
@@ -56,62 +57,77 @@ function saveContacts(contacts: EmergencyContact[]): void {
     } catch { /* ignore */ }
 }
 
+// Safety checklist persistence
+const CHECKLIST_KEY = 'faio_safety_checklist';
+const DEFAULT_CHECKLIST = [
+    { id: '1', text: 'Share hotel address with family', done: false },
+    { id: '2', text: 'Download offline maps', done: false },
+    { id: '3', text: 'Save local emergency numbers', done: false },
+    { id: '4', text: 'Register with embassy', done: false },
+    { id: '5', text: 'Get travel insurance', done: false },
+    { id: '6', text: 'Copy passport & IDs', done: false },
+];
+
+function loadChecklist() {
+    try {
+        const raw = localStorage.getItem(CHECKLIST_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return DEFAULT_CHECKLIST;
+}
+
+function saveChecklist(list: typeof DEFAULT_CHECKLIST) {
+    try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+}
+
 export function SafetyView() {
     const { isEmergency, toggleEmergency } = useEnvironment();
+    const { tripData } = useAIAgents();
     const [holding, setHolding] = useState(false);
     const [showContacts, setShowContacts] = useState(false);
-    const [activeTab, setActiveTab] = useState<'alerts' | 'zones' | 'tips'>('alerts');
+    const [activeTab, setActiveTab] = useState<'alerts' | 'zones' | 'checklist' | 'tips'>('alerts');
+    const [liveSharing, setLiveSharing] = useState(false);
+    const [showFakeCall, setShowFakeCall] = useState(false);
     const controls = useAnimation();
     const timeoutRef = useRef<any>(null);
 
     const [contacts, setContacts] = useState<EmergencyContact[]>(loadContacts);
+    const [checklist, setChecklist] = useState(loadChecklist);
 
-    // Persist contacts whenever they change
-    useEffect(() => {
-        saveContacts(contacts);
-    }, [contacts]);
+    useEffect(() => { saveContacts(contacts); }, [contacts]);
+    useEffect(() => { saveChecklist(checklist); }, [checklist]);
 
-    const addContact = (contact: EmergencyContact) => {
-        setContacts(prev => [...prev, contact]);
+    const addContact = (contact: EmergencyContact) => setContacts(prev => [...prev, contact]);
+    const removeContact = (id: string) => setContacts(prev => prev.filter(c => c.id !== id));
+
+    const toggleChecklistItem = (id: string) => {
+        setChecklist((prev: typeof DEFAULT_CHECKLIST) => prev.map((item: typeof DEFAULT_CHECKLIST[0]) =>
+            item.id === id ? { ...item, done: !item.done } : item
+        ));
     };
 
-    const removeContact = (id: string) => {
-        setContacts(prev => prev.filter(c => c.id !== id));
-    };
+    const checklistDone = checklist.filter((c: typeof DEFAULT_CHECKLIST[0]) => c.done).length;
+    const checklistPercent = (checklistDone / checklist.length) * 100;
 
     const startHold = () => {
         if (isEmergency) return;
         setHolding(true);
-        controls.start({
-            strokeDashoffset: 0,
-            transition: { duration: 3, ease: "linear" }
-        });
-
-        timeoutRef.current = setTimeout(() => {
-            toggleEmergency();
-            setHolding(false);
-        }, 3000);
+        controls.start({ strokeDashoffset: 0, transition: { duration: 3, ease: "linear" } });
+        timeoutRef.current = setTimeout(() => { toggleEmergency(); setHolding(false); }, 3000);
     };
 
     const endHold = () => {
         if (isEmergency) return;
         setHolding(false);
         clearTimeout(timeoutRef.current);
-        controls.start({
-            strokeDashoffset: 283,
-            transition: { duration: 0.2 }
-        });
+        controls.start({ strokeDashoffset: 283, transition: { duration: 0.2 } });
     };
 
     useEffect(() => {
-        if (!isEmergency) {
-            controls.set({ strokeDashoffset: 283 });
-        }
+        if (!isEmergency) controls.set({ strokeDashoffset: 283 });
     }, [isEmergency, controls]);
 
-    if (isEmergency) {
-        return <EmergencyScreen onCancel={toggleEmergency} contacts={contacts} />;
-    }
+    if (isEmergency) return <EmergencyScreen onCancel={toggleEmergency} contacts={contacts} />;
 
     return (
         <div className="p-5 pt-12 min-h-screen pb-32">
@@ -125,8 +141,10 @@ export function SafetyView() {
                         <Shield className="w-5 h-5 text-safety" />
                         <span className="text-xs text-safety font-bold uppercase tracking-wider">AI Protected</span>
                     </div>
-                    <h1 className="text-3xl font-bold">Safety Layer</h1>
-                    <p className="text-secondary text-sm">Real-time risk monitoring</p>
+                    <h1 className="text-3xl font-bold">Safety Hub</h1>
+                    <p className="text-secondary text-sm">
+                        {tripData ? `Protection active for ${tripData.destination}` : 'Real-time risk monitoring'}
+                    </p>
                 </div>
                 <button
                     onClick={() => setShowContacts(true)}
@@ -140,54 +158,90 @@ export function SafetyView() {
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-col items-center justify-center py-6 mb-6"
+                className="flex flex-col items-center justify-center py-5 mb-4"
             >
                 <div className="relative">
-                    <svg className="w-44 h-44 transform -rotate-90 pointer-events-none">
-                        <circle
-                            cx="88"
-                            cy="88"
-                            r="45"
-                            stroke="currentColor"
-                            strokeWidth="6"
-                            fill="transparent"
-                            className="text-slate-800"
-                        />
-                        <motion.circle
-                            cx="88"
-                            cy="88"
-                            r="45"
-                            stroke="#EF4444"
-                            strokeWidth="6"
-                            fill="transparent"
-                            strokeDasharray="283"
-                            strokeDashoffset="283"
-                            animate={controls}
-                            className="drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]"
-                        />
+                    <svg className="w-40 h-40 transform -rotate-90 pointer-events-none">
+                        <circle cx="80" cy="80" r="45" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-slate-800" />
+                        <motion.circle cx="80" cy="80" r="45" stroke="#EF4444" strokeWidth="6" fill="transparent"
+                            strokeDasharray="283" strokeDashoffset="283" animate={controls}
+                            className="drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]" />
                     </svg>
-
                     <button
-                        onPointerDown={startHold}
-                        onPointerUp={endHold}
-                        onContextMenu={(e) => e.preventDefault()}
-                        onMouseLeave={endHold}
+                        onPointerDown={startHold} onPointerUp={endHold}
+                        onContextMenu={(e) => e.preventDefault()} onMouseLeave={endHold}
                         className={cn(
-                            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full",
+                            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full",
                             "bg-gradient-to-br from-surface to-slate-900 border-4 border-slate-700",
                             "flex flex-col items-center justify-center shadow-2xl transition-all duration-200",
                             "active:scale-95 select-none",
                             holding ? "border-safety shadow-safety/30" : "hover:border-slate-500"
                         )}
                     >
-                        <div className="bg-gradient-to-br from-safety to-red-600 text-white w-16 h-16 rounded-full flex items-center justify-center mb-1 shadow-lg">
-                            <span className="font-black text-xl">SOS</span>
+                        <div className="bg-gradient-to-br from-safety to-red-600 text-white w-14 h-14 rounded-full flex items-center justify-center mb-1 shadow-lg">
+                            <span className="font-black text-lg">SOS</span>
                         </div>
-                        <span className="text-[10px] text-secondary font-medium uppercase tracking-widest">Hold 3s</span>
+                        <span className="text-[9px] text-secondary font-medium uppercase tracking-widest">Hold 3s</span>
                     </button>
                 </div>
-                <p className="text-sm text-secondary mt-3 animate-pulse opacity-60">Long press for emergency mode</p>
             </motion.div>
+
+            {/* Quick Action Row */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+                <button
+                    onClick={() => setShowFakeCall(true)}
+                    className="p-3 bg-surface/80 border border-slate-700 rounded-xl flex flex-col items-center gap-1.5 hover:border-action transition-colors"
+                >
+                    <PhoneCall className="w-5 h-5 text-amber-400" />
+                    <span className="text-[10px] font-medium text-secondary">Fake Call</span>
+                </button>
+                <button
+                    onClick={() => setLiveSharing(!liveSharing)}
+                    className={cn(
+                        "p-3 border rounded-xl flex flex-col items-center gap-1.5 transition-colors",
+                        liveSharing ? "bg-emerald-500/10 border-emerald-500/30" : "bg-surface/80 border-slate-700 hover:border-action"
+                    )}
+                >
+                    <Share2 className={cn("w-5 h-5", liveSharing ? "text-emerald-400" : "text-secondary")} />
+                    <span className="text-[10px] font-medium text-secondary">{liveSharing ? 'Sharing ON' : 'Share Location'}</span>
+                </button>
+                <button
+                    onClick={() => {
+                        if (navigator.share) {
+                            navigator.share({
+                                title: 'My Location - FAIO Safety',
+                                text: `I'm at this location. Shared via FAIO AI Safety.`,
+                                url: 'https://maps.google.com'
+                            });
+                        }
+                    }}
+                    className="p-3 bg-surface/80 border border-slate-700 rounded-xl flex flex-col items-center gap-1.5 hover:border-action transition-colors"
+                >
+                    <Navigation className="w-5 h-5 text-blue-400" />
+                    <span className="text-[10px] font-medium text-secondary">Send Location</span>
+                </button>
+            </div>
+
+            {/* Live Sharing Banner */}
+            <AnimatePresence>
+                {liveSharing && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mb-4"
+                    >
+                        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
+                            <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse" />
+                            <div className="flex-1">
+                                <p className="text-sm font-bold text-emerald-400">Live Location Active</p>
+                                <p className="text-[10px] text-secondary">Sharing with {contacts.length} emergency contacts</p>
+                            </div>
+                            <button onClick={() => setLiveSharing(false)} className="text-xs text-emerald-400 font-bold">Stop</button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-3 mb-6">
@@ -209,8 +263,8 @@ export function SafetyView() {
                     <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                         <ShieldCheck className="w-5 h-5 text-emerald-400" />
                     </div>
-                    <p className="text-lg font-bold">12</p>
-                    <p className="text-[10px] text-secondary">Verified Stays</p>
+                    <p className="text-lg font-bold">{checklistDone}/{checklist.length}</p>
+                    <p className="text-[10px] text-secondary">Checklist</p>
                 </GlassCard>
             </div>
 
@@ -219,6 +273,7 @@ export function SafetyView() {
                 {[
                     { id: 'alerts', label: 'Alerts', icon: Bell },
                     { id: 'zones', label: 'Safe Zones', icon: MapPin },
+                    { id: 'checklist', label: 'Checklist', icon: List },
                     { id: 'tips', label: 'Night Tips', icon: Moon },
                 ].map(tab => (
                     <button
@@ -240,13 +295,7 @@ export function SafetyView() {
             {/* Tab Content */}
             <AnimatePresence mode="wait">
                 {activeTab === 'alerts' && (
-                    <motion.div
-                        key="alerts"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="space-y-3"
-                    >
+                    <motion.div key="alerts" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-3">
                         {MOCK_ALERTS.map((alert, i) => (
                             <AlertCard key={alert.id} alert={alert} delay={i * 0.05} />
                         ))}
@@ -254,20 +303,14 @@ export function SafetyView() {
                 )}
 
                 {activeTab === 'zones' && (
-                    <motion.div
-                        key="zones"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="space-y-4"
-                    >
+                    <motion.div key="zones" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
                         <GlassCard className="p-4">
                             <div className="flex items-center gap-3 mb-3">
                                 <Eye className="w-5 h-5 text-pink-400" />
                                 <h3 className="font-bold">Women Safety Heatmap</h3>
                             </div>
                             <TravelMap
-                                center={[35.6762, 139.6503]} // Tokyo
+                                center={[35.6762, 139.6503]}
                                 zoom={13}
                                 height="180px"
                                 safetyZones={[
@@ -296,32 +339,128 @@ export function SafetyView() {
                                 <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-medium">Hotel Shuttles</span>
                             </div>
                         </GlassCard>
+
+                        {/* Nearby Safe Places */}
+                        <GlassCard className="p-4">
+                            <h3 className="font-bold mb-3 flex items-center gap-2">
+                                <Landmark className="w-5 h-5 text-action" />
+                                Nearby Safe Places
+                            </h3>
+                            <div className="space-y-2">
+                                {[
+                                    { name: '24/7 Police Station', dist: '200m', icon: '🏛️' },
+                                    { name: 'City Hospital', dist: '450m', icon: '🏥' },
+                                    { name: 'Tourist Info Center', dist: '300m', icon: 'ℹ️' },
+                                    { name: 'Safe Haven Hostel', dist: '100m', icon: '🏨' },
+                                ].map((place, i) => (
+                                    <div key={i} className="flex items-center justify-between p-2 bg-surface/50 rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                            <span>{place.icon}</span>
+                                            <span className="text-sm font-medium">{place.name}</span>
+                                        </div>
+                                        <span className="text-xs text-action">{place.dist}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </GlassCard>
+                    </motion.div>
+                )}
+
+                {activeTab === 'checklist' && (
+                    <motion.div key="checklist" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
+                        {/* Progress */}
+                        <GlassCard gradient="green" className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-bold text-white">Safety Readiness</span>
+                                <span className="text-sm font-bold text-white">{checklistPercent.toFixed(0)}%</span>
+                            </div>
+                            <div className="h-2.5 bg-white/20 rounded-full overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${checklistPercent}%` }}
+                                    className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full"
+                                />
+                            </div>
+                            <p className="text-xs text-white/70 mt-2">{checklistDone} of {checklist.length} completed</p>
+                        </GlassCard>
+
+                        <div className="space-y-2">
+                            {checklist.map((item: typeof DEFAULT_CHECKLIST[0], i: number) => (
+                                <motion.div
+                                    key={item.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.05 }}
+                                >
+                                    <button
+                                        onClick={() => toggleChecklistItem(item.id)}
+                                        className="w-full text-left"
+                                    >
+                                        <GlassCard className={cn(
+                                            "p-4 flex items-center gap-3 transition-all",
+                                            item.done ? "border-emerald-500/20 bg-emerald-500/5" : ""
+                                        )}>
+                                            <div className={cn(
+                                                "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0",
+                                                item.done ? "border-emerald-400 bg-emerald-400" : "border-slate-600"
+                                            )}>
+                                                {item.done && <CheckCircle className="w-4 h-4 text-white" />}
+                                            </div>
+                                            <span className={cn(
+                                                "text-sm font-medium transition-all",
+                                                item.done ? "text-secondary line-through" : "text-white"
+                                            )}>{item.text}</span>
+                                        </GlassCard>
+                                    </button>
+                                </motion.div>
+                            ))}
+                        </div>
                     </motion.div>
                 )}
 
                 {activeTab === 'tips' && (
-                    <motion.div
-                        key="tips"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="space-y-3"
-                    >
+                    <motion.div key="tips" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-3">
                         {[
-                            { icon: Moon, tip: 'Stick to well-lit main roads after 10 PM', type: 'essential' },
-                            { icon: Car, tip: 'Use only official taxis or hotel-arranged transport', type: 'transport' },
-                            { icon: MapPin, tip: 'Share live location with emergency contacts', type: 'location' },
-                            { icon: Phone, tip: 'Keep local emergency numbers saved offline', type: 'contacts' },
+                            { icon: Moon, tip: 'Stick to well-lit main roads after 10 PM', type: 'essential', severity: 'high' },
+                            { icon: Car, tip: 'Use only official taxis or hotel-arranged transport', type: 'transport', severity: 'high' },
+                            { icon: MapPin, tip: 'Share live location with emergency contacts', type: 'location', severity: 'medium' },
+                            { icon: Phone, tip: 'Keep local emergency numbers saved offline', type: 'contacts', severity: 'medium' },
+                            { icon: Wifi, tip: 'Avoid public WiFi for banking or personal info', type: 'digital', severity: 'medium' },
+                            { icon: Volume2, tip: 'Stay alert — avoid headphones in unfamiliar areas', type: 'awareness', severity: 'high' },
+                            { icon: BatteryCharging, tip: 'Keep phone charged above 20% when out', type: 'preparation', severity: 'low' },
                         ].map((item, i) => (
-                            <GlassCard key={i} className="p-4 flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-action/10 flex items-center justify-center flex-shrink-0">
-                                    <item.icon className="w-5 h-5 text-action" />
-                                </div>
-                                <div>
-                                    <p className="font-medium">{item.tip}</p>
-                                    <span className="text-xs text-secondary capitalize">{item.type}</span>
-                                </div>
-                            </GlassCard>
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                            >
+                                <GlassCard className="p-4 flex items-start gap-3">
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
+                                        item.severity === 'high' ? "bg-red-500/10" : item.severity === 'medium' ? "bg-amber-500/10" : "bg-action/10"
+                                    )}>
+                                        <item.icon className={cn(
+                                            "w-5 h-5",
+                                            item.severity === 'high' ? "text-red-400" : item.severity === 'medium' ? "text-amber-400" : "text-action"
+                                        )} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="font-medium text-sm">{item.tip}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-xs text-secondary capitalize">{item.type}</span>
+                                            <span className={cn(
+                                                "text-[10px] px-1.5 py-0.5 rounded font-bold",
+                                                item.severity === 'high' ? "bg-red-500/10 text-red-400" :
+                                                    item.severity === 'medium' ? "bg-amber-500/10 text-amber-400" :
+                                                        "bg-action/10 text-action"
+                                            )}>
+                                                {item.severity.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </GlassCard>
+                            </motion.div>
                         ))}
                     </motion.div>
                 )}
@@ -338,10 +477,63 @@ export function SafetyView() {
                     />
                 )}
             </AnimatePresence>
+
+            {/* Fake Call Modal */}
+            <AnimatePresence>
+                {showFakeCall && <FakeCallScreen onEnd={() => setShowFakeCall(false)} />}
+            </AnimatePresence>
         </div>
     );
 }
 
+// ============================
+// FAKE CALL SCREEN
+// ============================
+function FakeCallScreen({ onEnd }: { onEnd: () => void }) {
+    const [elapsed, setElapsed] = useState(0);
+
+    useEffect(() => {
+        const t = setInterval(() => setElapsed(e => e + 1), 1000);
+        return () => clearInterval(t);
+    }, []);
+
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-between p-8"
+        >
+            <div className="flex-1 flex flex-col items-center justify-center text-white text-center">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mb-6 shadow-xl shadow-emerald-500/30">
+                    <Phone className="w-12 h-12" />
+                </div>
+                <h1 className="text-2xl font-bold mb-1">Hotel Reception</h1>
+                <p className="text-secondary mb-2">+81 3 1234 5678</p>
+                <div className="flex items-center gap-2 text-emerald-400">
+                    <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+                        <Zap className="w-4 h-4" />
+                    </motion.div>
+                    <span className="text-sm font-medium">{minutes}:{seconds.toString().padStart(2, '0')}</span>
+                </div>
+            </div>
+
+            <button
+                onClick={onEnd}
+                className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center shadow-xl shadow-red-500/30 mb-8"
+            >
+                <Phone className="w-8 h-8 text-white rotate-[135deg]" />
+            </button>
+        </motion.div>
+    );
+}
+
+// ============================
+// ALERT CARD
+// ============================
 function AlertCard({ alert, delay }: { alert: SafetyAlert; delay: number }) {
     const colors = {
         warning: { bg: 'bg-red-500/10', border: 'border-red-500/20', icon: 'text-red-400' },
@@ -351,11 +543,7 @@ function AlertCard({ alert, delay }: { alert: SafetyAlert; delay: number }) {
     const style = colors[alert.type];
 
     return (
-        <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay }}
-        >
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay }}>
             <GlassCard className={cn("p-4 border", style.border, style.bg)}>
                 <div className="flex items-start gap-3">
                     <div className={cn("p-2 rounded-lg", style.bg)}>
@@ -381,6 +569,9 @@ function AlertCard({ alert, delay }: { alert: SafetyAlert; delay: number }) {
     );
 }
 
+// ============================
+// EMERGENCY SCREEN
+// ============================
 function EmergencyScreen({ onCancel, contacts }: { onCancel: () => void; contacts: EmergencyContact[] }) {
     const [countdown, setCountdown] = useState(10);
 
@@ -392,16 +583,11 @@ function EmergencyScreen({ onCancel, contacts }: { onCancel: () => void; contact
     }, []);
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="fixed inset-0 z-50 bg-gradient-to-b from-red-900 to-red-600 flex flex-col p-6"
         >
             <div className="flex-1 flex flex-col items-center justify-center text-white text-center">
-                <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ repeat: Infinity, duration: 1 }}
-                >
+                <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
                     <AlertTriangle className="w-24 h-24 mb-6" />
                 </motion.div>
                 <h1 className="text-4xl font-bold mb-2">SOS ACTIVE</h1>
@@ -418,47 +604,35 @@ function EmergencyScreen({ onCancel, contacts }: { onCancel: () => void; contact
                         </div>
                     </div>
                     <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: '100%' }}
-                            transition={{ duration: 10 }}
-                            className="h-full bg-white"
-                        />
+                        <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 10 }} className="h-full bg-white" />
                     </div>
                 </GlassCard>
 
                 <div className="flex gap-3 mb-8">
                     {contacts.slice(0, 2).map(contact => (
                         <div key={contact.id} className="px-4 py-2 bg-white/10 rounded-full flex items-center gap-2">
-                            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">
-                                {contact.name[0]}
-                            </div>
+                            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">{contact.name[0]}</div>
                             <span className="text-sm">{contact.name}</span>
                             <CheckCircle className="w-4 h-4 text-emerald-300" />
                         </div>
                     ))}
                 </div>
 
-                <p className="text-sm opacity-70 mb-4">
-                    Auto-calling emergency services in {countdown}s
-                </p>
+                <p className="text-sm opacity-70 mb-4">Auto-calling emergency services in {countdown}s</p>
             </div>
 
-            <button
-                onClick={onCancel}
-                className="w-full py-4 bg-white text-red-600 font-bold rounded-2xl shadow-xl"
-            >
+            <button onClick={onCancel} className="w-full py-4 bg-white text-red-600 font-bold rounded-2xl shadow-xl">
                 CANCEL EMERGENCY
             </button>
         </motion.div>
     );
 }
 
+// ============================
+// EMERGENCY CONTACTS MODAL
+// ============================
 function EmergencyContactsModal({
-    contacts,
-    onClose,
-    onAdd,
-    onRemove
+    contacts, onClose, onAdd, onRemove
 }: {
     contacts: EmergencyContact[];
     onClose: () => void;
@@ -477,17 +651,11 @@ function EmergencyContactsModal({
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end justify-center"
         >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <motion.div
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                 className="relative w-full max-w-md bg-surface rounded-t-3xl p-6 pb-safe"
             >
                 <div className="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-6" />
@@ -513,10 +681,7 @@ function EmergencyContactsModal({
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-secondary px-2 py-1 bg-surface rounded-full">{contact.relation}</span>
-                                <button
-                                    onClick={() => onRemove(contact.id)}
-                                    className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors"
-                                >
+                                <button onClick={() => onRemove(contact.id)} className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors">
                                     <X className="w-4 h-4 text-red-400" />
                                 </button>
                             </div>
@@ -526,53 +691,23 @@ function EmergencyContactsModal({
 
                 <AnimatePresence>
                     {showForm ? (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="space-y-3 mb-4"
-                        >
-                            <input
-                                type="text"
-                                placeholder="Name"
-                                value={newContact.name}
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-3 mb-4">
+                            <input type="text" placeholder="Name" value={newContact.name}
                                 onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
-                                className="w-full p-3 bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-action"
-                            />
-                            <input
-                                type="tel"
-                                placeholder="Phone Number"
-                                value={newContact.phone}
+                                className="w-full p-3 bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-action" />
+                            <input type="tel" placeholder="Phone Number" value={newContact.phone}
                                 onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
-                                className="w-full p-3 bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-action"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Relation (Family, Friend, Local)"
-                                value={newContact.relation}
+                                className="w-full p-3 bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-action" />
+                            <input type="text" placeholder="Relation (Family, Friend, Local)" value={newContact.relation}
                                 onChange={(e) => setNewContact({ ...newContact, relation: e.target.value })}
-                                className="w-full p-3 bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-action"
-                            />
+                                className="w-full p-3 bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-action" />
                             <div className="flex gap-2">
-                                <button
-                                    onClick={() => setShowForm(false)}
-                                    className="flex-1 py-3 bg-slate-800 rounded-xl font-bold"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleAdd}
-                                    className="flex-1 py-3 bg-action rounded-xl font-bold"
-                                >
-                                    Add Contact
-                                </button>
+                                <button onClick={() => setShowForm(false)} className="flex-1 py-3 bg-slate-800 rounded-xl font-bold">Cancel</button>
+                                <button onClick={handleAdd} className="flex-1 py-3 bg-action rounded-xl font-bold">Add Contact</button>
                             </div>
                         </motion.div>
                     ) : (
-                        <motion.button
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
+                        <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onClick={() => setShowForm(true)}
                             className="w-full py-3 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center gap-2 text-secondary hover:border-action hover:text-action transition-colors"
                         >

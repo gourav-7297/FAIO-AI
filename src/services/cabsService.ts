@@ -66,13 +66,7 @@ const BASE_RIDES: Omit<RideOption, 'price' | 'eta'>[] = [
     },
 ];
 
-// Pricing tiers: [base, range, etaMin, etaMax]
-const PRICE_CONFIG: Record<string, [number, number, number, number]> = {
-    Economy: [8, 5, 3, 8],
-    Comfort: [15, 8, 5, 10],
-    Premium: [25, 12, 4, 7],
-    Van: [30, 10, 8, 15],
-};
+
 
 // Pool of realistic drivers
 const DRIVER_POOL: Driver[] = [
@@ -100,50 +94,89 @@ function getSurgeMultiplier(): number {
 // SERVICE
 // ============================
 
+export interface RouteInfo {
+    distanceKm: number;
+    durationMin: number;
+}
+
+// OSRM free routing API - returns real driving distance & time
+export async function getRouteInfo(
+    originLat: number, originLng: number,
+    destLat: number, destLng: number
+): Promise<RouteInfo | null> {
+    try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${destLng},${destLat}?overview=false`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = await res.json();
+        const route = data?.routes?.[0];
+        if (!route) return null;
+        return {
+            distanceKm: Math.round(route.distance / 100) / 10,
+            durationMin: Math.round(route.duration / 60),
+        };
+    } catch {
+        return null;
+    }
+}
+
+// Per-km pricing by ride type (INR)
+const PER_KM_RATE: Record<string, number> = {
+    Economy: 9,
+    Comfort: 14,
+    Premium: 22,
+    Van: 18,
+};
+const BASE_FARE: Record<string, number> = {
+    Economy: 50,
+    Comfort: 80,
+    Premium: 150,
+    Van: 120,
+};
+
 export const cabsService = {
-    /**
-     * Get ride options with dynamically fluctuating prices based on time of day.
-     * Generates realistic pricing without needing an external API.
-     */
-    getRideOptions(): RideOption[] {
+    getRideOptions(route?: RouteInfo | null): RideOption[] {
         const surge = getSurgeMultiplier();
+        const km = route?.distanceKm || 10;
 
         return BASE_RIDES.map((ride) => {
-            const [base, range, etaMin, etaMax] = PRICE_CONFIG[ride.type];
-            const price = Math.round((base + Math.random() * range) * surge * 100) / 100;
-            const eta = Math.round(etaMin + Math.random() * (etaMax - etaMin));
-
+            const base = BASE_FARE[ride.type] || 50;
+            const perKm = PER_KM_RATE[ride.type] || 10;
+            const price = Math.round((base + km * perKm) * surge);
+            const eta = route
+                ? Math.round(route.durationMin * 0.3 + Math.random() * 3)
+                : Math.round(3 + Math.random() * 10);
             return { ...ride, price, eta };
         });
     },
 
-    /**
-     * Simulate price refresh — returns updated prices for existing rides.
-     */
-    refreshPrices(currentOptions: RideOption[]): RideOption[] {
+    refreshPrices(currentOptions: RideOption[], route?: RouteInfo | null): RideOption[] {
         const surge = getSurgeMultiplier();
+        const km = route?.distanceKm || 10;
 
         return currentOptions.map((ride) => {
-            const [base, range, etaMin, etaMax] = PRICE_CONFIG[ride.type];
-            const price = Math.round((base + Math.random() * range) * surge * 100) / 100;
-            const eta = Math.round(etaMin + Math.random() * (etaMax - etaMin));
-
+            const base = BASE_FARE[ride.type] || 50;
+            const perKm = PER_KM_RATE[ride.type] || 10;
+            const price = Math.round((base + km * perKm) * surge * (0.95 + Math.random() * 0.1));
+            const eta = route
+                ? Math.round(route.durationMin * 0.3 + Math.random() * 3)
+                : Math.round(3 + Math.random() * 10);
             return { ...ride, price, eta };
         });
     },
 
-    /**
-     * Get a random driver for the booked ride.
-     */
     getAssignedDriver(): Driver {
         return DRIVER_POOL[Math.floor(Math.random() * DRIVER_POOL.length)];
     },
 
-    /**
-     * Check if surge pricing is active.
-     */
     isSurgeActive(): boolean {
         return getSurgeMultiplier() > 1.2;
+    },
+
+    estimateFare(distanceKm: number, rideType: string = 'Economy'): number {
+        const base = BASE_FARE[rideType] || 50;
+        const perKm = PER_KM_RATE[rideType] || 10;
+        return Math.round((base + distanceKm * perKm) * getSurgeMultiplier());
     },
 };
 

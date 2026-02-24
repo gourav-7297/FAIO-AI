@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     TrendingUp, TrendingDown, Leaf, DollarSign,
-    AlertTriangle, Target, Plus, Book, Camera,
+    Target, Plus, Book, Camera,
     ChevronRight, Sparkles, Utensils, Hotel, Bus,
-    Coffee, ShoppingBag, Ticket, ArrowUpDown, Loader2
+    Coffee, ShoppingBag, Ticket, ArrowUpDown, Loader2,
+    PieChart, BarChart3, Lightbulb, Download, Users
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { GlassCard } from '../../components/ui/GlassCard';
@@ -22,9 +23,35 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
     Coffee: Coffee,
 };
 
+const CATEGORY_COLORS: Record<string, string> = {
+    Transport: 'from-blue-500 to-cyan-500',
+    Food: 'from-orange-500 to-amber-500',
+    Stay: 'from-purple-500 to-pink-500',
+    Activity: 'from-emerald-500 to-teal-500',
+    Shopping: 'from-rose-500 to-red-500',
+    Coffee: 'from-yellow-500 to-orange-500',
+};
+
+// AI budget advisor logic
+function getAIBudgetAdvice(totalSpent: number, totalBudget: number, expenses: Expense[]): { message: string; emoji: string; type: 'good' | 'warning' | 'danger' } {
+    const percent = (totalSpent / totalBudget) * 100;
+    const foodSpend = expenses.filter(e => e.category === 'Food').reduce((s, e) => s + e.amount, 0);
+    const transportSpend = expenses.filter(e => e.category === 'Transport').reduce((s, e) => s + e.amount, 0);
+
+    if (percent < 30) return { message: "You're spending wisely! Plenty of room for that special experience 🎉", emoji: '🏆', type: 'good' };
+    if (percent < 50) return { message: "On track! Consider local street food for big savings on meals", emoji: '👍', type: 'good' };
+    if (percent < 70) {
+        if (foodSpend > transportSpend * 1.5) return { message: "Food is your biggest spend. Try markets & local eateries for authentic + cheap meals!", emoji: '🍜', type: 'warning' };
+        return { message: "Past halfway — prioritize must-see experiences over shopping", emoji: '📊', type: 'warning' };
+    }
+    if (percent < 90) return { message: "Budget getting tight! Switch to walking tours and cook where you stay", emoji: '⚠️', type: 'warning' };
+    return { message: "Over budget! Consider free activities: parks, beaches, street art tours", emoji: '🚨', type: 'danger' };
+}
+
 export function WalletView() {
-    const [activeTab, setActiveTab] = useState<'expenses' | 'eco' | 'journal'>('expenses');
+    const [activeTab, setActiveTab] = useState<'expenses' | 'insights' | 'eco' | 'journal'>('expenses');
     const [showConverter, setShowConverter] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
     const { tripData } = useAIAgents();
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -39,16 +66,11 @@ export function WalletView() {
         load();
     }, []);
 
-    const handleAddExpense = async () => {
-        const name = prompt('Expense name:');
-        if (!name) return;
-        const amountStr = prompt('Amount ($):');
-        if (!amountStr) return;
-        const amount = parseFloat(amountStr);
-        if (isNaN(amount)) return;
-        const category = prompt('Category (Transport, Food, Stay, Activity, Shopping, Coffee):') || 'Food';
-        const { data } = await expenseService.addExpense(undefined, { category, name, amount });
+    const handleAddExpense = async (category: string, name: string, amount: number, split?: number) => {
+        const finalAmount = split && split > 1 ? amount / split : amount;
+        const { data } = await expenseService.addExpense(undefined, { category, name, amount: finalAmount });
         if (data) setExpenses(prev => [data, ...prev]);
+        setShowAddModal(false);
     };
 
     const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
@@ -56,6 +78,30 @@ export function WalletView() {
     const budgetPercent = Math.min((totalSpent / totalBudget) * 100, 100);
     const totalCarbon = expenses.reduce((sum, e) => sum + (e.carbonKg || 0), 0);
     const ecoChoices = expenses.filter(e => e.isEcoOption).length;
+    const budgetAdvice = useMemo(() => getAIBudgetAdvice(totalSpent, totalBudget, expenses), [totalSpent, totalBudget, expenses]);
+
+    // Category breakdown for pie chart
+    const categoryBreakdown = useMemo(() => {
+        const byCategory: Record<string, number> = {};
+        expenses.forEach(e => {
+            byCategory[e.category] = (byCategory[e.category] || 0) + e.amount;
+        });
+        return Object.entries(byCategory)
+            .map(([category, amount]) => ({ category, amount, percent: totalSpent > 0 ? (amount / totalSpent) * 100 : 0 }))
+            .sort((a, b) => b.amount - a.amount);
+    }, [expenses, totalSpent]);
+
+    // Daily spending trend
+    const dailySpending = useMemo(() => {
+        const byDate: Record<string, number> = {};
+        expenses.forEach(e => {
+            const date = e.date || 'Unknown';
+            byDate[date] = (byDate[date] || 0) + e.amount;
+        });
+        return Object.entries(byDate).slice(-7).map(([date, amount]) => ({ date, amount }));
+    }, [expenses]);
+
+    const dailyMax = Math.max(...dailySpending.map(d => d.amount), 1);
 
     return (
         <div className="p-5 pt-12 min-h-screen pb-32">
@@ -69,13 +115,29 @@ export function WalletView() {
                         <Sparkles className="w-5 h-5 text-emerald-400" />
                         <span className="text-xs text-emerald-400 font-bold uppercase tracking-wider">Budget Agent</span>
                     </div>
-                    <button
-                        onClick={() => setShowConverter(true)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-action/20 text-action rounded-lg text-sm font-medium hover:bg-action/30 transition-colors"
-                    >
-                        <ArrowUpDown className="w-4 h-4" />
-                        Convert
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setShowConverter(true)}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-action/20 text-action rounded-lg text-sm font-medium hover:bg-action/30 transition-colors"
+                        >
+                            <ArrowUpDown className="w-4 h-4" />
+                            Convert
+                        </button>
+                        <button
+                            onClick={() => {
+                                const csv = ['Category,Name,Amount,Date,Carbon(kg)', ...expenses.map(e => `${e.category},${e.name},${e.amount},${e.date},${e.carbonKg || 0}`)].join('\n');
+                                const blob = new Blob([csv], { type: 'text/csv' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url; a.download = 'faio-expenses.csv'; a.click();
+                                URL.revokeObjectURL(url);
+                            }}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-surface/80 text-secondary rounded-lg text-sm font-medium hover:text-white transition-colors"
+                        >
+                            <Download className="w-4 h-4" />
+                            CSV
+                        </button>
+                    </div>
                 </div>
                 <h1 className="text-3xl font-bold">Trip Wallet</h1>
                 <p className="text-secondary text-sm">AI-tracked spending & eco impact</p>
@@ -90,15 +152,15 @@ export function WalletView() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
             >
-                <GlassCard gradient="green" glow className="p-5 mb-6">
+                <GlassCard gradient="green" glow className="p-5 mb-4">
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-sm text-white/70 mb-1">Total Spent</p>
-                            <h2 className="text-4xl font-bold text-white">${totalSpent}</h2>
+                            <h2 className="text-4xl font-bold text-white">${totalSpent.toFixed(0)}</h2>
                         </div>
                         <div className="text-right">
                             <p className="text-sm text-white/70 mb-1">Budget</p>
-                            <p className="text-xl font-bold text-white">${totalBudget}</p>
+                            <p className="text-xl font-bold text-white">${totalBudget.toFixed(0)}</p>
                         </div>
                     </div>
 
@@ -117,36 +179,74 @@ export function WalletView() {
                         />
                     </div>
 
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-3">
                         <span className="text-sm text-white/70">{budgetPercent.toFixed(0)}% used</span>
-                        <span className="text-sm text-white/70">${totalBudget - totalSpent} remaining</span>
+                        <span className="text-sm text-white/70">${(totalBudget - totalSpent).toFixed(0)} remaining</span>
                     </div>
 
-                    {budgetPercent > 80 && (
-                        <div className="mt-4 p-3 bg-amber-500/20 rounded-xl flex items-center gap-2">
-                            <AlertTriangle className="w-5 h-5 text-amber-300" />
-                            <p className="text-sm text-amber-200">Budget alert: Consider eco-friendly options to save</p>
+                    {/* Per-day budget indicator */}
+                    {tripData && tripData.itinerary.length > 0 && (
+                        <div className="flex gap-2 mb-3">
+                            <div className="flex-1 p-2 bg-white/10 rounded-xl text-center">
+                                <p className="text-[10px] text-white/60">Per Day Budget</p>
+                                <p className="font-bold text-sm text-white">${(totalBudget / tripData.itinerary.length).toFixed(0)}</p>
+                            </div>
+                            <div className="flex-1 p-2 bg-white/10 rounded-xl text-center">
+                                <p className="text-[10px] text-white/60">Avg Spent/Day</p>
+                                <p className="font-bold text-sm text-white">${dailySpending.length > 0 ? (totalSpent / dailySpending.length).toFixed(0) : '0'}</p>
+                            </div>
                         </div>
                     )}
                 </GlassCard>
             </motion.div>
 
+            {/* AI Budget Advisor */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="mb-4"
+            >
+                <div className={cn(
+                    "p-4 rounded-2xl flex items-start gap-3 border",
+                    budgetAdvice.type === 'good' ? 'bg-emerald-500/10 border-emerald-500/20' :
+                        budgetAdvice.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20' :
+                            'bg-red-500/10 border-red-500/20'
+                )}>
+                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                        <Lightbulb className={cn("w-5 h-5",
+                            budgetAdvice.type === 'good' ? 'text-emerald-400' :
+                                budgetAdvice.type === 'warning' ? 'text-amber-400' : 'text-red-400'
+                        )} />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-white/50 uppercase tracking-wider mb-1">AI Budget Tip</p>
+                        <p className="text-sm text-white/90">{budgetAdvice.emoji} {budgetAdvice.message}</p>
+                    </div>
+                </div>
+            </motion.div>
+
             {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="grid grid-cols-4 gap-2 mb-5">
                 <GlassCard className="p-3 text-center">
-                    <TrendingUp className="w-5 h-5 mx-auto text-emerald-400 mb-2" />
-                    <p className="text-lg font-bold">${expenses.length > 0 ? (totalSpent / expenses.length).toFixed(0) : 0}</p>
-                    <p className="text-[10px] text-secondary">Avg/Expense</p>
+                    <DollarSign className="w-4 h-4 mx-auto text-action mb-1" />
+                    <p className="text-sm font-bold">{expenses.length}</p>
+                    <p className="text-[9px] text-secondary">Items</p>
                 </GlassCard>
                 <GlassCard className="p-3 text-center">
-                    <Leaf className="w-5 h-5 mx-auto text-teal-400 mb-2" />
-                    <p className="text-lg font-bold">{totalCarbon.toFixed(1)}kg</p>
-                    <p className="text-[10px] text-secondary">CO2 Total</p>
+                    <TrendingUp className="w-4 h-4 mx-auto text-emerald-400 mb-1" />
+                    <p className="text-sm font-bold">${expenses.length > 0 ? (totalSpent / expenses.length).toFixed(0) : 0}</p>
+                    <p className="text-[9px] text-secondary">Avg</p>
                 </GlassCard>
                 <GlassCard className="p-3 text-center">
-                    <Target className="w-5 h-5 mx-auto text-purple-400 mb-2" />
-                    <p className="text-lg font-bold">{ecoChoices}</p>
-                    <p className="text-[10px] text-secondary">Eco Choices</p>
+                    <Leaf className="w-4 h-4 mx-auto text-teal-400 mb-1" />
+                    <p className="text-sm font-bold">{totalCarbon.toFixed(1)}kg</p>
+                    <p className="text-[9px] text-secondary">CO2</p>
+                </GlassCard>
+                <GlassCard className="p-3 text-center">
+                    <Target className="w-4 h-4 mx-auto text-purple-400 mb-1" />
+                    <p className="text-sm font-bold">{ecoChoices}</p>
+                    <p className="text-[9px] text-secondary">Eco</p>
                 </GlassCard>
             </div>
 
@@ -154,6 +254,7 @@ export function WalletView() {
             <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
                 {[
                     { id: 'expenses', label: 'Expenses', icon: DollarSign },
+                    { id: 'insights', label: 'Insights', icon: PieChart },
                     { id: 'eco', label: 'Eco Impact', icon: Leaf },
                     { id: 'journal', label: 'Journal', icon: Book },
                 ].map(tab => (
@@ -183,7 +284,7 @@ export function WalletView() {
                         exit={{ opacity: 0, y: -10 }}
                         className="space-y-3"
                     >
-                        <button className="w-full" onClick={handleAddExpense}>
+                        <button className="w-full" onClick={() => setShowAddModal(true)}>
                             <GlassCard className="p-4 flex items-center justify-center gap-2 border-dashed border-2 border-slate-700 hover:border-action transition-colors">
                                 <Plus className="w-5 h-5 text-action" />
                                 <span className="text-action font-medium">Add Expense</span>
@@ -205,6 +306,20 @@ export function WalletView() {
                                 <ExpenseCard key={expense.id} expense={expense} delay={i * 0.05} />
                             ))
                         )}
+                    </motion.div>
+                )}
+
+                {activeTab === 'insights' && (
+                    <motion.div
+                        key="insights"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="space-y-4"
+                    >
+                        <SpendingChart categories={categoryBreakdown} totalSpent={totalSpent} />
+                        <DailyTrend data={dailySpending} max={dailyMax} />
+                        <TopExpenses expenses={expenses} />
                     </motion.div>
                 )}
 
@@ -234,12 +349,251 @@ export function WalletView() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Add Expense Modal */}
+            <AnimatePresence>
+                {showAddModal && (
+                    <AddExpenseModal onClose={() => setShowAddModal(false)} onAdd={handleAddExpense} />
+                )}
+            </AnimatePresence>
         </div>
     );
 }
 
+// ============================
+// ADD EXPENSE MODAL
+// ============================
+function AddExpenseModal({ onClose, onAdd }: { onClose: () => void; onAdd: (category: string, name: string, amount: number, split?: number) => void }) {
+    const [category, setCategory] = useState('Food');
+    const [name, setName] = useState('');
+    const [amount, setAmount] = useState('');
+    const [splitWith, setSplitWith] = useState(1);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+            <motion.div
+                initial={{ y: 300 }}
+                animate={{ y: 0 }}
+                exit={{ y: 300 }}
+                className="w-full max-w-lg bg-slate-900 rounded-t-3xl p-6 space-y-5"
+            >
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xl font-bold">Add Expense</h3>
+                    <button onClick={onClose} className="text-secondary hover:text-white">✕</button>
+                </div>
+
+                {/* Category Pills */}
+                <div>
+                    <p className="text-xs text-secondary mb-2 uppercase tracking-wider">Category</p>
+                    <div className="flex flex-wrap gap-2">
+                        {Object.keys(CATEGORY_ICONS).map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setCategory(cat)}
+                                className={cn(
+                                    "px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2",
+                                    category === cat ? "bg-action text-white" : "bg-surface/50 text-secondary hover:text-white"
+                                )}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Name */}
+                <div>
+                    <p className="text-xs text-secondary mb-2 uppercase tracking-wider">Name</p>
+                    <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="e.g. Lunch at market"
+                        className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-action text-white"
+                    />
+                </div>
+
+                {/* Amount */}
+                <div>
+                    <p className="text-xs text-secondary mb-2 uppercase tracking-wider">Amount ($)</p>
+                    <input
+                        type="number"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-action text-white text-2xl font-bold"
+                    />
+                </div>
+
+                {/* Split */}
+                <div>
+                    <p className="text-xs text-secondary mb-2 uppercase tracking-wider">Split with</p>
+                    <div className="flex gap-2">
+                        {[1, 2, 3, 4].map(n => (
+                            <button
+                                key={n}
+                                onClick={() => setSplitWith(n)}
+                                className={cn(
+                                    "flex-1 py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-1",
+                                    splitWith === n ? "bg-action text-white" : "bg-surface/50 text-secondary"
+                                )}
+                            >
+                                <Users className="w-3.5 h-3.5" />
+                                {n === 1 ? 'Just me' : `÷${n}`}
+                            </button>
+                        ))}
+                    </div>
+                    {splitWith > 1 && amount && (
+                        <p className="text-xs text-action mt-2">Your share: ${(parseFloat(amount) / splitWith).toFixed(2)}</p>
+                    )}
+                </div>
+
+                <button
+                    onClick={() => {
+                        if (name && amount) onAdd(category, name, parseFloat(amount), splitWith);
+                    }}
+                    disabled={!name || !amount}
+                    className="w-full py-4 bg-gradient-to-r from-action to-purple-500 rounded-xl text-white font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Add ${amount ? (parseFloat(amount) / splitWith).toFixed(2) : '0.00'}
+                </button>
+            </motion.div>
+        </motion.div>
+    );
+}
+
+// ============================
+// SPENDING CHART (Visual Pie)
+// ============================
+function SpendingChart({ categories, totalSpent: _totalSpent }: { categories: { category: string; amount: number; percent: number }[]; totalSpent: number }) {
+    return (
+        <GlassCard className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+                <PieChart className="w-5 h-5 text-action" />
+                <h3 className="font-bold">Spending Breakdown</h3>
+            </div>
+
+            {categories.length === 0 ? (
+                <p className="text-sm text-secondary text-center py-4">No expenses to analyze</p>
+            ) : (
+                <div className="space-y-3">
+                    {categories.map(({ category, amount, percent }) => {
+                        const Icon = CATEGORY_ICONS[category] || DollarSign;
+                        const gradient = CATEGORY_COLORS[category] || 'from-gray-500 to-gray-600';
+                        return (
+                            <div key={category}>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                                            <Icon className="w-4 h-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <span className="text-sm font-medium">{category}</span>
+                                            <p className="text-[10px] text-secondary">{percent.toFixed(0)}% of total</p>
+                                        </div>
+                                    </div>
+                                    <span className="font-bold">${amount.toFixed(0)}</span>
+                                </div>
+                                <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${percent}%` }}
+                                        transition={{ duration: 0.8 }}
+                                        className={`h-full bg-gradient-to-r ${gradient} rounded-full`}
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </GlassCard>
+    );
+}
+
+// ============================
+// DAILY TREND CHART
+// ============================
+function DailyTrend({ data, max }: { data: { date: string; amount: number }[]; max: number }) {
+    return (
+        <GlassCard className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-5 h-5 text-purple-400" />
+                <h3 className="font-bold">Daily Spending</h3>
+            </div>
+
+            {data.length === 0 ? (
+                <p className="text-sm text-secondary text-center py-4">No daily data yet</p>
+            ) : (
+                <div className="flex items-end gap-2 h-32">
+                    {data.map((d, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                            <span className="text-[10px] text-secondary font-bold">${d.amount.toFixed(0)}</span>
+                            <motion.div
+                                initial={{ height: 0 }}
+                                animate={{ height: `${(d.amount / max) * 100}%` }}
+                                transition={{ delay: i * 0.1, duration: 0.5 }}
+                                className="w-full bg-gradient-to-t from-action to-purple-500 rounded-t-lg min-h-[4px]"
+                            />
+                            <span className="text-[9px] text-secondary truncate max-w-full">{d.date.split('-').pop()}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </GlassCard>
+    );
+}
+
+// ============================
+// TOP EXPENSES
+// ============================
+function TopExpenses({ expenses }: { expenses: Expense[] }) {
+    const top = [...expenses].sort((a, b) => b.amount - a.amount).slice(0, 5);
+
+    return (
+        <GlassCard className="p-5">
+            <h3 className="font-bold mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-amber-400" />
+                Top Expenses
+            </h3>
+            {top.length === 0 ? (
+                <p className="text-sm text-secondary text-center py-4">No expenses yet</p>
+            ) : (
+                <div className="space-y-3">
+                    {top.map((e, i) => {
+                        const Icon = CATEGORY_ICONS[e.category] || DollarSign;
+                        return (
+                            <div key={e.id} className="flex items-center gap-3">
+                                <span className="text-lg font-bold text-secondary w-6">#{i + 1}</span>
+                                <div className="w-9 h-9 rounded-lg bg-surface/80 flex items-center justify-center">
+                                    <Icon className="w-4 h-4 text-action" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium text-sm">{e.name}</p>
+                                    <p className="text-[10px] text-secondary">{e.category}</p>
+                                </div>
+                                <span className="font-bold">${e.amount.toFixed(0)}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </GlassCard>
+    );
+}
+
+// ============================
+// EXPENSE CARD
+// ============================
 function ExpenseCard({ expense, delay }: { expense: Expense; delay: number }) {
     const Icon = CATEGORY_ICONS[expense.category] || DollarSign;
+    const gradient = CATEGORY_COLORS[expense.category] || 'from-gray-500 to-gray-600';
 
     return (
         <motion.div
@@ -250,10 +604,10 @@ function ExpenseCard({ expense, delay }: { expense: Expense; delay: number }) {
             <GlassCard className="p-4">
                 <div className="flex items-center gap-4">
                     <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center",
-                        expense.isEcoOption ? "bg-emerald-500/10" : "bg-action/10"
+                        "w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br",
+                        gradient
                     )}>
-                        <Icon className={cn("w-6 h-6", expense.isEcoOption ? "text-emerald-400" : "text-action")} />
+                        <Icon className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -265,7 +619,7 @@ function ExpenseCard({ expense, delay }: { expense: Expense; delay: number }) {
                         <p className="text-xs text-secondary">{expense.category} • {expense.date}</p>
                     </div>
                     <div className="text-right">
-                        <p className="font-bold">${expense.amount}</p>
+                        <p className="font-bold">${expense.amount.toFixed(2)}</p>
                         {expense.carbonKg && (
                             <p className="text-xs text-teal-400 flex items-center gap-1 justify-end">
                                 <Leaf className="w-3 h-3" /> {expense.carbonKg}kg
@@ -278,8 +632,10 @@ function ExpenseCard({ expense, delay }: { expense: Expense; delay: number }) {
     );
 }
 
+// ============================
+// ECO IMPACT
+// ============================
 function EcoImpactCard({ totalCarbon, ecoChoices: _ecoChoices }: { totalCarbon: number; ecoChoices: number }) {
-    // Compare to average traveler (15kg CO2/day for 5 days = 75kg average)
     const averageCarbon = 45;
     const savedCarbon = averageCarbon - totalCarbon;
     const treesEquivalent = (savedCarbon > 0 ? savedCarbon / 21 : 0).toFixed(1);
@@ -298,7 +654,7 @@ function EcoImpactCard({ totalCarbon, ecoChoices: _ecoChoices }: { totalCarbon: 
                 </div>
                 <div className="w-20 h-20 rounded-full border-4 border-emerald-400 flex items-center justify-center">
                     <div className="text-center">
-                        <p className="text-2xl font-bold text-white">A</p>
+                        <p className="text-2xl font-bold text-white">{totalCarbon < 20 ? 'A+' : totalCarbon < 35 ? 'A' : totalCarbon < 50 ? 'B' : 'C'}</p>
                         <p className="text-[10px] text-emerald-200">Grade</p>
                     </div>
                 </div>
@@ -330,7 +686,7 @@ function CarbonBreakdown({ expenses }: { expenses: Expense[] }) {
     }, {} as Record<string, number>);
 
     const sorted = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
-    const maxCarbon = Math.max(...Object.values(byCategory));
+    const maxCarbon = Math.max(...Object.values(byCategory), 1);
 
     return (
         <GlassCard className="p-5">
@@ -367,6 +723,7 @@ function EcoAlternatives() {
     const alternatives = [
         { current: 'Taxi to Airport', eco: 'Train + Metro', saveCO2: '3.2kg', saveUSD: 20 },
         { current: 'Steak Dinner', eco: 'Local Vegetarian', saveCO2: '2.5kg', saveUSD: 15 },
+        { current: 'Private Car Tour', eco: 'Walking Tour', saveCO2: '4.1kg', saveUSD: 35 },
     ];
 
     return (

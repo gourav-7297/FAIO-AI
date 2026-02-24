@@ -2,7 +2,7 @@ import { Home, Compass, Map as MapIcon, Wallet, ShieldAlert, Users2 } from 'luci
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
 
-type Tab = 'home' | 'explore' | 'community' | 'planner' | 'wallet' | 'safety' | 'profile' | 'guides' | 'cabs';
+type Tab = 'home' | 'explore' | 'community' | 'planner' | 'wallet' | 'safety' | 'profile' | 'guides' | 'cabs' | 'hotels' | 'flights' | 'trains' | 'buses' | 'visa' | 'packing' | 'documents';
 
 interface BottomNavProps {
     activeTab: Tab;

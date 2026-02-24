@@ -1,358 +1,411 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Search, MapPin, Star, Languages, BadgeCheck, X,
-    User, ChevronRight, Calendar, Loader2
+    Users, Star, Clock,
+    Shield, Heart,
+    Search, Award,
+    Languages, Compass,
+    CheckCircle, Loader2
 } from 'lucide-react';
+import { cn } from '../../lib/utils';
 import { GlassCard } from '../../components/ui/GlassCard';
-import { guidesService } from '../../services/guidesService';
-import type { Guide as DbGuide } from '../../types/database.types';
+import { useAIAgents } from '../../context/AIAgentContext';
 
-// ============================
-// TYPES
-// ============================
+const SPECIALTIES = [
+    { id: 'all', label: 'All Guides' },
+    { id: 'culture', label: 'Culture & History' },
+    { id: 'food', label: 'Food & Cuisine' },
+    { id: 'adventure', label: 'Adventure' },
+    { id: 'photography', label: 'Photography' },
+    { id: 'nature', label: 'Nature & Wildlife' },
+    { id: 'nightlife', label: 'Nightlife' },
+];
 
-interface Guide {
+interface GuideExtended {
     id: string;
     name: string;
     avatar: string;
-    location: string;
+    specialty: string[];
     rating: number;
-    reviewCount: number;
-    verified: boolean;
-    hourlyRate: number;
+    reviews: number;
+    price: number;
+    currency: string;
     languages: string[];
-    specialties: string[];
     bio: string;
-    image: string;
+    yearsExp: number;
+    toursCompleted: number;
+    isVerified: boolean;
+    isAvailableToday: boolean;
+    isFavorite: boolean;
+    responseTime: string;
 }
 
-// Map Supabase Guide → component Guide shape
-function mapDbGuide(db: DbGuide): Guide {
-    return {
-        id: db.id,
-        name: db.name,
-        avatar: db.avatar_url || `https://i.pravatar.cc/150?u=${db.id}`,
-        location: db.destination,
-        rating: db.rating ?? 5.0,
-        reviewCount: 0, // not in DB schema yet
-        verified: db.is_verified,
-        hourlyRate: db.price_per_day ? Math.round(db.price_per_day / 8) : 30,
-        languages: db.languages || [],
-        specialties: db.specialties || [],
-        bio: db.bio || '',
-        image: db.avatar_url || `https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&q=80&w=800`,
-    };
-}
-
-// Fallback mock data when Supabase is unavailable
-const FALLBACK_GUIDES: Guide[] = [
+const MOCK_GUIDES: GuideExtended[] = [
     {
-        id: '1',
-        name: 'Elena Rossi',
-        avatar: 'https://i.pravatar.cc/150?u=elena',
-        location: 'Venice, Italy',
-        rating: 4.9,
-        reviewCount: 124,
-        verified: true,
-        hourlyRate: 45,
-        languages: ['English', 'Italian', 'French'],
-        specialties: ['History', 'Art', 'Hidden Gems'],
-        bio: 'Born and raised in Venice. I specialize in showing you the authentic side of the city away from the tourist crowds. Licensed art historian.',
-        image: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&q=80&w=800'
+        id: '1', name: 'Yuki Tanaka', avatar: '🇯🇵', specialty: ['culture', 'food'],
+        rating: 4.9, reviews: 234, price: 80, currency: 'USD', languages: ['English', 'Japanese'],
+        bio: 'Born and raised in Kyoto. I show travelers the Japan that guidebooks miss — hidden temples, secret ramen spots, and backstreet izakayas.',
+        yearsExp: 8, toursCompleted: 450, isVerified: true, isAvailableToday: true, isFavorite: false, responseTime: '< 1h'
     },
     {
-        id: '2',
-        name: 'Kenji Tanaka',
-        avatar: 'https://i.pravatar.cc/150?u=kenji',
-        location: 'Kyoto, Japan',
-        rating: 5.0,
-        reviewCount: 89,
-        verified: true,
-        hourlyRate: 55,
-        languages: ['English', 'Japanese'],
-        specialties: ['Photography', 'Foodie', 'Culture'],
-        bio: 'Professional photographer and food lover. Let me take you to the best photo spots and hidden izakayas that only locals know about.',
-        image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&q=80&w=800'
+        id: '2', name: 'Priya Sharma', avatar: '🇮🇳', specialty: ['culture', 'photography'],
+        rating: 4.8, reviews: 189, price: 45, currency: 'USD', languages: ['English', 'Hindi', 'French'],
+        bio: 'Photographer & cultural storyteller. I\'ll take you through ancient streets and help you capture stunning photos. Featured in Lonely Planet.',
+        yearsExp: 6, toursCompleted: 320, isVerified: true, isAvailableToday: true, isFavorite: false, responseTime: '< 2h'
+    },
+    {
+        id: '3', name: 'Marco Silva', avatar: '🇧🇷', specialty: ['adventure', 'nature'],
+        rating: 4.7, reviews: 156, price: 65, currency: 'USD', languages: ['English', 'Portuguese', 'Spanish'],
+        bio: 'Adventure guide specializing in rainforest treks and off-the-beaten-path experiences. Certified wilderness first responder.',
+        yearsExp: 10, toursCompleted: 580, isVerified: true, isAvailableToday: false, isFavorite: false, responseTime: '< 3h'
+    },
+    {
+        id: '4', name: 'Aisha Ben Ali', avatar: '🇲🇦', specialty: ['food', 'culture'],
+        rating: 4.9, reviews: 267, price: 55, currency: 'USD', languages: ['English', 'Arabic', 'French'],
+        bio: 'Marrakech native & chef. My food tours are a feast for all senses — souks, spice markets, rooftop cooking classes, and hidden riads.',
+        yearsExp: 5, toursCompleted: 290, isVerified: true, isAvailableToday: true, isFavorite: false, responseTime: '< 1h'
+    },
+    {
+        id: '5', name: 'Liam O\'Brien', avatar: '🇮🇪', specialty: ['nightlife', 'culture'],
+        rating: 4.6, reviews: 98, price: 50, currency: 'USD', languages: ['English', 'Irish'],
+        bio: 'Dublin pub crawler and storyteller. I know every hidden speakeasy and live music spot. Part history tour, part pub crawl.',
+        yearsExp: 4, toursCompleted: 180, isVerified: false, isAvailableToday: false, isFavorite: false, responseTime: '< 4h'
     },
 ];
 
-// ============================
-// COMPONENTS
-// ============================
-
 export function GuidesView() {
+    const { tripData } = useAIAgents();
+    const [activeSpecialty, setActiveSpecialty] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
-    const [guides, setGuides] = useState<Guide[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [selectedGuide, setSelectedGuide] = useState<GuideExtended | null>(null);
+    const [favorites, setFavorites] = useState<Set<string>>(new Set());
+    const [sortBy, setSortBy] = useState<'rating' | 'price' | 'reviews'>('rating');
 
-    useEffect(() => {
-        async function loadGuides() {
-            setIsLoading(true);
-            const { data, error } = await guidesService.getGuides();
-            if (error || data.length === 0) {
-                // Use fallback when DB is empty or unavailable
-                setGuides(FALLBACK_GUIDES);
-            } else {
-                setGuides(data.map(mapDbGuide));
+    const toggleFavorite = (id: string) => {
+        setFavorites(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+
+    const filteredGuides = MOCK_GUIDES
+        .filter(g => {
+            if (activeSpecialty !== 'all' && !g.specialty.includes(activeSpecialty)) return false;
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                return g.name.toLowerCase().includes(q) || g.bio.toLowerCase().includes(q) || g.languages.some(l => l.toLowerCase().includes(q));
             }
-            setIsLoading(false);
-        }
-        loadGuides();
-    }, []);
-
-    const filteredGuides = guides.filter(guide =>
-        guide.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        guide.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        guide.specialties.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+            return true;
+        })
+        .sort((a, b) => {
+            if (sortBy === 'rating') return b.rating - a.rating;
+            if (sortBy === 'price') return a.price - b.price;
+            return b.reviews - a.reviews;
+        });
 
     return (
-        <div className="min-h-screen bg-background pb-32">
-            {/* Header */}
-            <div className="pt-12 px-5 pb-6">
+        <div className="p-5 pt-12 min-h-screen pb-32">
+            <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
                 <div className="flex items-center gap-2 mb-1">
-                    <BadgeCheck className="w-4 h-4 text-action" />
-                    <span className="text-xs font-bold text-action tracking-wider uppercase font-heading">
-                        Verified Experts
-                    </span>
+                    <Compass className="w-5 h-5 text-action" />
+                    <span className="text-xs text-action font-bold uppercase tracking-wider">Trusted Locals</span>
                 </div>
-                <h1 className="text-3xl font-bold text-white font-heading mb-2">
-                    Trusted Local Guides
-                </h1>
-                <p className="text-secondary text-sm mb-6">
-                    Connect with certified locals for authentic experiences.
+                <h1 className="text-3xl font-bold">Local Guides</h1>
+                <p className="text-secondary text-sm">
+                    {tripData ? `Expert guides for ${tripData.destination}` : 'Handpicked local experts'}
                 </p>
+            </motion.header>
 
-                {/* Search */}
-                <GlassCard className="p-3 flex items-center gap-3">
-                    <Search className="w-5 h-5 text-secondary" />
+            {/* Search + Sort */}
+            <div className="flex gap-2 mb-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
                     <input
                         type="text"
-                        placeholder="Search by city, name, or interest..."
-                        className="bg-transparent text-white placeholder:text-secondary/50 flex-1 outline-none font-sans"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search by name, language..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-surface/80 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-action placeholder:text-slate-500"
                     />
+                </div>
+                <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="px-3 py-2.5 bg-surface/80 border border-slate-700 rounded-xl text-sm text-secondary focus:outline-none appearance-none cursor-pointer"
+                >
+                    <option value="rating">⭐ Rating</option>
+                    <option value="price">💰 Price</option>
+                    <option value="reviews">💬 Reviews</option>
+                </select>
+            </div>
+
+            {/* Specialty Filters */}
+            <div className="flex gap-2 mb-5 overflow-x-auto no-scrollbar pb-1">
+                {SPECIALTIES.map(s => (
+                    <button
+                        key={s.id}
+                        onClick={() => setActiveSpecialty(s.id)}
+                        className={cn(
+                            "px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
+                            activeSpecialty === s.id ? "bg-action text-white" : "bg-surface/50 text-secondary hover:text-white"
+                        )}
+                    >
+                        {s.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-3 gap-2 mb-5">
+                <GlassCard className="p-2.5 text-center">
+                    <Users className="w-4 h-4 mx-auto text-action mb-1" />
+                    <p className="text-sm font-bold">{MOCK_GUIDES.length}</p>
+                    <p className="text-[9px] text-secondary">Guides</p>
+                </GlassCard>
+                <GlassCard className="p-2.5 text-center">
+                    <Shield className="w-4 h-4 mx-auto text-emerald-400 mb-1" />
+                    <p className="text-sm font-bold">{MOCK_GUIDES.filter(g => g.isVerified).length}</p>
+                    <p className="text-[9px] text-secondary">Verified</p>
+                </GlassCard>
+                <GlassCard className="p-2.5 text-center">
+                    <CheckCircle className="w-4 h-4 mx-auto text-amber-400 mb-1" />
+                    <p className="text-sm font-bold">{MOCK_GUIDES.filter(g => g.isAvailableToday).length}</p>
+                    <p className="text-[9px] text-secondary">Available</p>
                 </GlassCard>
             </div>
 
-            {/* Loading State */}
-            {isLoading && (
-                <div className="flex flex-col items-center justify-center py-20">
-                    <Loader2 className="w-8 h-8 text-action animate-spin mb-3" />
-                    <p className="text-secondary text-sm">Loading guides...</p>
-                </div>
-            )}
-
-            {/* Guides Grid */}
-            {!isLoading && (
-                <div className="px-5 space-y-4">
-                    {filteredGuides.map((guide, index) => (
-                        <motion.div
+            {/* Guide Cards */}
+            <div className="space-y-3">
+                {filteredGuides.length === 0 ? (
+                    <GlassCard className="p-8 text-center">
+                        <Users className="w-10 h-10 text-secondary/30 mx-auto mb-3" />
+                        <p className="text-secondary text-sm">No guides match your filters</p>
+                    </GlassCard>
+                ) : (
+                    filteredGuides.map((guide, i) => (
+                        <GuideCard
                             key={guide.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            onClick={() => setSelectedGuide(guide)}
-                        >
-                            <GuideCard guide={guide} />
-                        </motion.div>
-                    ))}
-
-                    {filteredGuides.length === 0 && (
-                        <div className="text-center py-10">
-                            <User className="w-12 h-12 text-secondary/30 mx-auto mb-3" />
-                            <p className="text-secondary">No guides found matching your search.</p>
-                        </div>
-                    )}
-                </div>
-            )}
+                            guide={guide}
+                            delay={i * 0.05}
+                            isFavorite={favorites.has(guide.id)}
+                            onFavorite={() => toggleFavorite(guide.id)}
+                            onBook={() => setSelectedGuide(guide)}
+                        />
+                    ))
+                )}
+            </div>
 
             {/* Booking Modal */}
             <AnimatePresence>
                 {selectedGuide && (
-                    <BookingModal
-                        guide={selectedGuide}
-                        onClose={() => setSelectedGuide(null)}
-                    />
+                    <BookingModal guide={selectedGuide} onClose={() => setSelectedGuide(null)} />
                 )}
             </AnimatePresence>
         </div>
     );
 }
 
-function GuideCard({ guide }: { guide: Guide }) {
+// ============================
+// GUIDE CARD
+// ============================
+function GuideCard({ guide, delay, isFavorite, onFavorite, onBook }: {
+    guide: GuideExtended; delay: number; isFavorite: boolean; onFavorite: () => void; onBook: () => void
+}) {
     return (
-        <GlassCard className="p-0 overflow-hidden cursor-pointer group hover:bg-white/5 transition-colors">
-            <div className="flex">
-                {/* Image Section */}
-                <div className="w-32 relative">
-                    <img
-                        src={guide.image}
-                        alt={guide.name}
-                        className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
-                </div>
-
-                {/* Info Section */}
-                <div className="flex-1 p-4">
-                    <div className="flex justify-between items-start mb-2">
-                        <div>
-                            <div className="flex items-center gap-1">
-                                <h3 className="font-bold text-white font-heading">{guide.name}</h3>
-                                {guide.verified && <BadgeCheck className="w-3 h-3 text-action" />}
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-secondary">
-                                <MapPin className="w-3 h-3" />
-                                {guide.location}
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1 bg-white/10 px-1.5 py-0.5 rounded text-xs font-bold text-white">
-                            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                            {guide.rating}
-                        </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
+            <GlassCard className="p-4">
+                <div className="flex items-start gap-3 mb-3">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-action/20 to-purple-500/20 flex items-center justify-center text-3xl flex-shrink-0">
+                        {guide.avatar}
                     </div>
-
-                    <div className="flex flex-wrap gap-1 mb-3">
-                        {guide.specialties.slice(0, 2).map(tag => (
-                            <span key={tag} className="text-[10px] px-2 py-0.5 bg-surface rounded-full text-secondary">
-                                {tag}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-bold">{guide.name}</h3>
+                            {guide.isVerified && (
+                                <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <span className="flex items-center gap-0.5 text-xs">
+                                <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                                <span className="font-bold">{guide.rating}</span>
                             </span>
-                        ))}
+                            <span className="text-xs text-secondary">({guide.reviews} reviews)</span>
+                            {guide.isAvailableToday && (
+                                <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 text-[9px] font-bold rounded">TODAY</span>
+                            )}
+                        </div>
                     </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                        <span className="text-action font-bold">${guide.hourlyRate}/hr</span>
-                        <ChevronRight className="w-4 h-4 text-secondary group-hover:text-white transition-colors" />
-                    </div>
+                    <button onClick={onFavorite} className="flex-shrink-0 p-1">
+                        <Heart className={cn("w-5 h-5 transition-colors", isFavorite ? "text-red-400 fill-red-400" : "text-secondary")} />
+                    </button>
                 </div>
-            </div>
-        </GlassCard>
+
+                <p className="text-xs text-secondary leading-relaxed line-clamp-2 mb-3">{guide.bio}</p>
+
+                {/* Tags Row */}
+                <div className="flex flex-wrap gap-1 mb-3">
+                    {guide.languages.map((lang, i) => (
+                        <span key={i} className="px-2 py-0.5 bg-action/10 text-action text-[10px] rounded-full flex items-center gap-0.5">
+                            <Languages className="w-2.5 h-2.5" /> {lang}
+                        </span>
+                    ))}
+                    {guide.specialty.map((s, i) => (
+                        <span key={i} className="px-2 py-0.5 bg-surface/80 text-secondary text-[10px] rounded-full capitalize">{s}</span>
+                    ))}
+                </div>
+
+                {/* Stats Row */}
+                <div className="flex items-center gap-4 text-xs text-secondary mb-3">
+                    <span className="flex items-center gap-1"><Award className="w-3 h-3 text-amber-400" /> {guide.yearsExp}y exp</span>
+                    <span className="flex items-center gap-1"><Compass className="w-3 h-3 text-action" /> {guide.toursCompleted} tours</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-emerald-400" /> Reply {guide.responseTime}</span>
+                </div>
+
+                {/* Bottom Row */}
+                <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
+                    <div>
+                        <span className="text-xl font-bold text-white">${guide.price}</span>
+                        <span className="text-xs text-secondary">/hour</span>
+                    </div>
+                    <button
+                        onClick={onBook}
+                        className="px-5 py-2.5 bg-gradient-to-r from-action to-purple-500 text-white rounded-xl text-sm font-bold"
+                    >
+                        Book Now
+                    </button>
+                </div>
+            </GlassCard>
+        </motion.div>
     );
 }
 
-function BookingModal({ guide, onClose }: { guide: Guide; onClose: () => void }) {
-    const [step, setStep] = useState(1);
+// ============================
+// BOOKING MODAL
+// ============================
+function BookingModal({ guide, onClose }: { guide: GuideExtended; onClose: () => void }) {
+    const [date, setDate] = useState('');
+    const [hours, setHours] = useState(2);
+    const [message, setMessage] = useState('');
+    const [isBooking, setIsBooking] = useState(false);
+    const [booked, setBooked] = useState(false);
+
+    const total = guide.price * hours;
+
+    const handleBook = async () => {
+        setIsBooking(true);
+        await new Promise(r => setTimeout(r, 1500));
+        setIsBooking(false);
+        setBooked(true);
+    };
 
     return (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/80 backdrop-blur-sm"
-            onClick={onClose}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
             <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="w-full max-w-sm bg-background/90 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
-                onClick={e => e.stopPropagation()}
+                initial={{ y: 300 }}
+                animate={{ y: 0 }}
+                exit={{ y: 300 }}
+                className="w-full max-w-lg bg-slate-900 rounded-t-3xl p-6 space-y-4 max-h-[85vh] overflow-y-auto"
             >
-                {/* Header Image */}
-                <div className="relative h-48">
-                    <img
-                        src={guide.image}
-                        alt={guide.name}
-                        className="w-full h-full object-cover"
-                    />
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 p-2 bg-black/20 backdrop-blur-md rounded-full text-white hover:bg-black/40 transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                    <div className="absolute -bottom-10 left-6">
-                        <img
-                            src={guide.avatar}
-                            alt={guide.name}
-                            className="w-20 h-20 rounded-full border-4 border-background object-cover"
-                        />
-                    </div>
+                <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold">
+                        {booked ? '🎉 Booking Confirmed!' : `Book ${guide.name}`}
+                    </h3>
+                    <button onClick={onClose} className="text-secondary hover:text-white">✕</button>
                 </div>
 
-                <div className="pt-12 px-6 pb-6">
-                    <div className="flex justify-between items-start mb-4">
+                {booked ? (
+                    <div className="text-center py-6">
+                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                            <CheckCircle className="w-10 h-10 text-emerald-400" />
+                        </div>
+                        <p className="text-lg font-bold mb-2">You're all set!</p>
+                        <p className="text-sm text-secondary mb-4">{guide.name} will confirm within {guide.responseTime}</p>
+                        <button onClick={onClose} className="px-6 py-3 bg-action rounded-xl text-white font-bold">Done</button>
+                    </div>
+                ) : (
+                    <>
+                        {/* Guide Summary */}
+                        <GlassCard className="p-3 flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-action/20 to-purple-500/20 flex items-center justify-center text-2xl">
+                                {guide.avatar}
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-bold">{guide.name}</p>
+                                <p className="text-xs text-secondary flex items-center gap-1">
+                                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" /> {guide.rating} • ${guide.price}/hr
+                                </p>
+                            </div>
+                        </GlassCard>
+
+                        {/* Date */}
                         <div>
-                            <div className="flex items-center gap-1.5">
-                                <h2 className="text-xl font-bold text-white font-heading">{guide.name}</h2>
-                                {guide.verified && <BadgeCheck className="w-4 h-4 text-action" />}
-                            </div>
-                            <p className="text-secondary text-sm flex items-center gap-1">
-                                <MapPin className="w-3 h-3" /> {guide.location}
-                            </p>
+                            <p className="text-xs text-secondary mb-2 uppercase tracking-wider">Date</p>
+                            <input
+                                type="date"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-action text-white"
+                            />
                         </div>
-                        <div className="text-right">
-                            <span className="block text-2xl font-bold text-action font-heading">${guide.hourlyRate}</span>
-                            <span className="text-xs text-secondary">per hour</span>
+
+                        {/* Duration */}
+                        <div>
+                            <p className="text-xs text-secondary mb-2 uppercase tracking-wider">Duration (hours)</p>
+                            <div className="flex gap-2">
+                                {[1, 2, 3, 4, 6, 8].map(h => (
+                                    <button
+                                        key={h}
+                                        onClick={() => setHours(h)}
+                                        className={cn(
+                                            "flex-1 py-2 rounded-xl text-sm font-medium transition-all",
+                                            hours === h ? "bg-action text-white" : "bg-surface/50 text-secondary"
+                                        )}
+                                    >
+                                        {h}h
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
 
-                    {step === 1 ? (
-                        <>
-                            <div className="flex items-center gap-4 mb-6 text-sm text-secondary">
-                                <span className="flex items-center gap-1">
-                                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                                    {guide.rating} ({guide.reviewCount} reviews)
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <Languages className="w-4 h-4" />
-                                    {guide.languages.join(', ')}
-                                </span>
-                            </div>
-
-                            <div className="mb-6">
-                                <h3 className="text-sm font-bold text-white mb-2">About</h3>
-                                <p className="text-sm text-secondary leading-relaxed">{guide.bio}</p>
-                            </div>
-
-                            <div className="mb-8">
-                                <h3 className="text-sm font-bold text-white mb-2">Specialties</h3>
-                                <div className="flex flex-wrap gap-2">
-                                    {guide.specialties.map(tag => (
-                                        <span key={tag} className="px-3 py-1 bg-surface rounded-full text-xs text-white">
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => onClose()}
-                                    className="flex-1 py-3 bg-surface rounded-xl font-bold text-white border border-white/5 hover:bg-surface/80"
-                                >
-                                    Message
-                                </button>
-                                <button
-                                    onClick={() => setStep(2)}
-                                    className="flex-[2] py-3 bg-action rounded-xl font-bold text-white shadow-lg shadow-action/20 hover:scale-[1.02] transition-transform"
-                                >
-                                    Check Availability
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="text-center py-8">
-                            <div className="w-16 h-16 bg-action/20 rounded-full flex items-center justify-center mx-auto mb-4 text-action">
-                                <Calendar className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Request Sent!</h3>
-                            <p className="text-secondary text-sm mb-6">
-                                {guide.name} typically responds within 1 hour. We've sent you a confirmation email.
-                            </p>
-                            <button
-                                onClick={onClose}
-                                className="w-full py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-100 transition-colors"
-                            >
-                                Done
-                            </button>
+                        {/* Message */}
+                        <div>
+                            <p className="text-xs text-secondary mb-2 uppercase tracking-wider">Message (optional)</p>
+                            <textarea
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                placeholder="Tell the guide what you'd like to see..."
+                                rows={2}
+                                className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-action text-white text-sm resize-none"
+                            />
                         </div>
-                    )}
-                </div>
+
+                        {/* Total */}
+                        <div className="flex items-center justify-between p-4 bg-surface/50 rounded-xl">
+                            <span className="text-secondary">Total</span>
+                            <span className="text-2xl font-bold">${total}</span>
+                        </div>
+
+                        <button
+                            onClick={handleBook}
+                            disabled={!date || isBooking}
+                            className="w-full py-4 bg-gradient-to-r from-action to-purple-500 rounded-xl text-white font-bold text-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {isBooking ? (
+                                <><Loader2 className="w-5 h-5 animate-spin" /> Booking...</>
+                            ) : (
+                                `Confirm Booking — $${total}`
+                            )}
+                        </button>
+                    </>
+                )}
             </motion.div>
         </motion.div>
     );
