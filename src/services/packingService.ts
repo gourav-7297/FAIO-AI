@@ -1,7 +1,8 @@
 /**
  * Smart Packing List Service
- * Weather-aware, activity-based packing suggestions with local storage persistence.
+ * Supabase-backed with localStorage fallback for guests.
  */
+import { dbGetPackingLists, dbUpsertPackingList, dbDeletePackingList, isDbAvailable } from './database';
 
 export interface PackingItem {
     id: string;
@@ -124,19 +125,65 @@ function makeId(): string {
     return `packing-${Date.now()}-${idCounter++}`;
 }
 
+// ─── localStorage helpers (fallback) ────────────
+function loadLocal(): PackingList[] {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+}
+function saveLocal(lists: PackingList[]) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(lists));
+}
+
+// ─── Async Supabase-first API ───────────────────
+export async function loadListsAsync(): Promise<PackingList[]> {
+    if (isDbAvailable()) {
+        try {
+            const dbLists = await dbGetPackingLists();
+            if (dbLists.length > 0 || loadLocal().length === 0) {
+                return dbLists.map(l => ({
+                    id: l.id, name: l.name, destination: l.destination,
+                    duration: l.duration, weather: l.weather as PackingList['weather'],
+                    activities: l.activities || [], items: l.items as PackingItem[],
+                    createdAt: l.created_at,
+                }));
+            }
+        } catch (e) { console.warn('DB fetch failed, using localStorage', e); }
+    }
+    return loadLocal();
+}
+
+export async function saveListAsync(list: PackingList): Promise<void> {
+    if (isDbAvailable()) {
+        await dbUpsertPackingList({
+            id: list.id, name: list.name, destination: list.destination,
+            duration: list.duration, weather: list.weather,
+            activities: list.activities, items: list.items as any,
+        });
+    }
+    // Always save locally too (offline backup)
+    const lists = loadLocal().filter(l => l.id !== list.id);
+    lists.push(list);
+    saveLocal(lists);
+}
+
+export async function deleteListAsync(listId: string): Promise<PackingList[]> {
+    if (isDbAvailable()) { await dbDeletePackingList(listId); }
+    const lists = loadLocal().filter(l => l.id !== listId);
+    saveLocal(lists);
+    return lists;
+}
+
+// ─── Sync API (backward compat for views) ───────
+export function loadLists(): PackingList[] { return loadLocal(); }
+
 export function generatePackingList(
-    destination: string,
-    duration: number,
-    weather: PackingList['weather'],
-    activities: string[],
+    destination: string, duration: number,
+    weather: PackingList['weather'], activities: string[],
 ): PackingList {
     const allRaw = [
         ...BASE_ESSENTIALS,
         ...(WEATHER_ITEMS[weather] || []),
         ...activities.flatMap(a => ACTIVITY_ITEMS[a] || []),
     ];
-
-    // Deduplicate by name
     const seen = new Set<string>();
     const items: PackingItem[] = [];
     for (const raw of allRaw) {
@@ -147,51 +194,45 @@ export function generatePackingList(
     }
 
     const list: PackingList = {
-        id: `list-${Date.now()}`,
-        name: `${destination} Trip`,
-        destination,
-        duration,
-        weather,
-        activities,
-        items,
+        id: `list-${Date.now()}`, name: `${destination} Trip`,
+        destination, duration, weather, activities, items,
         createdAt: new Date().toISOString(),
     };
 
-    saveLists([...loadLists().filter(l => l.id !== list.id), list]);
+    // Save both locally and to DB
+    const existing = loadLocal().filter(l => l.id !== list.id);
+    existing.push(list);
+    saveLocal(existing);
+    saveListAsync(list).catch(console.error);
     return list;
 }
 
-export function loadLists(): PackingList[] {
-    try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    } catch { return []; }
-}
-
-export function saveLists(lists: PackingList[]) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(lists));
-}
-
 export function toggleItem(listId: string, itemId: string): PackingList[] {
-    const lists = loadLists().map(l => {
+    const lists = loadLocal().map(l => {
         if (l.id !== listId) return l;
         return { ...l, items: l.items.map(i => i.id === itemId ? { ...i, packed: !i.packed } : i) };
     });
-    saveLists(lists);
+    saveLocal(lists);
+    const updated = lists.find(l => l.id === listId);
+    if (updated) saveListAsync(updated).catch(console.error);
     return lists;
 }
 
 export function addCustomItem(listId: string, name: string, category: PackingCategory): PackingList[] {
-    const lists = loadLists().map(l => {
+    const lists = loadLocal().map(l => {
         if (l.id !== listId) return l;
         return { ...l, items: [...l.items, { id: makeId(), name, category, packed: false, quantity: 1, essential: false }] };
     });
-    saveLists(lists);
+    saveLocal(lists);
+    const updated = lists.find(l => l.id === listId);
+    if (updated) saveListAsync(updated).catch(console.error);
     return lists;
 }
 
 export function deleteList(listId: string): PackingList[] {
-    const lists = loadLists().filter(l => l.id !== listId);
-    saveLists(lists);
+    const lists = loadLocal().filter(l => l.id !== listId);
+    saveLocal(lists);
+    deleteListAsync(listId).catch(console.error);
     return lists;
 }
 

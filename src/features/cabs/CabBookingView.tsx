@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Car, MapPin, Clock, Star, Shield, Navigation,
-    Zap, Users, Leaf, Phone, MessageCircle,
-    ChevronRight, Loader2, CheckCircle, X,
-    Route, Timer, AlertTriangle, Share2
+    Car, Clock, Star, Shield, Navigation,
+    Users, Phone, MessageCircle,
+    Loader2, CheckCircle,
+    AlertTriangle, Share2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { GlassCard } from '../../components/ui/GlassCard';

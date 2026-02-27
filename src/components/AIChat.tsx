@@ -13,12 +13,7 @@ interface AIChatProps {
 // Chat history persistence
 const CHAT_STORAGE_KEY = 'faio_chat_history';
 
-function loadChatHistory(): { role: 'user' | 'assistant'; content: string; agent?: AgentType }[] {
-    try {
-        const raw = localStorage.getItem(CHAT_STORAGE_KEY);
-        return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-}
+
 
 function saveChatHistory(messages: { role: 'user' | 'assistant'; content: string; agent?: AgentType }[]) {
     try {

@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    User, Settings, LogOut, MapPin, Globe, Star,
-    Award, Leaf, Heart, Calendar, Camera,
+    Settings, LogOut, MapPin, Globe,
+    Award, Leaf, Calendar, Camera,
     Shield, Bell, Moon, Palette, Languages,
-    ChevronRight, Edit2, Compass, TrendingUp,
+    ChevronRight, Compass, TrendingUp,
     Bookmark, Plane, CheckCircle
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useAuth } from '../../context/AuthContext';
-import { useAIAgents } from '../../context/AIAgentContext';
 
 interface Achievement {
     id: string;
@@ -33,7 +32,6 @@ const ACHIEVEMENTS: Achievement[] = [
 
 export function ProfileView() {
     const { user, signOut } = useAuth();
-    const { tripData } = useAIAgents();
     const [activeTab, setActiveTab] = useState<'stats' | 'achievements' | 'settings'>('stats');
     const [savedTrips, setSavedTrips] = useState<any[]>([]);
 

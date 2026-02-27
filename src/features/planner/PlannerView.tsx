@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowRight, ArrowLeft, MapPin, Sparkles, Navigation, CloudRain,
@@ -542,7 +542,6 @@ function ItineraryResult({ data, tripData, onReset, onSave, onRegenerate }: Itin
     const showBackups = localBackupMode || isRaining;
 
     const totalActivities = tripData.itinerary?.reduce((sum: number, day: any) => sum + day.activities.length, 0) || 0;
-    const perDayCost = tripData.totalCost / (tripData.itinerary?.length || 1);
 
     const handleCopyTrip = () => {
         const text = generateTripText(data, tripData);
@@ -773,13 +772,12 @@ function ItineraryResult({ data, tripData, onReset, onSave, onRegenerate }: Itin
                                             <div className="relative">
                                                 <div className="absolute left-[18px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-action via-purple-500 to-action/20" />
                                                 <div className="space-y-1">
-                                                    {day.activities.map((activity: any, idx: number) => (
+                                                    {day.activities.map((activity: any) => (
                                                         <ActivityCard
                                                             key={activity.id}
                                                             activity={activity}
                                                             showBackup={showBackups}
                                                             isRaining={isRaining}
-                                                            isLast={idx === day.activities.length - 1}
                                                         />
                                                     ))}
                                                 </div>
@@ -925,7 +923,7 @@ function ItineraryResult({ data, tripData, onReset, onSave, onRegenerate }: Itin
 // ACTIVITY CARD
 // ============================
 
-function ActivityCard({ activity, showBackup, isRaining, isLast }: { activity: any; showBackup: boolean; isRaining: boolean; isLast: boolean }) {
+function ActivityCard({ activity, showBackup, isRaining }: { activity: any; showBackup: boolean; isRaining: boolean }) {
     const isBackupActive = isRaining && activity.isOutdoor && activity.backup;
     const displayTitle = isBackupActive ? activity.backup : activity.title;
 
@@ -1077,7 +1075,7 @@ function SmartPackingModal({ tripData, isRaining }: { tripData: any; isRaining: 
                                     <div key={i}>
                                         <h3 className="text-sm font-bold text-action uppercase tracking-wider mb-3">{section.cat}</h3>
                                         <div className="space-y-2">
-                                            {section.items.map(item => (
+                                            {section.items.map((item: string) => (
                                                 <div key={item} className="flex items-center gap-3">
                                                     <SquareCheck className="w-5 h-5 text-slate-600" />
                                                     <span>{item}</span>
