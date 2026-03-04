@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users, Heart, MessageCircle, Share2, BookOpen,
     MapPin, Calendar, Star, Globe, UserPlus,
-    Camera, Award, Compass,
+    Award, Compass, ImagePlus,
     Plus, Search, Send, Trash2, X,
     Clock, Check, XCircle, Loader2
 } from 'lucide-react';
@@ -639,9 +639,24 @@ function CreatePostModal({ userId, onClose, onCreated }: { userId?: string; onCl
     const [location, setLocation] = useState('');
     const [country, setCountry] = useState('');
     const [tags, setTags] = useState('');
-    const [imageUrl, setImageUrl] = useState('');
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const { showToast } = useToast();
+
+    const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('Image must be under 5MB', 'error');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setPhotoPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    };
 
     const handleSubmit = async () => {
         if (!userId) { showToast('Sign in to post', 'error'); return; }
@@ -653,7 +668,7 @@ function CreatePostModal({ userId, onClose, onCreated }: { userId?: string; onCl
             country: country.trim() || location.trim(),
             caption: caption.trim(),
             tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-            images: imageUrl.trim() ? [imageUrl.trim()] : [],
+            images: photoPreview ? [photoPreview] : [],
         });
         setLoading(false);
 
@@ -664,10 +679,10 @@ function CreatePostModal({ userId, onClose, onCreated }: { userId?: string; onCl
     return (
         <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center"
+            className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-end justify-center"
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
-            <motion.div initial={{ y: 300 }} animate={{ y: 0 }} exit={{ y: 300 }} className="w-full max-w-lg bg-slate-900 rounded-t-3xl p-6 pb-24 space-y-4">
+            <motion.div initial={{ y: 300 }} animate={{ y: 0 }} exit={{ y: 300 }} className="w-full max-w-lg bg-slate-900 rounded-t-3xl p-6 pb-10 space-y-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold">Share Your Story</h3>
                     <button onClick={onClose} className="text-secondary hover:text-white"><X className="w-5 h-5" /></button>
@@ -693,11 +708,34 @@ function CreatePostModal({ userId, onClose, onCreated }: { userId?: string; onCl
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <Camera className="w-4 h-4 text-secondary flex-shrink-0" />
-                    <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
-                        placeholder="Image URL (optional)" className="w-full bg-surface/50 border border-slate-700 rounded-xl px-3 py-2 outline-none focus:border-action text-sm" />
-                </div>
+                {/* Photo Picker */}
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                />
+
+                {photoPreview ? (
+                    <div className="relative rounded-xl overflow-hidden">
+                        <img src={photoPreview} alt="Preview" className="w-full h-40 object-cover rounded-xl" />
+                        <button
+                            onClick={() => { setPhotoPreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                            className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition-colors"
+                        >
+                            <X className="w-4 h-4 text-white" />
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full py-3 border-2 border-dashed border-slate-600 rounded-xl flex items-center justify-center gap-2 text-secondary hover:text-white hover:border-action/50 transition-colors"
+                    >
+                        <ImagePlus className="w-5 h-5" />
+                        <span className="text-sm font-medium">Add Photo</span>
+                    </button>
+                )}
 
                 <input type="text" value={tags} onChange={(e) => setTags(e.target.value)}
                     placeholder="Tags (comma separated: Beach, Culture, Food)"
