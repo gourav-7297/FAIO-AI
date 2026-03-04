@@ -30,8 +30,8 @@ export function useCurrency() {
             }
         }
         return {
-            baseCurrency: 'USD',
-            targetCurrency: 'USD',
+            baseCurrency: 'INR',
+            targetCurrency: 'INR',
             lastUpdated: null,
         };
     });

@@ -15,6 +15,8 @@ export interface Database {
                     id: string;
                     username: string | null;
                     avatar_url: string | null;
+                    bio: string | null;
+                    travel_styles: string[] | null;
                     preferences: Json;
                     created_at: string;
                 };
@@ -22,6 +24,8 @@ export interface Database {
                     id: string;
                     username?: string | null;
                     avatar_url?: string | null;
+                    bio?: string | null;
+                    travel_styles?: string[] | null;
                     preferences?: Json;
                     created_at?: string;
                 };
@@ -29,6 +33,8 @@ export interface Database {
                     id?: string;
                     username?: string | null;
                     avatar_url?: string | null;
+                    bio?: string | null;
+                    travel_styles?: string[] | null;
                     preferences?: Json;
                     created_at?: string;
                 };

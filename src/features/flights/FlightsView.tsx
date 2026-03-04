@@ -103,23 +103,54 @@ export function FlightsView() {
 
     // Search
     const handleSearch = async () => {
-        if (!originAirport || !destAirport) {
-            showToast('Please select both origin and destination', 'error');
-            return;
-        }
+        let finalOrigin = originAirport;
+        let finalDest = destAirport;
 
         setIsSearching(true);
-        setHasSearched(true);
 
         try {
-            const originNav = originAirport.navigation?.relevantFlightParams;
-            const destNav = destAirport.navigation?.relevantFlightParams;
+            // Auto-resolve origin if user typed but didn't click dropdown
+            if (!finalOrigin && originQuery) {
+                let suggestions = originSuggestions;
+                if (suggestions.length === 0) {
+                    suggestions = await searchAirports(originQuery);
+                }
+                if (suggestions.length > 0) {
+                    finalOrigin = suggestions[0];
+                    setOriginAirport(finalOrigin);
+                    setOriginQuery(finalOrigin.presentation.suggestionTitle || finalOrigin.presentation.title);
+                }
+            }
+
+            // Auto-resolve dest if user typed but didn't click dropdown
+            if (!finalDest && destQuery) {
+                let suggestions = destSuggestions;
+                if (suggestions.length === 0) {
+                    suggestions = await searchAirports(destQuery);
+                }
+                if (suggestions.length > 0) {
+                    finalDest = suggestions[0];
+                    setDestAirport(finalDest);
+                    setDestQuery(finalDest.presentation.suggestionTitle || finalDest.presentation.title);
+                }
+            }
+
+            if (!finalOrigin || !finalDest) {
+                showToast('Please select both origin and destination', 'error');
+                setIsSearching(false);
+                return;
+            }
+
+            setHasSearched(true);
+
+            const originNav = finalOrigin.navigation?.relevantFlightParams;
+            const destNav = finalDest.navigation?.relevantFlightParams;
 
             const result = await searchFlights(
-                originNav?.skyId || originAirport.skyId,
-                destNav?.skyId || destAirport.skyId,
-                originNav?.entityId || originAirport.entityId,
-                destNav?.entityId || destAirport.entityId,
+                originNav?.skyId || finalOrigin.skyId,
+                destNav?.skyId || finalDest.skyId,
+                originNav?.entityId || finalOrigin.entityId,
+                destNav?.entityId || finalDest.entityId,
                 departDate,
                 tripType === 'roundTrip' ? returnDate : undefined,
                 passengers
@@ -503,15 +534,24 @@ function FlightCard({ flight, isCheapest }: { flight: FlightResult; isCheapest: 
                 </div>
 
                 {/* Footer tags */}
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
-                    <span className="flex items-center gap-1 text-[10px] text-secondary">
-                        <Luggage className="w-3 h-3" /> Check-in bag included
-                    </span>
-                    {flight.score >= 9 && (
-                        <span className="flex items-center gap-1 text-[10px] text-amber-400 ml-auto">
-                            <Star className="w-3 h-3 fill-amber-400" /> Top rated
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
+                    <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1 text-[10px] text-secondary">
+                            <Luggage className="w-3 h-3" /> Check-in bag included
                         </span>
-                    )}
+                        {flight.score >= 9 && (
+                            <span className="flex items-center gap-1 text-[10px] text-amber-400">
+                                <Star className="w-3 h-3 fill-amber-400" /> Top rated
+                            </span>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={() => alert(`Starting native booking flow for ${airline?.name} flight at ${flight.price.formatted}...`)}
+                        className="px-4 py-1.5 bg-action/20 text-action hover:bg-action hover:text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                        Book Now
+                    </button>
                 </div>
             </GlassCard>
         </motion.div>

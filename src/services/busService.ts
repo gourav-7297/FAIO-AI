@@ -1,6 +1,6 @@
 /**
- * Bus Search Service
- * Inter-city bus search with popular Indian operators.
+ * Bus Search Service — Aggregator Redirect
+ * Shows search form, then redirects to RedBus/MakeMyTrip/AbhiBus for actual booking.
  */
 
 export interface BusCity {
@@ -8,25 +8,18 @@ export interface BusCity {
     state: string;
 }
 
-export interface BusResult {
-    id: string;
-    operator: string;
-    type: 'Sleeper' | 'AC Sleeper' | 'Semi-Sleeper' | 'Seater' | 'Volvo AC' | 'Non-AC Seater';
-    from: string;
-    to: string;
-    departure: string;
-    arrival: string;
-    duration: string;
-    durationMins: number;
-    price: number;
-    rating: number;
-    totalRatings: number;
-    seatsAvailable: number;
-    amenities: string[];
-    isAC: boolean;
-    boardingPoints: string[];
-    droppingPoints: string[];
+export interface BusPartner {
+    name: string;
+    logo: string;
+    color: string;
+    getUrl: (from: string, to: string, date: string) => string;
+    getAppLink: (from: string, to: string) => string;
+    description: string;
 }
+
+// ============================
+// CITIES (for autocomplete)
+// ============================
 
 const CITIES: BusCity[] = [
     { name: 'Mumbai', state: 'Maharashtra' },
@@ -49,18 +42,72 @@ const CITIES: BusCity[] = [
     { name: 'Nashik', state: 'Maharashtra' },
     { name: 'Lucknow', state: 'Uttar Pradesh' },
     { name: 'Kochi', state: 'Kerala' },
+    { name: 'Chandigarh', state: 'Chandigarh' },
+    { name: 'Bhopal', state: 'Madhya Pradesh' },
+    { name: 'Thiruvananthapuram', state: 'Kerala' },
+    { name: 'Varanasi', state: 'Uttar Pradesh' },
+    { name: 'Agra', state: 'Uttar Pradesh' },
+    { name: 'Rishikesh', state: 'Uttarakhand' },
+    { name: 'Manali', state: 'Himachal Pradesh' },
+    { name: 'Shimla', state: 'Himachal Pradesh' },
+    { name: 'Amritsar', state: 'Punjab' },
+    { name: 'Jodhpur', state: 'Rajasthan' },
 ];
 
-const OPERATORS = [
-    'VRL Travels', 'SRS Travels', 'Neeta Travels', 'Paulo Travels',
-    'Orange Tours', 'IntrCity SmartBus', 'Shivneri', 'KSRTC',
-    'APSRTC', 'MSRTC', 'RedBus Connect', 'Humsafar',
-    'Kallada Travels', 'KPN Travels', 'Kaveri Travels', 'Sharma Transports',
+// ============================
+// BOOKING PARTNERS
+// ============================
+
+function formatCityForUrl(city: string): string {
+    return city.toLowerCase().replace(/\s+/g, '-');
+}
+
+export const BUS_PARTNERS: BusPartner[] = [
+    {
+        name: 'RedBus',
+        logo: '🔴',
+        color: '#D32F2F',
+        description: 'India\'s largest bus booking platform. 3500+ operators, 100K+ routes.',
+        getUrl: (from, to, date) =>
+            `https://www.redbus.in/bus-tickets/${formatCityForUrl(from)}-to-${formatCityForUrl(to)}?date=${date}`,
+        getAppLink: (from, to) =>
+            `https://www.redbus.in/bus-tickets/${formatCityForUrl(from)}-to-${formatCityForUrl(to)}`,
+    },
+    {
+        name: 'MakeMyTrip',
+        logo: '🔵',
+        color: '#0770E3',
+        description: 'Book buses along with flights and hotels. Combo deals available.',
+        getUrl: (from, to, date) =>
+            `https://www.makemytrip.com/bus-tickets/${formatCityForUrl(from)}-${formatCityForUrl(to)}-${date}.html`,
+        getAppLink: (from, to) =>
+            `https://www.makemytrip.com/bus-tickets/${formatCityForUrl(from)}-${formatCityForUrl(to)}.html`,
+    },
+    {
+        name: 'AbhiBus',
+        logo: '🟢',
+        color: '#2E7D32',
+        description: 'Trusted bus booking across India. Government & private operators.',
+        getUrl: (from, to, date) =>
+            `https://www.abhibus.com/bus-booking/${formatCityForUrl(from)}-to-${formatCityForUrl(to)}?date=${date}`,
+        getAppLink: (from, to) =>
+            `https://www.abhibus.com/bus-booking/${formatCityForUrl(from)}-to-${formatCityForUrl(to)}`,
+    },
+    {
+        name: 'ixigo',
+        logo: '🟠',
+        color: '#E65100',
+        description: 'Compare bus fares across platforms. Best price guarantee.',
+        getUrl: (from, to, date) =>
+            `https://www.ixigo.com/bus-tickets/${formatCityForUrl(from)}-to-${formatCityForUrl(to)}-${date}`,
+        getAppLink: (from, to) =>
+            `https://www.ixigo.com/bus-tickets/${formatCityForUrl(from)}-to-${formatCityForUrl(to)}`,
+    },
 ];
 
-const BUS_TYPES: BusResult['type'][] = ['Sleeper', 'AC Sleeper', 'Semi-Sleeper', 'Seater', 'Volvo AC', 'Non-AC Seater'];
-
-const AMENITIES_POOL = ['WiFi', 'Charging', 'Blanket', 'Water', 'Snacks', 'TV', 'Reading Light', 'Track My Bus'];
+// ============================
+// SERVICE FUNCTIONS
+// ============================
 
 export function searchCities(query: string): BusCity[] {
     if (query.length < 2) return [];
@@ -70,50 +117,15 @@ export function searchCities(query: string): BusCity[] {
     ).slice(0, 8);
 }
 
-export async function searchBuses(from: string, to: string, _date: string): Promise<BusResult[]> {
-    await new Promise(r => setTimeout(r, 600 + Math.random() * 800));
-
-    const count = 5 + Math.floor(Math.random() * 8);
-    const distance = 200 + Math.floor(Math.random() * 800);
-
-    return Array.from({ length: count }, (_, i) => {
-        const type = BUS_TYPES[i % BUS_TYPES.length];
-        const isAC = type.includes('AC') || type === 'Volvo AC';
-
-        const depHour = 17 + Math.floor(Math.random() * 8); // most buses 5PM-1AM
-        const depMin = Math.floor(Math.random() / 2) * 30; // :00 or :30
-        const durationMins = Math.round(distance / (isAC ? 55 : 45) * 60);
-        const arrHour = (depHour + Math.floor(durationMins / 60)) % 24;
-        const arrMin = (depMin + durationMins % 60) % 60;
-
-        const basePrice = isAC ? 800 : 400;
-        const price = Math.round(basePrice + distance * (isAC ? 1.2 : 0.7) + (type === 'Volvo AC' ? 300 : 0));
-
-        const amenityCount = isAC ? 4 + Math.floor(Math.random() * 4) : 1 + Math.floor(Math.random() * 3);
-        const amenities = [...AMENITIES_POOL].sort(() => Math.random() - 0.5).slice(0, amenityCount);
-
-        return {
-            id: `bus-${i}`,
-            operator: OPERATORS[Math.floor(Math.random() * OPERATORS.length)],
-            type,
-            from,
-            to,
-            departure: `${String(depHour % 24).padStart(2, '0')}:${String(depMin).padStart(2, '0')}`,
-            arrival: `${String(arrHour).padStart(2, '0')}:${String(arrMin).padStart(2, '0')}`,
-            duration: `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`,
-            durationMins,
-            price,
-            rating: +(3.2 + Math.random() * 1.8).toFixed(1),
-            totalRatings: 50 + Math.floor(Math.random() * 2000),
-            seatsAvailable: Math.floor(Math.random() * 30),
-            amenities,
-            isAC,
-            boardingPoints: [`${from} Central`, `${from} Station`, `${from} Highway`],
-            droppingPoints: [`${to} Central`, `${to} Bus Stand`, `${to} Junction`],
-        };
-    }).sort((a, b) => a.price - b.price);
-}
-
 export function getCities(): BusCity[] {
     return CITIES;
+}
+
+export function getPartners(): BusPartner[] {
+    return BUS_PARTNERS;
+}
+
+export function openPartnerBooking(partner: BusPartner, from: string, to: string, date: string): void {
+    const url = partner.getUrl(from, to, date);
+    window.open(url, '_blank', 'noopener,noreferrer');
 }

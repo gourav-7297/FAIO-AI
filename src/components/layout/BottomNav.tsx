@@ -1,4 +1,4 @@
-import { Home, Compass, Map as MapIcon, Wallet, ShieldAlert, Users2 } from 'lucide-react';
+import { Home, Compass, Map as MapIcon, Wallet, Users2, UserCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
 
@@ -16,7 +16,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
         { id: 'community', icon: Users2, label: 'Community' },
         { id: 'planner', icon: MapIcon, label: 'Plan' },
         { id: 'wallet', icon: Wallet, label: 'Wallet' },
-        { id: 'safety', icon: ShieldAlert, label: 'Safety' },
+        { id: 'profile', icon: UserCircle, label: 'Profile' },
     ];
 
     return (

@@ -37,7 +37,7 @@ interface EnvironmentContextType {
 const EnvironmentContext = createContext<EnvironmentContextType | undefined>(undefined);
 
 export function EnvironmentProvider({ children }: { children: ReactNode }) {
-    const [currentCity, setCurrentCity] = useState('Tokyo');
+    const [currentCity, setCurrentCity] = useState('New Delhi');
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [forecast, setForecast] = useState<ForecastDay[]>([]);
     const [weatherAlert, setWeatherAlert] = useState<WeatherAlert | null>(null);
@@ -48,6 +48,31 @@ export function EnvironmentProvider({ children }: { children: ReactNode }) {
     const [isRaining, setIsRaining] = useState(false);
     const [isHighTraffic, setIsHighTraffic] = useState(false);
     const [isEmergency, setIsEmergency] = useState(false);
+
+    // Detect user's city via geolocation on mount
+    useEffect(() => {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    try {
+                        const { latitude, longitude } = position.coords;
+                        const res = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`
+                        );
+                        const data = await res.json();
+                        const city = data.address?.city || data.address?.town || data.address?.village || data.address?.state_district;
+                        if (city) setCurrentCity(city);
+                    } catch (err) {
+                        console.warn('Reverse geocoding failed, using default city');
+                    }
+                },
+                () => {
+                    console.warn('Geolocation denied, using default city');
+                },
+                { timeout: 5000 }
+            );
+        }
+    }, []);
 
     const fetchWeatherData = useCallback(async (city: string) => {
         setIsWeatherLoading(true);
