@@ -215,8 +215,8 @@ export function CommunityView() {
 
             {/* Modals */}
             <AnimatePresence>
-                {showCreatePost && <CreatePostModal userId={user?.id} onClose={() => setShowCreatePost(false)} onCreated={handleStoryCreated} />}
-                {showCreateTrip && <CreateTripModal userId={user?.id} onClose={() => setShowCreateTrip(false)} onCreated={handleTripCreated} />}
+                {showCreatePost && <CreatePostModal userId={user?.id} user={user} onClose={() => setShowCreatePost(false)} onCreated={handleStoryCreated} />}
+                {showCreateTrip && <CreateTripModal userId={user?.id} user={user} onClose={() => setShowCreateTrip(false)} onCreated={handleTripCreated} />}
             </AnimatePresence>
         </div>
     );
@@ -634,7 +634,7 @@ function Leaderboard() {
 // CREATE POST MODAL
 // ============================
 
-function CreatePostModal({ userId, onClose, onCreated }: { userId?: string; onClose: () => void; onCreated: () => void }) {
+function CreatePostModal({ userId, user, onClose, onCreated }: { userId?: string; user?: any; onClose: () => void; onCreated: () => void }) {
     const [caption, setCaption] = useState('');
     const [location, setLocation] = useState('');
     const [country, setCountry] = useState('');
@@ -643,6 +643,9 @@ function CreatePostModal({ userId, onClose, onCreated }: { userId?: string; onCl
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { showToast } = useToast();
+
+    const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Traveler';
+    const displayAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || '';
 
     const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -669,6 +672,8 @@ function CreatePostModal({ userId, onClose, onCreated }: { userId?: string; onCl
             caption: caption.trim(),
             tags: tags.split(',').map(t => t.trim()).filter(Boolean),
             images: photoPreview ? [photoPreview] : [],
+            userName: displayName,
+            userAvatar: displayAvatar,
         });
         setLoading(false);
 
@@ -757,7 +762,7 @@ function CreatePostModal({ userId, onClose, onCreated }: { userId?: string; onCl
 // CREATE TRIP MODAL
 // ============================
 
-function CreateTripModal({ userId, onClose, onCreated }: { userId?: string; onClose: () => void; onCreated: () => void }) {
+function CreateTripModal({ userId, user, onClose, onCreated }: { userId?: string; user?: any; onClose: () => void; onCreated: () => void }) {
     const [destination, setDestination] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -769,6 +774,9 @@ function CreateTripModal({ userId, onClose, onCreated }: { userId?: string; onCl
     const [description, setDescription] = useState('');
     const [loading, setLoading] = useState(false);
     const { showToast } = useToast();
+
+    const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Host';
+    const displayAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || '';
 
     const handleSubmit = async () => {
         if (!userId) { showToast('Sign in to host trips', 'error'); return; }
@@ -785,6 +793,8 @@ function CreateTripModal({ userId, onClose, onCreated }: { userId?: string; onCl
             priceCurrency: 'USD',
             includes: includes.split(',').map(i => i.trim()).filter(Boolean),
             description: description.trim(),
+            hostName: displayName,
+            hostAvatar: displayAvatar,
         });
         setLoading(false);
 

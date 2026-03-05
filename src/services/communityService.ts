@@ -131,7 +131,7 @@ export const communityService = {
     // Create a new story
     async createStory(userId: string, data: {
         location: string; country: string; caption: string;
-        tags: string[]; images: string[];
+        tags: string[]; images: string[]; userName?: string; userAvatar?: string;
     }): Promise<{ data: any; error: Error | null }> {
         if (!isSupabaseAvailable || !supabase) {
             return { data: null, error: new Error('Sign in to post stories') };
@@ -146,6 +146,8 @@ export const communityService = {
                     caption: data.caption,
                     tags: data.tags,
                     images: data.images,
+                    user_name: data.userName || 'Traveler',
+                    user_avatar: data.userAvatar || '',
                     likes: 0, comments: 0, saves: 0,
                 } as any)
                 .select()
@@ -167,7 +169,7 @@ export const communityService = {
         try {
             const { data, error } = await supabase
                 .from('travel_stories')
-                .select('*, profiles(username, avatar_url)')
+                .select('*')
                 .order('created_at', { ascending: false })
                 .limit(50);
 
@@ -193,8 +195,8 @@ export const communityService = {
                 id: row.id,
                 user_id: row.user_id,
                 user: {
-                    name: row.profiles?.username || 'Traveler',
-                    avatar: row.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${row.user_id}`,
+                    name: row.user_name || 'Traveler',
+                    avatar: row.user_avatar || `https://i.pravatar.cc/150?u=${row.user_id}`,
                     verified: false,
                 },
                 location: row.location,
@@ -279,7 +281,7 @@ export const communityService = {
         try {
             const { data, error } = await supabase
                 .from('story_comments')
-                .select('*, profiles(username, avatar_url)')
+                .select('*')
                 .eq('story_id', storyId)
                 .order('created_at', { ascending: true })
                 .limit(50);
@@ -293,8 +295,8 @@ export const communityService = {
                 content: row.content,
                 created_at: row.created_at,
                 user: {
-                    name: row.profiles?.username || 'Traveler',
-                    avatar: row.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${row.user_id}`,
+                    name: row.user_name || 'Traveler',
+                    avatar: row.user_avatar || `https://i.pravatar.cc/150?u=${row.user_id}`,
                 },
             }));
 
@@ -304,12 +306,12 @@ export const communityService = {
         }
     },
 
-    async addComment(storyId: string, userId: string, content: string): Promise<{ error: Error | null }> {
+    async addComment(storyId: string, userId: string, content: string, userName?: string, userAvatar?: string): Promise<{ error: Error | null }> {
         if (!isSupabaseAvailable || !supabase) return { error: new Error('Sign in to comment') };
         try {
             const { error } = await supabase
                 .from('story_comments')
-                .insert({ story_id: storyId, user_id: userId, content } as any);
+                .insert({ story_id: storyId, user_id: userId, content, user_name: userName || 'Traveler', user_avatar: userAvatar || '' } as any);
             if (error) throw error;
             // Update comment count
             const { data: story } = await supabase.from('travel_stories').select('comments').eq('id', storyId).single();
@@ -344,7 +346,7 @@ export const communityService = {
         try {
             const { data, error } = await supabase
                 .from('group_trips')
-                .select('*, profiles(username, avatar_url)')
+                .select('*')
                 .order('created_at', { ascending: false })
                 .limit(20);
 
@@ -370,8 +372,8 @@ export const communityService = {
                 id: row.id,
                 host_id: row.host_id,
                 host: {
-                    name: row.profiles?.username || 'Host',
-                    avatar: row.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${row.host_id}`,
+                    name: row.host_name || 'Host',
+                    avatar: row.host_avatar || `https://i.pravatar.cc/150?u=${row.host_id}`,
                     verified: false,
                     rating: 4.5,
                     tripsHosted: 0,
@@ -399,6 +401,7 @@ export const communityService = {
         duration: string; vibes: string[]; spotsTotal: number;
         priceAmount: number; priceCurrency: string;
         includes: string[]; description: string;
+        hostName?: string; hostAvatar?: string;
     }): Promise<{ data: any; error: Error | null }> {
         if (!isSupabaseAvailable || !supabase) {
             return { data: null, error: new Error('Sign in to host trips') };
@@ -418,6 +421,8 @@ export const communityService = {
                     price_currency: data.priceCurrency,
                     includes: data.includes,
                     description: data.description,
+                    host_name: data.hostName || 'Host',
+                    host_avatar: data.hostAvatar || '',
                 } as any)
                 .select()
                 .single();
