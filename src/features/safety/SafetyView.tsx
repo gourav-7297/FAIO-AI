@@ -14,7 +14,7 @@ import { useToast } from '../../components/ui/Toast';
 import { cn } from '../../lib/utils';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { TravelMap } from '../../components/map/TravelMap';
-import type { SafetyZone, MapMarker } from '../../components/map/TravelMap';
+import type { MapMarker } from '../../components/map/TravelMap';
 import {
     getCountryAdvisory, getAdvisoryLevel, getCurrentLocation, watchUserLocation,
     reverseGeocode, getAllNearbySafePlaces, getEmergencyContacts, addEmergencyContact,
@@ -41,7 +41,7 @@ export function SafetyView() {
     const { isEmergency, toggleEmergency } = useEnvironment();
     const { tripData } = useAIAgents();
     const { user } = useAuth();
-    const { addToast } = useToast();
+    const { showToast } = useToast();
 
     // SOS state
     const [holding, setHolding] = useState(false);
@@ -94,7 +94,7 @@ export function SafetyView() {
                 // Parallel fetches
                 const [advisoryData, contactsData, alertsData] = await Promise.all([
                     getCountryAdvisory(countryCode),
-                    user ? getEmergencyContacts(user.uid) : Promise.resolve([]),
+                    user ? getEmergencyContacts(user.id) : Promise.resolve([]),
                     getCommunityAlerts(loc?.lat, loc?.lon, countryCode),
                 ]);
 
@@ -112,7 +112,7 @@ export function SafetyView() {
 
                 // Check active sharing session
                 if (user) {
-                    const session = await getActiveSession(user.uid);
+                    const session = await getActiveSession(user.id);
                     if (session && !cancelled) { setSharingSession(session); setLiveSharing(true); }
                 }
             } catch (err) { console.error('Safety init error:', err); }
@@ -124,17 +124,17 @@ export function SafetyView() {
 
     // ── Live sharing GPS watch ──
     const toggleLiveSharing = useCallback(async () => {
-        if (!user) { addToast('Sign in to share location', 'error'); return; }
+        if (!user) { showToast('Sign in to share location', 'error'); return; }
         if (liveSharing && sharingSession) {
             await stopLocationSharing(sharingSession.id);
             stopWatchRef.current?.();
             setSharingSession(null); setLiveSharing(false);
-            addToast('Location sharing stopped', 'success');
+            showToast('Location sharing stopped', 'success');
         } else {
             try {
                 const pos = await getCurrentLocation();
                 const geo = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-                const session = await startLocationSharing(user.uid, pos.coords.latitude, pos.coords.longitude, geo.city, geo.country);
+                const session = await startLocationSharing(user.id, pos.coords.latitude, pos.coords.longitude, geo.city, geo.country);
                 if (session) {
                     setSharingSession(session); setLiveSharing(true);
                     // Start watching
@@ -143,20 +143,20 @@ export function SafetyView() {
                         if (session) await updateSharingLocation(session.id, loc.lat, loc.lon, loc.city, loc.country);
                     });
                     stopWatchRef.current = stop;
-                    addToast('Live location sharing active!', 'success');
+                    showToast('Live location sharing active!', 'success');
                 }
-            } catch { addToast('GPS permission required', 'error'); }
+            } catch { showToast('GPS permission required', 'error'); }
         }
-    }, [liveSharing, sharingSession, user, addToast]);
+    }, [liveSharing, sharingSession, user, showToast]);
 
     // Contact handlers
     const handleAddContact = async (contact: { name: string; phone: string; relation: string }) => {
-        const userId = user?.uid || 'anonymous';
+        const userId = user?.id || 'anonymous';
         const result = await addEmergencyContact(userId, contact);
         if (result) setContacts(prev => [...prev, result]);
     };
     const handleRemoveContact = async (id: string) => {
-        const userId = user?.uid || 'anonymous';
+        const userId = user?.id || 'anonymous';
         await removeEmergencyContact(id, userId);
         setContacts(prev => prev.filter(c => c.id !== id));
     };
@@ -451,7 +451,7 @@ export function SafetyView() {
                 {showFakeCall && <FakeCallScreen onEnd={() => setShowFakeCall(false)} />}
             </AnimatePresence>
             <AnimatePresence>
-                {showReportModal && <ReportAlertModal userLocation={userLocation} userId={user?.uid || ''} onClose={() => setShowReportModal(false)} onSubmit={async (alert) => { const ok = await reportSafetyAlert(user!.uid, alert); if (ok) { addToast('Alert reported!', 'success'); setShowReportModal(false); const updated = await getCommunityAlerts(userLocation?.lat, userLocation?.lon, userLocation?.countryCode); setAlerts(updated); } else { addToast('Failed to report', 'error'); } }} />}
+                {showReportModal && <ReportAlertModal userLocation={userLocation} onClose={() => setShowReportModal(false)} onSubmit={async (alert) => { const ok = await reportSafetyAlert(user!.id, alert); if (ok) { showToast('Alert reported!', 'success'); setShowReportModal(false); const updated = await getCommunityAlerts(userLocation?.lat, userLocation?.lon, userLocation?.countryCode); setAlerts(updated); } else { showToast('Failed to report', 'error'); } }} />}
             </AnimatePresence>
         </div>
     );
@@ -600,7 +600,7 @@ function EmergencyContactsModal({ contacts, onClose, onAdd, onRemove }: { contac
     );
 }
 
-function ReportAlertModal({ userLocation, userId, onClose, onSubmit }: { userLocation: UserLocation | null; userId: string; onClose: () => void; onSubmit: (alert: { type: 'warning' | 'caution' | 'info'; title: string; description: string; lat?: number; lon?: number; area: string; countryCode?: string }) => void }) {
+function ReportAlertModal({ userLocation, onClose, onSubmit }: { userLocation: UserLocation | null; onClose: () => void; onSubmit: (alert: { type: 'warning' | 'caution' | 'info'; title: string; description: string; lat?: number; lon?: number; area: string; countryCode?: string }) => void }) {
     const [type, setType] = useState<'warning' | 'caution' | 'info'>('caution');
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');

@@ -344,3 +344,117 @@ function getFallbackChatResponse(_message: string): string {
 export function isAIConfigured(): boolean {
     return !!API_KEY;
 }
+
+// ============================
+// WALLET AI FEATURES
+// ============================
+
+export interface AnalyzedReceipt {
+    name: string;
+    amount: number;
+    category: string;
+}
+
+const VISION_MODEL = 'llama-3.2-90b-vision-preview';
+
+/**
+ * Sends a base64 encoded image to Groq's Vision model to extract receipt details.
+ */
+export async function analyzeReceiptWithAI(base64Image: string): Promise<AnalyzedReceipt | null> {
+    const ai = getGroqClient();
+    if (!ai) return null;
+
+    try {
+        const response = await ai.chat.completions.create({
+            model: VISION_MODEL,
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: "Parse this receipt. Respond ONLY with a JSON object containing three keys: 'name' (a short, clean description of the merchant or item), 'amount' (the total cost as a number), and 'category' (must be exactly one of: 'Food', 'Transport', 'Stay', 'Activity', 'Shopping', or 'Coffee'). No other text." },
+                        { type: "image_url", image_url: { url: base64Image } }
+                    ],
+                }
+            ],
+            temperature: 0.1,
+            max_tokens: 200,
+        });
+
+        const text = response.choices[0]?.message?.content || '';
+        let jsonText = text.trim();
+        if (jsonText.startsWith('```json')) jsonText = jsonText.slice(7);
+        if (jsonText.startsWith('```')) jsonText = jsonText.slice(3);
+        if (jsonText.endsWith('```')) jsonText = jsonText.slice(0, -3);
+
+        const parsed = JSON.parse(jsonText.trim());
+        
+        // Basic validation
+        if (parsed.name && typeof parsed.amount === 'number' && parsed.category) {
+            return {
+                name: parsed.name,
+                amount: parsed.amount,
+                category: parsed.category
+            };
+        }
+        return null;
+    } catch (error) {
+        console.error('Error analyzing receipt:', error);
+        return null;
+    }
+}
+
+/**
+ * Generates personalized, witty budget advice based on actual expenses.
+ */
+export async function generateBudgetAdvice(expenses: any[], budget: number): Promise<{ message: string, emoji: string, type: 'good' | 'warning' | 'danger' }> {
+    const ai = getGroqClient();
+    if (!ai || expenses.length === 0) {
+        return { message: "Looking good! Add more expenses so I can roast—I mean, analyze—your spending.", emoji: "👀", type: "good" };
+    }
+
+    const totalSpent = expenses.reduce((s, e) => s + e.amount, 0);
+    const percent = (totalSpent / budget) * 100;
+    
+    // Provide a summary to the AI to save tokens
+    const recentExpenses = expenses.slice(0, 10).map(e => `${e.name}: $${e.amount} (${e.category})`).join(', ');
+
+    const prompt = `You are FAIO, a slightly sassy but highly knowledgeable travel budget AI. 
+The user has a budget of $${budget} and has spent $${totalSpent} (${percent.toFixed(0)}%).
+Here are their recent expenses: ${recentExpenses}.
+
+Give them ONE short, witty sentence of advice or a gentle roast about their spending habits based on these specific entries. 
+Then, on the next line, provide exactly one emoji that summarizes the vibe.
+Then, on the next line, output exactly one word: 'good' if they are on track, 'warning' if they are spending too fast or too much on one thing, or 'danger' if they are over budget or spending recklessly.
+
+Respond strictly in this three-line format:
+[Sentence]
+[Emoji]
+[good/warning/danger]`;
+
+    try {
+        const response = await ai.chat.completions.create({
+            model: DEFAULT_MODEL,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.8,
+            max_tokens: 150,
+        });
+
+        const lines = (response.choices[0]?.message?.content || '').trim().split('\n').filter(l => l.trim().length > 0);
+        if (lines.length >= 3) {
+            const typeRaw = lines[lines.length - 1].trim().toLowerCase();
+            const type = (typeRaw === 'good' || typeRaw === 'warning' || typeRaw === 'danger') ? typeRaw : (percent > 90 ? 'danger' : percent > 50 ? 'warning' : 'good');
+            return {
+                message: lines[0].trim(),
+                emoji: lines[1].trim(),
+                type: type as any
+            };
+        }
+        throw new Error('Failed to parse AI advice format');
+    } catch (error) {
+        console.error('Error getting budget advice:', error);
+        // Fallback logic
+        if (percent > 90) return { message: "Red alert! You are almost out of money.", emoji: "🚨", type: "danger" };
+        if (percent > 50) return { message: "Past the halfway mark. Pace yourself!", emoji: "⚠️", type: "warning" };
+        return { message: "You're spending wisely. Keep it up!", emoji: "👍", type: "good" };
+    }
+}

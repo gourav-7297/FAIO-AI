@@ -257,7 +257,7 @@ export function ExploreView() {
     const [selectedVibe, setSelectedVibe] = useState<VibePlace | null>(null);
 
     // Nearby (shared)
-    const [nearbyPlaces, setNearbyPlaces] = useState<DisplayPlace[]>([]);
+    const [nearbyPlaces, _setNearbyPlaces] = useState<DisplayPlace[]>([]);
     const [isLoadingNearby, setIsLoadingNearby] = useState(false);
     const [showNearbyMap, setShowNearbyMap] = useState(false);
 

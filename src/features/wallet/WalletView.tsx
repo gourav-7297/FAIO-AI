@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     TrendingUp, TrendingDown, Leaf, DollarSign,
@@ -13,6 +13,7 @@ import { useAIAgents } from '../../context/AIAgentContext';
 import { CurrencyConverter } from '../../components/ui/CurrencyConverter';
 import { expenseService } from '../../services/expenseService';
 import type { Expense } from '../../services/expenseService';
+import { generateBudgetAdvice, analyzeReceiptWithAI } from '../../services/openRouterService';
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
     Transport: Bus,
@@ -31,22 +32,6 @@ const CATEGORY_COLORS: Record<string, string> = {
     Shopping: 'from-rose-500 to-red-500',
     Coffee: 'from-yellow-500 to-orange-500',
 };
-
-// AI budget advisor logic
-function getAIBudgetAdvice(totalSpent: number, totalBudget: number, expenses: Expense[]): { message: string; emoji: string; type: 'good' | 'warning' | 'danger' } {
-    const percent = (totalSpent / totalBudget) * 100;
-    const foodSpend = expenses.filter(e => e.category === 'Food').reduce((s, e) => s + e.amount, 0);
-    const transportSpend = expenses.filter(e => e.category === 'Transport').reduce((s, e) => s + e.amount, 0);
-
-    if (percent < 30) return { message: "You're spending wisely! Plenty of room for that special experience 🎉", emoji: '🏆', type: 'good' };
-    if (percent < 50) return { message: "On track! Consider local street food for big savings on meals", emoji: '👍', type: 'good' };
-    if (percent < 70) {
-        if (foodSpend > transportSpend * 1.5) return { message: "Food is your biggest spend. Try markets & local eateries for authentic + cheap meals!", emoji: '🍜', type: 'warning' };
-        return { message: "Past halfway — prioritize must-see experiences over shopping", emoji: '📊', type: 'warning' };
-    }
-    if (percent < 90) return { message: "Budget getting tight! Switch to walking tours and cook where you stay", emoji: '⚠️', type: 'warning' };
-    return { message: "Over budget! Consider free activities: parks, beaches, street art tours", emoji: '🚨', type: 'danger' };
-}
 
 export function WalletView() {
     const [activeTab, setActiveTab] = useState<'expenses' | 'insights' | 'eco' | 'journal'>('expenses');
@@ -78,7 +63,25 @@ export function WalletView() {
     const budgetPercent = Math.min((totalSpent / totalBudget) * 100, 100);
     const totalCarbon = expenses.reduce((sum, e) => sum + (e.carbonKg || 0), 0);
     const ecoChoices = expenses.filter(e => e.isEcoOption).length;
-    const budgetAdvice = useMemo(() => getAIBudgetAdvice(totalSpent, totalBudget, expenses), [totalSpent, totalBudget, expenses]);
+
+    const [budgetAdvice, setBudgetAdvice] = useState<{ message: string; emoji: string; type: 'good' | 'warning' | 'danger' }>({ 
+        message: "Analyzing your spending...", emoji: "🤔", type: "good" 
+    });
+    const [_isAdviceLoading, setIsAdviceLoading] = useState(false);
+
+    // AI Budget Roast (triggered when expenses change)
+    useEffect(() => {
+        if (expenses.length > 0) {
+            setIsAdviceLoading(true);
+            generateBudgetAdvice(expenses, totalBudget).then(advice => {
+                setBudgetAdvice(advice);
+                setIsAdviceLoading(false);
+            });
+        } else {
+            setBudgetAdvice({ message: "No expenses yet. Time to start spending!", emoji: "💸", type: "good" });
+            setIsAdviceLoading(false);
+        }
+    }, [expenses.length, totalBudget]);
 
     // Category breakdown for pie chart
     const categoryBreakdown = useMemo(() => {
@@ -369,6 +372,30 @@ function AddExpenseModal({ onClose, onAdd }: { onClose: () => void; onAdd: (cate
     const [amount, setAmount] = useState('');
     const [splitWith, setSplitWith] = useState(1);
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isScanning, setIsScanning] = useState(false);
+
+    const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsScanning(true);
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            const base64 = reader.result as string;
+            const result = await analyzeReceiptWithAI(base64);
+            if (result) {
+                setName(result.name);
+                setAmount(result.amount.toString());
+                if (CATEGORY_ICONS[result.category]) {
+                    setCategory(result.category);
+                }
+            }
+            setIsScanning(false);
+        };
+        reader.readAsDataURL(file);
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -385,7 +412,25 @@ function AddExpenseModal({ onClose, onAdd }: { onClose: () => void; onAdd: (cate
             >
                 <div className="flex items-center justify-between mb-2">
                     <h3 className="text-xl font-bold">Add Expense</h3>
-                    <button onClick={onClose} className="text-secondary hover:text-white">✕</button>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => fileInputRef.current?.click()} 
+                            disabled={isScanning}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 text-purple-400 rounded-lg text-sm font-bold hover:bg-purple-500/20 disabled:opacity-50"
+                        >
+                            {isScanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                            {isScanning ? "Scanning..." : "Scan Receipt"}
+                        </button>
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            capture="environment" 
+                            ref={fileInputRef}
+                            className="hidden" 
+                            onChange={handleReceiptUpload} 
+                        />
+                        <button onClick={onClose} className="text-secondary hover:text-white p-1">✕</button>
+                    </div>
                 </div>
 
                 {/* Category Pills */}
