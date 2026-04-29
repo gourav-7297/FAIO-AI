@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, X, Trash2, MapPin, Utensils, ShieldCheck, Wallet, Compass, Copy, Check, ChevronRight, MessageSquare, Zap, Target } from 'lucide-react';
+import { Send, Sparkles, X, Trash2, MapPin, Utensils, Copy, Check, MessageSquare, Zap, Target } from 'lucide-react';
 import { useAIAgents, AGENTS, type AgentType } from '../context/AIAgentContext';
 import { cn } from '../lib/utils';
 

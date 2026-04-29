@@ -8,7 +8,7 @@ import {
     Clock, TrendingUp, Eye, Gem, Loader2, MapPinned, Hotel, Globe
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { GlassCard } from '../../components/ui/GlassCard';
+// GlassCard import removed (unused)
 import { useAIAgents } from '../../context/AIAgentContext';
 import { secretsService } from '../../services/secretsService';
 import type { LocalSecret } from '../../types/database.types';
@@ -248,7 +248,7 @@ export function ExploreView() {
 
     // Real places tab state
     const [realCategory, setRealCategory] = useState('all');
-    const [realSearch, setRealSearch] = useState('');
+    const [realSearch, _setRealSearch] = useState('');
     const [searchCity, setSearchCity] = useState(tripData?.destination || '');
     const [places, setPlaces] = useState<DisplayPlace[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -258,8 +258,8 @@ export function ExploreView() {
 
     // Nearby (shared)
     const [nearbyPlaces, _setNearbyPlaces] = useState<DisplayPlace[]>([]);
-    const [isLoadingNearby, setIsLoadingNearby] = useState(false);
-    const [showNearbyMap, setShowNearbyMap] = useState(false);
+    const [_isLoadingNearby, _setIsLoadingNearby] = useState(false);
+    const [_showNearbyMap, _setShowNearbyMap] = useState(false);
 
     useEffect(() => {
         async function load() {
@@ -386,7 +386,7 @@ export function ExploreView() {
         return true;
     });
 
-    const nearbyMarkers: MapMarker[] = nearbyPlaces.map(p => ({
+    const _nearbyMarkers: MapMarker[] = nearbyPlaces.map(p => ({
         id: p.id, lat: p.lat, lon: p.lon, label: p.name,
         emoji: p.category.split(' ')[0] || '📍', popup: `${p.name} • ${p.category}`,
     }));
@@ -677,7 +677,7 @@ export function ExploreView() {
 // ══════════════════════════════════════════════════
 // SHARED: NEARBY SECTION (Map & Quick List)
 // ══════════════════════════════════════════════════
-function NearbySection({ nearbyPlaces, isLoadingNearby, showNearbyMap, setShowNearbyMap, discoverNearby, nearbyMarkers }: {
+function _NearbySection({ nearbyPlaces, isLoadingNearby, showNearbyMap, setShowNearbyMap, discoverNearby, nearbyMarkers }: {
     nearbyPlaces: DisplayPlace[]; isLoadingNearby: boolean; showNearbyMap: boolean;
     setShowNearbyMap: (v: boolean) => void; discoverNearby: () => void; nearbyMarkers: MapMarker[];
 }) {

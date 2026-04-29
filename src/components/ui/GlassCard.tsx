@@ -14,7 +14,7 @@ export function GlassCard({
     children,
     className,
     gradient = 'none',
-    glow = false,
+    _glow = false,
     hover = true,
     onClick
 }: GlassCardProps) {

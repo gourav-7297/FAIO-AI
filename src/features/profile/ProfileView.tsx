@@ -10,7 +10,7 @@ import {
     Star, Clock, Hash, Sparkles, Zap
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { GlassCard } from '../../components/ui/GlassCard';
+// GlassCard import removed (unused)
 import { useAuth } from '../../context/AuthContext';
 
 // ─── Types ──────────────────────────────────────────────────────────
