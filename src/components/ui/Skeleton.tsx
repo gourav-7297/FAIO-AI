@@ -17,7 +17,7 @@ export function Skeleton({
     animation = 'wave'
 }: SkeletonProps) {
     const baseClasses = cn(
-        "bg-slate-800 relative overflow-hidden",
+        "bg-stone-200 relative overflow-hidden",
         variant === 'circular' && "rounded-full",
         variant === 'rounded' && "rounded-xl",
         variant === 'rectangular' && "rounded-md",
@@ -49,7 +49,7 @@ export function Skeleton({
     return (
         <div className={baseClasses} style={style}>
             <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-700/50 to-transparent"
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-stone-300/50 to-transparent"
                 animate={{ x: ['-100%', '100%'] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
             />
@@ -60,7 +60,7 @@ export function Skeleton({
 // Card skeleton for loading states
 export function CardSkeleton({ className }: { className?: string }) {
     return (
-        <div className={cn("p-4 bg-surface/50 rounded-2xl border border-slate-800 space-y-3", className)}>
+        <div className={cn("p-4 bg-white rounded-2xl border border-stone-100 space-y-3", className)}>
             <div className="flex items-center gap-3">
                 <Skeleton variant="circular" width={48} height={48} />
                 <div className="flex-1 space-y-2">
@@ -80,7 +80,7 @@ export function CardSkeleton({ className }: { className?: string }) {
 // Place card skeleton for explore view
 export function PlaceCardSkeleton({ className }: { className?: string }) {
     return (
-        <div className={cn("overflow-hidden rounded-2xl border border-slate-800 bg-surface/50", className)}>
+        <div className={cn("overflow-hidden rounded-2xl border border-stone-100 bg-white", className)}>
             <Skeleton variant="rectangular" height={180} />
             <div className="p-3 space-y-2">
                 <Skeleton variant="text" width="70%" height={20} />
@@ -96,7 +96,7 @@ export function PlaceCardSkeleton({ className }: { className?: string }) {
 // Itinerary day skeleton
 export function ItineraryDaySkeleton({ className }: { className?: string }) {
     return (
-        <div className={cn("p-4 bg-surface/50 rounded-2xl border border-slate-800", className)}>
+        <div className={cn("p-4 bg-white rounded-2xl border border-stone-100", className)}>
             <div className="flex items-center gap-3 mb-4">
                 <Skeleton variant="rounded" width={40} height={40} />
                 <div className="space-y-1">
@@ -106,7 +106,7 @@ export function ItineraryDaySkeleton({ className }: { className?: string }) {
             </div>
             <div className="space-y-3">
                 {[1, 2, 3].map(i => (
-                    <div key={i} className="p-3 bg-slate-800/50 rounded-xl space-y-2">
+                    <div key={i} className="p-3 bg-stone-50 rounded-xl space-y-2">
                         <div className="flex items-center gap-2">
                             <Skeleton variant="text" width={50} height={14} />
                             <Skeleton variant="rounded" width={40} height={18} />
@@ -125,7 +125,7 @@ export function StatsRowSkeleton({ count = 3, className }: { count?: number; cla
     return (
         <div className={cn("grid gap-3", className)} style={{ gridTemplateColumns: `repeat(${count}, 1fr)` }}>
             {Array.from({ length: count }).map((_, i) => (
-                <div key={i} className="p-3 bg-surface/50 rounded-xl border border-slate-800 flex flex-col items-center gap-2">
+                <div key={i} className="p-3 bg-white rounded-xl border border-stone-100 flex flex-col items-center gap-2">
                     <Skeleton variant="circular" width={40} height={40} />
                     <Skeleton variant="text" width={50} height={20} />
                     <Skeleton variant="text" width={40} height={10} />
@@ -142,7 +142,7 @@ export function ChatMessageSkeleton({ isAI = true, className }: { isAI?: boolean
             {isAI && <Skeleton variant="circular" width={32} height={32} />}
             <div className={cn(
                 "max-w-[75%] p-3 rounded-2xl",
-                isAI ? "bg-slate-800" : "bg-action/20"
+                isAI ? "bg-stone-100" : "bg-action/10"
             )}>
                 <Skeleton variant="text" width={180} height={14} className="mb-1" />
                 <Skeleton variant="text" width={120} height={14} />

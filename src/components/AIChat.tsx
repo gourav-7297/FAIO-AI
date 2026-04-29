@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, X, Trash2, MapPin, Utensils, ShieldCheck, Wallet, Compass, Copy, Check } from 'lucide-react';
+import { Send, Sparkles, X, Trash2, MapPin, Utensils, ShieldCheck, Wallet, Compass, Copy, Check, ChevronRight, MessageSquare, Zap, Target } from 'lucide-react';
 import { useAIAgents, AGENTS, type AgentType } from '../context/AIAgentContext';
 import { cn } from '../lib/utils';
 
@@ -10,14 +10,10 @@ interface AIChatProps {
     placeholder?: string;
 }
 
-// Chat history persistence
 const CHAT_STORAGE_KEY = 'faio_chat_history';
-
-
 
 function saveChatHistory(messages: { role: 'user' | 'assistant'; content: string; agent?: AgentType }[]) {
     try {
-        // Keep last 50 messages
         const recent = messages.slice(-50);
         localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(recent));
     } catch { /* ignore quota errors */ }
@@ -40,7 +36,6 @@ export function AIChat({ isOpen, onClose, placeholder = "Ask FAIO anything..." }
         }
     }, [isOpen]);
 
-    // Save chat history when messages change
     useEffect(() => {
         if (chatMessages.length > 0) {
             saveChatHistory(chatMessages.map(m => ({ role: m.role, content: m.content, agent: m.agent })));
@@ -62,190 +57,263 @@ export function AIChat({ isOpen, onClose, placeholder = "Ask FAIO anything..." }
         setTimeout(() => setCopiedId(null), 2000);
     }, []);
 
-    // Context-aware suggestions based on trip status
     const suggestions = tripData ? [
         `What should I do in ${tripData.destination} today?`,
         `Best restaurants in ${tripData.destination}`,
         `Safety tips for ${tripData.destination}`,
-        "How's my budget looking?",
         "Suggest an eco-friendly activity",
-        "What should I pack?"
     ] : [
         "Plan a 3-day trip to Tokyo",
         "Find hidden cafes nearby",
-        "What's the safest city for solo travel?",
         "Show eco-friendly destinations",
         "Budget tips for Europe",
-        "Best time to visit Bali"
     ];
 
-    // Quick action buttons
     const quickActions = [
-        { icon: MapPin, label: 'Places', query: tripData ? `Top places in ${tripData.destination}` : 'Suggest amazing travel destinations' },
-        { icon: Utensils, label: 'Food', query: tripData ? `Best local food in ${tripData.destination}` : 'Best food destinations worldwide' },
-        { icon: ShieldCheck, label: 'Safety', query: tripData ? `Safety advice for ${tripData.destination}` : 'General travel safety tips' },
-        { icon: Wallet, label: 'Budget', query: tripData ? `Budget tips for ${tripData.destination}` : 'How to travel on a budget' },
-        { icon: Compass, label: 'Explore', query: tripData ? `Hidden gems in ${tripData.destination}` : 'Undiscovered travel destinations' },
+        { icon: MapPin, label: 'PLACES', query: tripData ? `Top places in ${tripData.destination}` : 'Suggest amazing travel destinations' },
+        { icon: Utensils, label: 'GASTRO', query: tripData ? `Best local food in ${tripData.destination}` : 'Best food destinations worldwide' },
+        { icon: Target, label: 'SAFETY', query: tripData ? `Safety advice for ${tripData.destination}` : 'General travel safety tips' },
+        { icon: Zap, label: 'BUDGET', query: tripData ? `Budget tips for ${tripData.destination}` : 'How to travel on a budget' },
     ];
 
     return (
         <AnimatePresence>
             {isOpen && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    className="fixed inset-x-0 bottom-0 z-50 p-4 pb-safe"
-                >
-                    <div className="max-w-md mx-auto">
-                        <div className="bg-surface/95 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl overflow-hidden">
-                            {/* Header */}
-                            <div className="flex items-center justify-between p-4 border-b border-slate-800">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-action to-purple-500 flex items-center justify-center">
-                                        <Sparkles className="w-4 h-4 text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-sm">FAIO Assistant</h3>
-                                        <p className="text-[10px] text-secondary">
-                                            {tripData ? (
-                                                <span className="flex items-center gap-1">
-                                                    <MapPin className="w-2.5 h-2.5 text-action" />
-                                                    {tripData.destination} trip loaded
-                                                </span>
-                                            ) : (
-                                                '6 AI agents at your service'
-                                            )}
-                                        </p>
-                                    </div>
+                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-stone-900/60 backdrop-blur-md"
+                        onClick={onClose}
+                    />
+                    
+                    <motion.div
+                        initial={{ y: "100%", opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: "100%", opacity: 0 }}
+                        className="bg-white w-full max-w-xl rounded-t-[48px] sm:rounded-[48px] shadow-2xl relative z-10 flex flex-col h-[85vh] sm:h-[700px] overflow-hidden"
+                    >
+                        {/* Header */}
+                        <div className="p-8 border-b border-stone-50 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                                    <Sparkles className="w-6 h-6 text-white" />
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    {chatMessages.length > 0 && (
-                                        <button
-                                            onClick={() => {
-                                                localStorage.removeItem(CHAT_STORAGE_KEY);
-                                            }}
-                                            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                                            title="Clear chat"
-                                        >
-                                            <Trash2 className="w-4 h-4 text-secondary" />
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={onClose}
-                                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                                    >
-                                        <X className="w-5 h-5 text-secondary" />
-                                    </button>
+                                <div>
+                                    <h3 className="text-xl font-black text-stone-900 tracking-tight">FAIO Intelligence</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">NEURAL LINK ACTIVE</p>
+                                    </div>
                                 </div>
                             </div>
+                            <div className="flex items-center gap-2">
+                                {chatMessages.length > 0 && (
+                                    <button
+                                        onClick={() => localStorage.removeItem(CHAT_STORAGE_KEY)}
+                                        className="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center text-stone-400 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                )}
+                                <button
+                                    onClick={onClose}
+                                    className="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-100 transition-all"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
 
-                            {/* Trip Context Banner */}
-                            {tripData && chatMessages.length === 0 && (
-                                <div className="mx-4 mt-3 p-3 rounded-xl bg-gradient-to-r from-action/10 to-purple-500/10 border border-action/20 flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-action flex-shrink-0" />
-                                    <p className="text-xs text-white/80">
-                                        I know you're planning <strong>{tripData.destination}</strong> ({tripData.itinerary.length} days). Ask me anything about it!
-                                    </p>
+                        {/* Messages Area */}
+                        <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar bg-stone-50/50">
+                            {chatMessages.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                                    <div className="w-20 h-20 rounded-[32px] bg-white shadow-soft border border-stone-100 flex items-center justify-center mb-6">
+                                        <MessageSquare className="w-8 h-8 text-primary" />
+                                    </div>
+                                    <h2 className="text-3xl font-black text-stone-900 tracking-tighter mb-4">Neural Command Interface</h2>
+                                    <p className="text-stone-400 text-sm font-medium max-w-xs mb-10 leading-relaxed">Initialized and ready for tactical travel inquiries. Choose a preset or initialize custom query.</p>
+                                    
+                                    <div className="grid grid-cols-2 gap-3 w-full">
+                                        {suggestions.map((s, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => setInput(s)}
+                                                className="p-4 bg-white border border-stone-100 rounded-2xl text-left hover:border-primary hover:shadow-lg transition-all group"
+                                            >
+                                                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1 group-hover:text-primary transition-colors">QUERY {i+1}</p>
+                                                <p className="text-sm font-black text-stone-900 line-clamp-2">{s}</p>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
+                            ) : (
+                                <>
+                                    {chatMessages.map((msg) => (
+                                        <ChatBubble
+                                            key={msg.id}
+                                            message={msg}
+                                            onCopy={() => handleCopyMessage(msg.id, msg.content)}
+                                            isCopied={copiedId === msg.id}
+                                        />
+                                    ))}
+                                    {isAITyping && (
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-stone-900 flex items-center justify-center">
+                                                <div className="flex gap-1">
+                                                    <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce" />
+                                                    <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:0.2s]" />
+                                                    <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:0.4s]" />
+                                                </div>
+                                            </div>
+                                            <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">PROCESSING DATA...</p>
+                                        </div>
+                                    )}
+                                    <div ref={messagesEndRef} />
+                                </>
                             )}
+                        </div>
 
-                            {/* Quick Actions Bar */}
-                            <div className="flex gap-1 px-4 py-2 overflow-x-auto no-scrollbar">
+                        {/* Tactical Actions */}
+                        <div className="px-8 py-4 bg-white border-t border-stone-50">
+                            <div className="flex gap-2 overflow-x-auto no-scrollbar">
                                 {quickActions.map((action, i) => (
                                     <button
                                         key={i}
-                                        onClick={async () => {
-                                            await sendChatMessage(action.query);
-                                        }}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface/80 border border-slate-700/50 rounded-full text-[11px] whitespace-nowrap hover:bg-white/10 transition-colors flex-shrink-0"
+                                        onClick={() => sendChatMessage(action.query)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-stone-50 border border-stone-100 rounded-full whitespace-nowrap hover:bg-stone-900 hover:text-white transition-all group"
                                     >
-                                        <action.icon className="w-3 h-3 text-action" />
-                                        {action.label}
+                                        <action.icon className="w-3 h-3 text-primary group-hover:text-white" />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">{action.label}</span>
                                     </button>
                                 ))}
                             </div>
+                        </div>
 
-                            {/* Messages */}
-                            <div className="h-64 overflow-y-auto p-4 space-y-3">
-                                {chatMessages.length === 0 ? (
-                                    <div className="text-center py-6">
-                                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-action/20 to-purple-500/20 flex items-center justify-center">
-                                            <Sparkles className="w-8 h-8 text-action" />
-                                        </div>
-                                        <h4 className="font-bold mb-2">How can I help?</h4>
-                                        <p className="text-sm text-secondary mb-4">
-                                            {tripData ? `Ask me about ${tripData.destination}` : 'Ask me anything about travel'}
-                                        </p>
-
-                                        {/* Suggestion chips */}
-                                        <div className="flex flex-wrap gap-2 justify-center">
-                                            {suggestions.slice(0, 4).map((suggestion, i) => (
-                                                <button
-                                                    key={i}
-                                                    onClick={() => setInput(suggestion)}
-                                                    className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-slate-700 rounded-full text-xs transition-colors"
-                                                >
-                                                    {suggestion}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        {chatMessages.map((msg) => (
-                                            <ChatBubble
-                                                key={msg.id}
-                                                message={msg}
-                                                onCopy={() => handleCopyMessage(msg.id, msg.content)}
-                                                isCopied={copiedId === msg.id}
-                                            />
-                                        ))}
-                                        {isAITyping && (
-                                            <div className="flex items-center gap-2 text-secondary text-sm">
-                                                <div className="flex gap-1">
-                                                    <span className="w-2 h-2 bg-action rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                                    <span className="w-2 h-2 bg-action rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                                    <span className="w-2 h-2 bg-action rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                                                </div>
-                                                <span>FAIO is thinking...</span>
-                                            </div>
-                                        )}
-                                        <div ref={messagesEndRef} />
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Input */}
-                            <form onSubmit={handleSubmit} className="p-4 border-t border-slate-800">
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        ref={inputRef}
-                                        type="text"
-                                        value={input}
-                                        onChange={(e) => setInput(e.target.value)}
-                                        placeholder={tripData ? `Ask about ${tripData.destination}...` : placeholder}
-                                        className="flex-1 bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-action transition-colors placeholder:text-slate-500"
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={!input.trim() || isAITyping}
-                                        className={cn(
-                                            "p-3 rounded-xl transition-all",
-                                            input.trim() && !isAITyping
-                                                ? "bg-action text-white shadow-lg shadow-action/30"
-                                                : "bg-slate-800 text-slate-500"
-                                        )}
-                                    >
-                                        <Send className="w-5 h-5" />
-                                    </button>
-                                </div>
+                        {/* Input Command Center */}
+                        <div className="p-8 pt-0 bg-white">
+                            <form onSubmit={handleSubmit} className="relative group">
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    placeholder={placeholder}
+                                    className="w-full h-16 bg-stone-50 border border-stone-100 rounded-[24px] pl-6 pr-20 text-sm font-black text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-primary focus:bg-white transition-all shadow-inner"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!input.trim() || isAITyping}
+                                    className={cn(
+                                        "absolute right-2 top-2 h-12 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all",
+                                        input.trim() && !isAITyping
+                                            ? "bg-stone-800 text-white shadow-xl hover:bg-stone-900"
+                                            : "bg-stone-200 text-stone-400"
+                                    )}
+                                >
+                                    <Send className="w-4 h-4" />
+                                </button>
                             </form>
                         </div>
-                    </div>
-                </motion.div>
+                    </motion.div>
+                </div>
             )}
         </AnimatePresence>
+    );
+}
+
+function FormattedText({ text }: { text: string }) {
+    if (!text) return null;
+    const lines = text.split('\n');
+    const elements: React.ReactNode[] = [];
+    let currentList: React.ReactNode[] = [];
+
+    lines.forEach((line, i) => {
+        if (/^\d+\.\s/.test(line.trim()) || line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+            const content = line.trim().replace(/^(\d+\.\s|[-*]\s)/, '');
+            currentList.push(
+                <li key={i} className="mb-2 pl-2">
+                    {parseBold(content)}
+                </li>
+            );
+        } else {
+            if (currentList.length > 0) {
+                elements.push(<ul key={`list-${i}`} className="list-disc ml-4 mb-4 text-sm font-medium">{currentList}</ul>);
+                currentList = [];
+            }
+            if (line.trim().startsWith('### ')) {
+                elements.push(<h4 key={i} className="text-xs font-black text-primary uppercase tracking-widest mt-6 mb-3">{line.trim().substring(4)}</h4>);
+            } else if (line.trim() === '') {
+                elements.push(<div key={i} className="h-4" />);
+            } else {
+                elements.push(<p key={i} className="mb-4 leading-relaxed text-sm font-medium text-stone-600">{parseBold(line)}</p>);
+            }
+        }
+    });
+    if (currentList.length > 0) elements.push(<ul key="end-list" className="list-disc ml-4 mb-4 text-sm font-medium">{currentList}</ul>);
+    return <div>{elements}</div>;
+}
+
+function parseBold(text: string): React.ReactNode {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={index} className="font-black text-stone-900">{part.slice(2, -2)}</strong>;
+        }
+        return part;
+    });
+}
+
+function ChatBubble({ message, onCopy, isCopied }: ChatBubbleProps) {
+    const isUser = message.role === 'user';
+    const agent = message.agent ? AGENTS[message.agent] : null;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={cn("flex gap-4", isUser ? "flex-row-reverse" : "flex-row")}
+        >
+            <div className={cn(
+                "w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center text-lg shadow-sm border border-stone-100",
+                isUser ? "bg-white" : "bg-stone-50"
+            )}>
+                {isUser ? '👤' : agent?.emoji || '🤖'}
+            </div>
+            
+            <div className={cn("max-w-[80%] relative group", isUser ? "text-right" : "text-left")}>
+                {!isUser && agent && (
+                    <p className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-2">{agent.name} AGENT</p>
+                )}
+                
+                <div className={cn(
+                    "p-6 rounded-[32px] shadow-sm border",
+                    isUser 
+                        ? "bg-white border-stone-100 rounded-tr-sm" 
+                        : "bg-stone-50 border-stone-100 rounded-tl-sm text-stone-800"
+                )}>
+                    {isUser ? (
+                        <p className="text-sm font-black text-stone-900 leading-relaxed">{message.content}</p>
+                    ) : (
+                        <div className="text-stone-800">
+                            <FormattedText text={message.content} />
+                        </div>
+                    )}
+                </div>
+
+                {!isUser && (
+                    <button
+                        onClick={onCopy}
+                        className="mt-2 flex items-center gap-1.5 text-[9px] font-black text-stone-400 uppercase tracking-widest hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                        {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {isCopied ? 'COPIED' : 'COPY INTEL'}
+                    </button>
+                )}
+            </div>
+        </motion.div>
     );
 }
 
@@ -260,173 +328,20 @@ interface ChatBubbleProps {
     isCopied: boolean;
 }
 
-// Simple Markdown Parser
-function FormattedText({ text }: { text: string }) {
-    if (!text) return null;
-
-    const lines = text.split('\n');
-    const elements: React.ReactNode[] = [];
-    let currentList: React.ReactNode[] = [];
-
-    lines.forEach((line, i) => {
-        // Handle Numbered Lists
-        if (/^\d+\.\s/.test(line.trim())) {
-            const content = line.trim().replace(/^\d+\.\s/, '');
-            currentList.push(
-                <li key={`oli-${i}`} className="ml-4 mb-1">
-                    {parseBold(content)}
-                </li>
-            );
-        }
-        // Handle Bullet Points
-        else if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-            const content = line.trim().substring(2);
-            currentList.push(
-                <li key={`li-${i}`} className="ml-4 mb-1">
-                    {parseBold(content)}
-                </li>
-            );
-        } else {
-            // Flush list if exists
-            if (currentList.length > 0) {
-                elements.push(
-                    <ul key={`ul-${i}`} className="list-disc mb-2 space-y-1">
-                        {currentList}
-                    </ul>
-                );
-                currentList = [];
-            }
-
-            // Handle Headers (### or ##)
-            if (line.trim().startsWith('### ')) {
-                elements.push(
-                    <h4 key={`h4-${i}`} className="font-bold text-sm mt-2 mb-1 text-action/90">
-                        {line.trim().substring(4)}
-                    </h4>
-                );
-            } else if (line.trim().startsWith('## ')) {
-                elements.push(
-                    <h3 key={`h3-${i}`} className="font-bold mt-2 mb-1 text-action">
-                        {line.trim().substring(3)}
-                    </h3>
-                );
-            }
-            // Handle Empty Lines
-            else if (line.trim() === '') {
-                if (i < lines.length - 1) {
-                    elements.push(<div key={`br-${i}`} className="h-2" />);
-                }
-            } else {
-                elements.push(
-                    <p key={`p-${i}`} className="mb-1 last:mb-0 leading-relaxed">
-                        {parseBold(line)}
-                    </p>
-                );
-            }
-        }
-    });
-
-    // Flush remaining list
-    if (currentList.length > 0) {
-        elements.push(
-            <ul key="ul-end" className="list-disc mb-2 space-y-1">
-                {currentList}
-            </ul>
-        );
-    }
-
-    return <div>{elements}</div>;
-}
-
-// Helper to parse **bold** text
-function parseBold(text: string): React.ReactNode {
-    const parts = text.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, index) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={index} className="font-bold text-action/90 filter brightness-110">{part.slice(2, -2)}</strong>;
-        }
-        return part;
-    });
-}
-
-function ChatBubble({ message, onCopy, isCopied }: ChatBubbleProps) {
-    const isUser = message.role === 'user';
-    const agent = message.agent ? AGENTS[message.agent] : null;
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={cn(
-                "flex gap-2 group",
-                isUser ? "justify-end" : "justify-start"
-            )}
-        >
-            {!isUser && agent && (
-                <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${agent.color}20` }}
-                >
-                    <span className="text-xs">{agent.emoji}</span>
-                </div>
-            )}
-            <div className="relative">
-                <div className={cn(
-                    "max-w-[85%] px-4 py-3 rounded-2xl text-sm shadow-sm",
-                    isUser
-                        ? "bg-action text-white rounded-br-sm"
-                        : "bg-slate-800/90 border border-slate-700/50 text-slate-100 rounded-bl-sm"
-                )}>
-                    {!isUser && agent && (
-                        <p className="text-[10px] font-bold mb-1 opacity-80" style={{ color: agent.color }}>
-                            {agent.name}
-                        </p>
-                    )}
-
-                    {isUser ? (
-                        <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                    ) : (
-                        <FormattedText text={message.content} />
-                    )}
-                </div>
-
-                {/* Copy button for AI messages */}
-                {!isUser && (
-                    <button
-                        onClick={onCopy}
-                        className="absolute -bottom-1 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-slate-800 border border-slate-700 rounded-md"
-                        title="Copy message"
-                    >
-                        {isCopied ? (
-                            <Check className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                            <Copy className="w-3 h-3 text-secondary" />
-                        )}
-                    </button>
-                )}
-            </div>
-        </motion.div>
-    );
-}
-
-// Floating AI Button
-interface AIFloatingButtonProps {
-    onClick: () => void;
-    hasUnread?: boolean;
-}
-
-export function AIFloatingButton({ onClick, hasUnread }: AIFloatingButtonProps) {
+export function AIFloatingButton({ onClick, hasUnread }: { onClick: () => void; hasUnread?: boolean }) {
     return (
         <motion.button
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.05, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
             onClick={onClick}
-            className="fixed bottom-24 right-4 w-14 h-14 bg-gradient-to-br from-action to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-action/40 z-40"
+            className="fixed bottom-24 right-6 w-16 h-16 bg-white border border-stone-200 rounded-[24px] flex items-center justify-center shadow-2xl z-40 group"
         >
-            <Sparkles className="w-6 h-6 text-white" />
+            <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity rounded-[24px]" />
+            <Sparkles className="w-7 h-7 text-primary" />
             {hasUnread && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-background" />
+                <span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 rounded-full border-4 border-white shadow-lg" />
             )}
         </motion.button>
     );
 }
+

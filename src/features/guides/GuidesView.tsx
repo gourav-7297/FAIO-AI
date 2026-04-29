@@ -108,11 +108,11 @@ export function GuidesView() {
         <div className="p-5 pt-12 min-h-screen pb-32">
             <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
                 <div className="flex items-center gap-2 mb-1">
-                    <Compass className="w-5 h-5 text-action" />
-                    <span className="text-xs text-action font-bold uppercase tracking-wider">Trusted Locals</span>
+                    <Compass className="w-5 h-5 text-primary" />
+                    <span className="text-xs text-primary font-bold uppercase tracking-wider">Trusted Locals</span>
                 </div>
-                <h1 className="text-3xl font-bold">Local Guides</h1>
-                <p className="text-secondary text-sm">
+                <h1 className="text-3xl font-bold text-stone-800">Local Guides</h1>
+                <p className="text-stone-500 text-sm">
                     {tripData ? `Expert guides for ${tripData.destination}` : 'Handpicked local experts'}
                 </p>
             </motion.header>
@@ -120,19 +120,19 @@ export function GuidesView() {
             {/* Search + Sort */}
             <div className="flex gap-2 mb-4">
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search by name, language..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-surface/80 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-action placeholder:text-slate-500"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-primary placeholder:text-stone-400"
                     />
                 </div>
                 <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
-                    className="px-3 py-2.5 bg-surface/80 border border-slate-700 rounded-xl text-sm text-secondary focus:outline-none appearance-none cursor-pointer"
+                    className="px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-sm text-stone-700 focus:outline-none appearance-none cursor-pointer"
                 >
                     <option value="rating">⭐ Rating</option>
                     <option value="price">💰 Price</option>
@@ -147,8 +147,8 @@ export function GuidesView() {
                         key={s.id}
                         onClick={() => setActiveSpecialty(s.id)}
                         className={cn(
-                            "px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
-                            activeSpecialty === s.id ? "bg-action text-white" : "bg-surface/50 text-secondary hover:text-white"
+                            "px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 shadow-sm",
+                            activeSpecialty === s.id ? "bg-primary text-white" : "bg-stone-100 text-stone-500 hover:text-stone-800"
                         )}
                     >
                         {s.label}
@@ -159,19 +159,19 @@ export function GuidesView() {
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-2 mb-5">
                 <GlassCard className="p-2.5 text-center">
-                    <Users className="w-4 h-4 mx-auto text-action mb-1" />
-                    <p className="text-sm font-bold">{MOCK_GUIDES.length}</p>
-                    <p className="text-[9px] text-secondary">Guides</p>
+                    <Users className="w-4 h-4 mx-auto text-primary mb-1" />
+                    <p className="text-sm font-bold text-stone-800">{MOCK_GUIDES.length}</p>
+                    <p className="text-[9px] text-stone-500">Guides</p>
                 </GlassCard>
                 <GlassCard className="p-2.5 text-center">
-                    <Shield className="w-4 h-4 mx-auto text-emerald-400 mb-1" />
-                    <p className="text-sm font-bold">{MOCK_GUIDES.filter(g => g.isVerified).length}</p>
-                    <p className="text-[9px] text-secondary">Verified</p>
+                    <Shield className="w-4 h-4 mx-auto text-emerald-500 mb-1" />
+                    <p className="text-sm font-bold text-stone-800">{MOCK_GUIDES.filter(g => g.isVerified).length}</p>
+                    <p className="text-[9px] text-stone-500">Verified</p>
                 </GlassCard>
                 <GlassCard className="p-2.5 text-center">
-                    <CheckCircle className="w-4 h-4 mx-auto text-amber-400 mb-1" />
-                    <p className="text-sm font-bold">{MOCK_GUIDES.filter(g => g.isAvailableToday).length}</p>
-                    <p className="text-[9px] text-secondary">Available</p>
+                    <CheckCircle className="w-4 h-4 mx-auto text-amber-500 mb-1" />
+                    <p className="text-sm font-bold text-stone-800">{MOCK_GUIDES.filter(g => g.isAvailableToday).length}</p>
+                    <p className="text-[9px] text-stone-500">Available</p>
                 </GlassCard>
             </div>
 
@@ -221,17 +221,17 @@ function GuideCard({ guide, delay, isFavorite, onFavorite, onBook }: {
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                            <h3 className="font-bold">{guide.name}</h3>
+                            <h3 className="font-bold text-stone-800">{guide.name}</h3>
                             {guide.isVerified && (
-                                <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                                <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                             )}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                            <span className="flex items-center gap-0.5 text-xs">
-                                <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                            <span className="flex items-center gap-0.5 text-xs text-stone-700">
+                                <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
                                 <span className="font-bold">{guide.rating}</span>
                             </span>
-                            <span className="text-xs text-secondary">({guide.reviews} reviews)</span>
+                            <span className="text-xs text-stone-500">({guide.reviews} reviews)</span>
                             {guide.isAvailableToday && (
                                 <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 text-[9px] font-bold rounded">TODAY</span>
                             )}
@@ -247,7 +247,7 @@ function GuideCard({ guide, delay, isFavorite, onFavorite, onBook }: {
                 {/* Tags Row */}
                 <div className="flex flex-wrap gap-1 mb-3">
                     {guide.languages.map((lang, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-action/10 text-action text-[10px] rounded-full flex items-center gap-0.5">
+                        <span key={i} className="px-2 py-0.5 bg-primary/10 text-action text-[10px] rounded-full flex items-center gap-0.5">
                             <Languages className="w-2.5 h-2.5" /> {lang}
                         </span>
                     ))}
@@ -264,14 +264,14 @@ function GuideCard({ guide, delay, isFavorite, onFavorite, onBook }: {
                 </div>
 
                 {/* Bottom Row */}
-                <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
+                <div className="flex items-center justify-between pt-3 border-t border-stone-100">
                     <div>
-                        <span className="text-xl font-bold text-white">${guide.price}</span>
-                        <span className="text-xs text-secondary">/hour</span>
+                        <span className="text-xl font-bold text-stone-800">${guide.price}</span>
+                        <span className="text-xs text-stone-500">/hour</span>
                     </div>
                     <button
                         onClick={onBook}
-                        className="px-5 py-2.5 bg-gradient-to-r from-action to-purple-500 text-white rounded-xl text-sm font-bold"
+                        className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold shadow-sm"
                     >
                         Book Now
                     </button>
@@ -312,7 +312,7 @@ function BookingModal({ guide, onClose }: { guide: GuideExtended; onClose: () =>
                 initial={{ y: 300 }}
                 animate={{ y: 0 }}
                 exit={{ y: 300 }}
-                className="w-full max-w-lg bg-slate-900 rounded-t-3xl p-6 space-y-4 max-h-[85vh] overflow-y-auto"
+                className="w-full max-w-lg bg-white rounded-t-3xl p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl"
             >
                 <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold">
@@ -347,18 +347,18 @@ function BookingModal({ guide, onClose }: { guide: GuideExtended; onClose: () =>
 
                         {/* Date */}
                         <div>
-                            <p className="text-xs text-secondary mb-2 uppercase tracking-wider">Date</p>
+                            <p className="text-xs text-stone-500 mb-2 uppercase tracking-wider">Date</p>
                             <input
                                 type="date"
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
-                                className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-action text-white"
+                                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none focus:border-stone-800 text-stone-800"
                             />
                         </div>
 
                         {/* Duration */}
                         <div>
-                            <p className="text-xs text-secondary mb-2 uppercase tracking-wider">Duration (hours)</p>
+                            <p className="text-xs text-stone-500 mb-2 uppercase tracking-wider">Duration (hours)</p>
                             <div className="flex gap-2">
                                 {[1, 2, 3, 4, 6, 8].map(h => (
                                     <button
@@ -366,7 +366,7 @@ function BookingModal({ guide, onClose }: { guide: GuideExtended; onClose: () =>
                                         onClick={() => setHours(h)}
                                         className={cn(
                                             "flex-1 py-2 rounded-xl text-sm font-medium transition-all",
-                                            hours === h ? "bg-action text-white" : "bg-surface/50 text-secondary"
+                                            hours === h ? "bg-stone-800 text-white" : "bg-stone-100 text-stone-600"
                                         )}
                                     >
                                         {h}h
@@ -377,20 +377,20 @@ function BookingModal({ guide, onClose }: { guide: GuideExtended; onClose: () =>
 
                         {/* Message */}
                         <div>
-                            <p className="text-xs text-secondary mb-2 uppercase tracking-wider">Message (optional)</p>
+                            <p className="text-xs text-stone-500 mb-2 uppercase tracking-wider">Message (optional)</p>
                             <textarea
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
                                 placeholder="Tell the guide what you'd like to see..."
                                 rows={2}
-                                className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-action text-white text-sm resize-none"
+                                className="w-full bg-stone-50/50 border border-stone-200 rounded-xl px-4 py-3 outline-none focus:border-action text-stone-800 text-sm resize-none"
                             />
                         </div>
 
                         {/* Total */}
-                        <div className="flex items-center justify-between p-4 bg-surface/50 rounded-xl">
-                            <span className="text-secondary">Total</span>
-                            <span className="text-2xl font-bold">${total}</span>
+                        <div className="flex items-center justify-between p-4 bg-stone-50 rounded-xl">
+                            <span className="text-stone-500">Total</span>
+                            <span className="text-2xl font-bold text-stone-900">${total}</span>
                         </div>
 
                         <button

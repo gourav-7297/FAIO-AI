@@ -185,49 +185,49 @@ export function SafetyView() {
             <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex justify-between items-start">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
-                        <Shield className="w-5 h-5 text-safety" />
-                        <span className="text-xs text-safety font-bold uppercase tracking-wider">AI Protected</span>
+                        <Shield className="w-5 h-5 text-red-500" />
+                        <span className="text-xs text-stone-500 font-bold uppercase tracking-wider">AI Protected</span>
                         {advisoryLevel && (
                             <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", advisoryLevel.bgColor, advisoryLevel.color)}>
                                 {advisoryLevel.label}
                             </span>
                         )}
                     </div>
-                    <h1 className="text-3xl font-bold">Safety Hub</h1>
-                    <p className="text-secondary text-sm">
+                    <h1 className="text-3xl font-bold text-stone-800">Safety Hub</h1>
+                    <p className="text-stone-500 text-sm">
                         {userLocation?.city ? `📍 ${userLocation.city}, ${userLocation.country}` : tripData ? `Protection active for ${tripData.destination}` : 'Real-time risk monitoring'}
                     </p>
                 </div>
-                <button onClick={() => setShowContacts(true)} className="p-3 bg-surface/50 border border-slate-800 rounded-xl hover:border-slate-600 transition-colors">
-                    <User className="w-5 h-5 text-secondary" />
+                <button onClick={() => setShowContacts(true)} className="p-3 bg-white border border-stone-200 rounded-xl hover:border-stone-400 transition-colors shadow-sm">
+                    <User className="w-5 h-5 text-stone-500" />
                 </button>
             </motion.header>
 
             {/* Emergency Numbers Card */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <GlassCard gradient="none" className="p-4 mb-4 border border-red-500/20">
+                <GlassCard className="p-4 mb-4 border border-red-500/20 bg-red-50/30">
                     <div className="flex items-center gap-2 mb-3">
                         <span className="text-2xl">{emergencyNums.flag}</span>
                         <div>
-                            <h3 className="font-bold text-sm">{emergencyNums.countryName} Emergency</h3>
-                            <p className="text-[10px] text-secondary">Tap to call instantly</p>
+                            <h3 className="font-bold text-sm text-stone-800">{emergencyNums.countryName} Emergency</h3>
+                            <p className="text-[10px] text-stone-500">Tap to call instantly</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                         {[
-                            { label: 'Police', num: emergencyNums.police, icon: <Siren className="w-4 h-4" />, color: 'text-blue-400 bg-blue-500/10' },
-                            { label: 'Ambulance', num: emergencyNums.ambulance, icon: <Heart className="w-4 h-4" />, color: 'text-red-400 bg-red-500/10' },
-                            { label: 'Fire', num: emergencyNums.fire, icon: <Flame className="w-4 h-4" />, color: 'text-orange-400 bg-orange-500/10' },
+                            { label: 'Police', num: emergencyNums.police, icon: <Siren className="w-4 h-4" />, color: 'text-blue-600 bg-blue-100/50' },
+                            { label: 'Ambulance', num: emergencyNums.ambulance, icon: <Heart className="w-4 h-4" />, color: 'text-red-600 bg-red-100/50' },
+                            { label: 'Fire', num: emergencyNums.fire, icon: <Flame className="w-4 h-4" />, color: 'text-orange-600 bg-orange-100/50' },
                         ].map(item => (
-                            <a key={item.label} href={`tel:${item.num}`} className={cn("flex flex-col items-center gap-1 p-2.5 rounded-xl border border-white/5 transition-all hover:scale-105", item.color)}>
+                            <a key={item.label} href={`tel:${item.num}`} className={cn("flex flex-col items-center gap-1 p-2.5 rounded-xl border border-stone-100 transition-all hover:scale-105 shadow-sm", item.color)}>
                                 {item.icon}
-                                <span className="text-[10px] font-bold text-white">{item.num}</span>
-                                <span className="text-[9px] text-secondary">{item.label}</span>
+                                <span className="text-[10px] font-bold">{item.num}</span>
+                                <span className="text-[9px] opacity-70">{item.label}</span>
                             </a>
                         ))}
                     </div>
                     {emergencyNums.touristPolice && (
-                        <a href={`tel:${emergencyNums.touristPolice}`} className="mt-2 w-full flex items-center justify-center gap-2 p-2 bg-purple-500/10 rounded-lg text-purple-400 text-xs font-medium">
+                        <a href={`tel:${emergencyNums.touristPolice}`} className="mt-2 w-full flex items-center justify-center gap-2 p-2 bg-purple-50 rounded-lg text-purple-600 text-xs font-medium border border-purple-100">
                             <Globe className="w-3.5 h-3.5" /> Tourist Police: {emergencyNums.touristPolice}
                         </a>
                     )}
@@ -238,31 +238,31 @@ export function SafetyView() {
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-4 mb-4">
                 <div className="relative">
                     <svg className="w-36 h-36 transform -rotate-90 pointer-events-none">
-                        <circle cx="72" cy="72" r="42" stroke="currentColor" strokeWidth="5" fill="transparent" className="text-slate-800" />
-                        <motion.circle cx="72" cy="72" r="42" stroke="#EF4444" strokeWidth="5" fill="transparent" strokeDasharray="264" strokeDashoffset="264" animate={controls} className="drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]" />
+                        <circle cx="72" cy="72" r="42" stroke="currentColor" strokeWidth="5" fill="transparent" className="text-stone-100" />
+                        <motion.circle cx="72" cy="72" r="42" stroke="#EF4444" strokeWidth="5" fill="transparent" strokeDasharray="264" strokeDashoffset="264" animate={controls} className="drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" />
                     </svg>
                     <button onPointerDown={startHold} onPointerUp={endHold} onContextMenu={e => e.preventDefault()} onMouseLeave={endHold}
-                        className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full", "bg-gradient-to-br from-surface to-slate-900 border-4 border-slate-700", "flex flex-col items-center justify-center shadow-2xl transition-all duration-200", "active:scale-95 select-none", holding ? "border-safety shadow-safety/30" : "hover:border-slate-500")}>
-                        <div className="bg-gradient-to-br from-safety to-red-600 text-white w-12 h-12 rounded-full flex items-center justify-center mb-1 shadow-lg">
+                        className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full", "bg-white border-4 border-stone-100", "flex flex-col items-center justify-center shadow-premium transition-all duration-200", "active:scale-95 select-none", holding ? "border-red-500 shadow-red-200" : "hover:border-stone-200")}>
+                        <div className="bg-gradient-to-br from-red-500 to-red-600 text-white w-12 h-12 rounded-full flex items-center justify-center mb-1 shadow-md">
                             <span className="font-black text-base">SOS</span>
                         </div>
-                        <span className="text-[8px] text-secondary font-medium uppercase tracking-widest">Hold 3s</span>
+                        <span className="text-[8px] text-stone-500 font-bold uppercase tracking-widest">Hold 3s</span>
                     </button>
                 </div>
             </motion.div>
 
             {/* Quick Actions */}
             <div className="grid grid-cols-3 gap-2 mb-4">
-                <button onClick={() => setShowFakeCall(true)} className="p-3 bg-surface/80 border border-slate-700 rounded-xl flex flex-col items-center gap-1.5 hover:border-action transition-colors">
-                    <PhoneCall className="w-5 h-5 text-amber-400" /><span className="text-[10px] font-medium text-secondary">Fake Call</span>
+                <button onClick={() => setShowFakeCall(true)} className="p-3 bg-white border border-stone-200 rounded-xl flex flex-col items-center gap-1.5 hover:border-primary transition-colors shadow-sm">
+                    <PhoneCall className="w-5 h-5 text-amber-500" /><span className="text-[10px] font-semibold text-stone-500">Fake Call</span>
                 </button>
-                <button onClick={toggleLiveSharing} className={cn("p-3 border rounded-xl flex flex-col items-center gap-1.5 transition-colors", liveSharing ? "bg-emerald-500/10 border-emerald-500/30" : "bg-surface/80 border-slate-700 hover:border-action")}>
-                    <Share2 className={cn("w-5 h-5", liveSharing ? "text-emerald-400" : "text-secondary")} />
-                    <span className="text-[10px] font-medium text-secondary">{liveSharing ? 'Sharing ON' : 'Share GPS'}</span>
+                <button onClick={toggleLiveSharing} className={cn("p-3 border rounded-xl flex flex-col items-center gap-1.5 transition-colors shadow-sm", liveSharing ? "bg-emerald-50 border-emerald-100" : "bg-white border-stone-200 hover:border-primary")}>
+                    <Share2 className={cn("w-5 h-5", liveSharing ? "text-emerald-600" : "text-stone-400")} />
+                    <span className="text-[10px] font-semibold text-stone-500">{liveSharing ? 'Sharing ON' : 'Share GPS'}</span>
                 </button>
                 <button onClick={() => { if (navigator.share) navigator.share({ title: 'My Location - FAIO Safety', text: userLocation ? `I'm at ${userLocation.city || 'this location'}. Shared via FAIO AI Safety.` : 'Shared via FAIO AI Safety.', url: userLocation ? `https://maps.google.com/?q=${userLocation.lat},${userLocation.lon}` : 'https://maps.google.com' }); }}
-                    className="p-3 bg-surface/80 border border-slate-700 rounded-xl flex flex-col items-center gap-1.5 hover:border-action transition-colors">
-                    <Navigation className="w-5 h-5 text-blue-400" /><span className="text-[10px] font-medium text-secondary">Send Location</span>
+                    className="p-3 bg-white border border-stone-200 rounded-xl flex flex-col items-center gap-1.5 hover:border-primary transition-colors shadow-sm">
+                    <Navigation className="w-5 h-5 text-blue-500" /><span className="text-[10px] font-semibold text-stone-500">Send Location</span>
                 </button>
             </div>
 
@@ -274,7 +274,7 @@ export function SafetyView() {
                             <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse" />
                             <div className="flex-1">
                                 <p className="text-sm font-bold text-emerald-400">Live Location Active</p>
-                                <p className="text-[10px] text-secondary">GPS updating every 30s · Accuracy: {userLocation ? `${Math.round(userLocation.accuracy)}m` : '...'}</p>
+                                <p className="text-[10px] text-stone-500">GPS updating every 30s · Accuracy: {userLocation ? `${Math.round(userLocation.accuracy)}m` : '...'}</p>
                             </div>
                             <button onClick={toggleLiveSharing} className="text-xs text-emerald-400 font-bold">Stop</button>
                         </div>
@@ -289,21 +289,21 @@ export function SafetyView() {
                         {isLoading ? <Loader2 className="w-5 h-5 text-amber-400 animate-spin" /> : <AlertTriangle className="w-5 h-5 text-amber-400" />}
                     </div>
                     <p className={cn("text-lg font-bold", advisoryLevel?.color)}>{advisory ? advisory.score.toFixed(1) : '...'}</p>
-                    <p className="text-[10px] text-secondary">Risk Score</p>
+                    <p className="text-[10px] text-stone-500">Risk Score</p>
                 </GlassCard>
                 <GlassCard className="p-3 text-center">
                     <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-blue-500/10 flex items-center justify-center">
                         <MapPin className="w-5 h-5 text-blue-400" />
                     </div>
                     <p className="text-lg font-bold">{nearbyPlaces.length}</p>
-                    <p className="text-[10px] text-secondary">Safe Places</p>
+                    <p className="text-[10px] text-stone-500">Safe Places</p>
                 </GlassCard>
                 <GlassCard className="p-3 text-center">
                     <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                         <ShieldCheck className="w-5 h-5 text-emerald-400" />
                     </div>
                     <p className="text-lg font-bold">{checklistDone}/{checklist.length}</p>
-                    <p className="text-[10px] text-secondary">Checklist</p>
+                    <p className="text-[10px] text-stone-500">Checklist</p>
                 </GlassCard>
             </div>
 
@@ -316,7 +316,7 @@ export function SafetyView() {
                     { id: 'tips', label: 'Night Tips', icon: Moon },
                 ].map(tab => (
                     <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
-                        className={cn("flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap", activeTab === tab.id ? "bg-action text-white" : "bg-surface/50 text-secondary hover:text-white")}>
+                        className={cn("flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap", activeTab === tab.id ? "bg-primary text-stone-800 shadow-sm" : "bg-stone-100 text-stone-500 hover:text-stone-700")}>
                         <tab.icon className="w-4 h-4" /><span className="text-sm font-medium">{tab.label}</span>
                     </button>
                 ))}
@@ -333,18 +333,18 @@ export function SafetyView() {
                                     <Globe className={cn("w-5 h-5", advisoryLevel.color)} />
                                     <div className="flex-1">
                                         <h4 className="font-bold text-sm">{advisory.countryName} Travel Advisory</h4>
-                                        <p className="text-[10px] text-secondary">Score: {advisory.score.toFixed(1)}/5 · Updated {formatTimeAgo(advisory.updatedAt)}</p>
+                                        <p className="text-[10px] text-stone-500">Score: {advisory.score.toFixed(1)}/5 · Updated {formatTimeAgo(advisory.updatedAt)}</p>
                                     </div>
                                     <span className={cn("px-2 py-1 rounded-full text-xs font-bold", advisoryLevel.bgColor, advisoryLevel.color)}>{advisoryLevel.label}</span>
                                 </div>
-                                <p className="text-xs text-secondary">{advisory.message}</p>
+                                <p className="text-xs text-stone-500">{advisory.message}</p>
                             </GlassCard>
                         )}
                         {/* Community alerts */}
                         {alerts.map((alert, i) => <AlertCard key={alert.id} alert={alert} delay={i * 0.05} />)}
                         {/* Report button */}
                         {user && (
-                            <button onClick={() => setShowReportModal(true)} className="w-full py-3 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center gap-2 text-secondary hover:border-action hover:text-action transition-colors">
+                            <button onClick={() => setShowReportModal(true)} className="w-full py-3 border-2 border-dashed border-stone-200 rounded-xl flex items-center justify-center gap-2 text-stone-500 hover:border-action hover:text-action transition-colors">
                                 <AlertCircle className="w-5 h-5" /> Report Safety Alert
                             </button>
                         )}
@@ -360,20 +360,20 @@ export function SafetyView() {
                                 {userLocation && <span className="text-[10px] text-emerald-400 ml-auto">📍 Live GPS</span>}
                             </div>
                             <TravelMap center={mapCenter} zoom={14} height="200px" markers={mapMarkers} />
-                            <p className="text-xs text-secondary mt-2">🏥 Hospital · 🏛️ Police · 💊 Pharmacy</p>
+                            <p className="text-xs text-stone-500 mt-2">🏥 Hospital · 🏛️ Police · 💊 Pharmacy</p>
                         </GlassCard>
                         {/* Place list */}
                         <GlassCard className="p-4">
                             <h3 className="font-bold mb-3 flex items-center gap-2"><Landmark className="w-5 h-5 text-action" />Places ({nearbyPlaces.length})</h3>
                             <div className="space-y-2 max-h-60 overflow-y-auto">
-                                {nearbyPlaces.length === 0 && <p className="text-sm text-secondary">No GPS data. Enable location for real results.</p>}
+                                {nearbyPlaces.length === 0 && <p className="text-sm text-stone-500">No GPS data. Enable location for real results.</p>}
                                 {nearbyPlaces.slice(0, 10).map(place => (
-                                    <div key={place.id} className="flex items-center justify-between p-2 bg-surface/50 rounded-lg">
+                                    <div key={place.id} className="flex items-center justify-between p-2 bg-white/50 rounded-lg">
                                         <div className="flex items-center gap-2 flex-1 min-w-0">
                                             <span className="text-lg">{place.icon}</span>
                                             <div className="min-w-0">
                                                 <p className="text-sm font-medium truncate">{place.name}</p>
-                                                <p className="text-[10px] text-secondary truncate">{place.address}</p>
+                                                <p className="text-[10px] text-stone-500 truncate">{place.address}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -391,23 +391,23 @@ export function SafetyView() {
                     <motion.div key="checklist" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
                         <GlassCard gradient="green" className="p-4">
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-bold text-white">Safety Readiness</span>
-                                <span className="text-sm font-bold text-white">{checklistPercent.toFixed(0)}%</span>
+                                <span className="text-sm font-bold text-stone-800">Safety Readiness</span>
+                                <span className="text-sm font-bold text-stone-800">{checklistPercent.toFixed(0)}%</span>
                             </div>
                             <div className="h-2.5 bg-white/20 rounded-full overflow-hidden">
                                 <motion.div initial={{ width: 0 }} animate={{ width: `${checklistPercent}%` }} className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full" />
                             </div>
-                            <p className="text-xs text-white/70 mt-2">{checklistDone} of {checklist.length} completed</p>
+                            <p className="text-xs text-stone-800/70 mt-2">{checklistDone} of {checklist.length} completed</p>
                         </GlassCard>
                         <div className="space-y-2">
                             {checklist.map((item: typeof DEFAULT_CHECKLIST[0], i: number) => (
                                 <motion.div key={item.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
                                     <button onClick={() => toggleChecklistItem(item.id)} className="w-full text-left">
                                         <GlassCard className={cn("p-4 flex items-center gap-3 transition-all", item.done ? "border-emerald-500/20 bg-emerald-500/5" : "")}>
-                                            <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0", item.done ? "border-emerald-400 bg-emerald-400" : "border-slate-600")}>
-                                                {item.done && <CheckCircle className="w-4 h-4 text-white" />}
+                                            <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0", item.done ? "border-emerald-400 bg-emerald-400" : "border-stone-600")}>
+                                                {item.done && <CheckCircle className="w-4 h-4 text-stone-800" />}
                                             </div>
-                                            <span className={cn("text-sm font-medium transition-all", item.done ? "text-secondary line-through" : "text-white")}>{item.text}</span>
+                                            <span className={cn("text-sm font-medium transition-all", item.done ? "text-stone-500 line-through" : "text-stone-800")}>{item.text}</span>
                                         </GlassCard>
                                     </button>
                                 </motion.div>
@@ -482,11 +482,11 @@ function AlertCard({ alert, delay }: { alert: SafetyAlert; delay: number }) {
                     <div className="flex-1">
                         <div className="flex items-start justify-between mb-1">
                             <h4 className="font-bold">{alert.title}</h4>
-                            <span className="text-[10px] text-secondary flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTimeAgo(alert.created_at)}</span>
+                            <span className="text-[10px] text-stone-500 flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTimeAgo(alert.created_at)}</span>
                         </div>
-                        <p className="text-sm text-secondary mb-2">{alert.description}</p>
+                        <p className="text-sm text-stone-500 mb-2">{alert.description}</p>
                         <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 text-xs text-secondary"><MapPin className="w-3 h-3" /> {alert.area}</div>
+                            <div className="flex items-center gap-1 text-xs text-stone-500"><MapPin className="w-3 h-3" /> {alert.area}</div>
                             {alert.distance !== undefined && <span className="text-[10px] text-action">{alert.distance.toFixed(1)}km away</span>}
                         </div>
                     </div>
@@ -500,17 +500,17 @@ function FakeCallScreen({ onEnd }: { onEnd: () => void }) {
     const [elapsed, setElapsed] = useState(0);
     useEffect(() => { const t = setInterval(() => setElapsed(e => e + 1), 1000); return () => clearInterval(t); }, []);
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-between p-8">
-            <div className="flex-1 flex flex-col items-center justify-center text-white text-center">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-gradient-to-b from-stone-900 to-stone-800 flex flex-col items-center justify-between p-8">
+            <div className="flex-1 flex flex-col items-center justify-center text-stone-800 text-center">
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mb-6 shadow-xl shadow-emerald-500/30"><Phone className="w-12 h-12" /></div>
                 <h1 className="text-2xl font-bold mb-1">Hotel Reception</h1>
-                <p className="text-secondary mb-2">+81 3 1234 5678</p>
+                <p className="text-stone-500 mb-2">+81 3 1234 5678</p>
                 <div className="flex items-center gap-2 text-emerald-400">
                     <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}><Zap className="w-4 h-4" /></motion.div>
                     <span className="text-sm font-medium">{Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}</span>
                 </div>
             </div>
-            <button onClick={onEnd} className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center shadow-xl shadow-red-500/30 mb-8"><Phone className="w-8 h-8 text-white rotate-[135deg]" /></button>
+            <button onClick={onEnd} className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center shadow-xl shadow-red-500/30 mb-8"><Phone className="w-8 h-8 text-stone-800 rotate-[135deg]" /></button>
         </motion.div>
     );
 }
@@ -520,7 +520,7 @@ function EmergencyScreen({ onCancel, contacts, emergencyNums }: { onCancel: () =
     useEffect(() => { const t = setInterval(() => setCountdown(p => p > 0 ? p - 1 : 0), 1000); return () => clearInterval(t); }, []);
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-50 bg-gradient-to-b from-red-900 to-red-600 flex flex-col p-6">
-            <div className="flex-1 flex flex-col items-center justify-center text-white text-center">
+            <div className="flex-1 flex flex-col items-center justify-center text-stone-800 text-center">
                 <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1 }}><AlertTriangle className="w-24 h-24 mb-6" /></motion.div>
                 <h1 className="text-4xl font-bold mb-2">SOS ACTIVE</h1>
                 <p className="text-xl opacity-90 mb-4">Broadcasting Location...</p>
@@ -557,8 +557,8 @@ function EmergencyContactsModal({ contacts, onClose, onAdd, onRemove }: { contac
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-end justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="relative w-full max-w-md bg-surface rounded-t-3xl p-6 pb-safe">
-                <div className="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-6" />
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-safe">
+                <div className="w-12 h-1.5 bg-stone-700 rounded-full mx-auto mb-6" />
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold">Emergency Contacts</h2>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg"><X className="w-5 h-5" /></button>
@@ -568,11 +568,11 @@ function EmergencyContactsModal({ contacts, onClose, onAdd, onRemove }: { contac
                         <GlassCard key={c.id} className="p-4 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-action/10 flex items-center justify-center"><span className="font-bold text-action">{c.name[0]}</span></div>
-                                <div><p className="font-bold">{c.name}</p><p className="text-xs text-secondary">{c.phone}</p></div>
+                                <div><p className="font-bold">{c.name}</p><p className="text-xs text-stone-500">{c.phone}</p></div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <a href={`tel:${c.phone}`} className="p-1.5 bg-emerald-500/10 rounded-lg"><PhoneCall className="w-4 h-4 text-emerald-400" /></a>
-                                <span className="text-xs text-secondary px-2 py-1 bg-surface rounded-full">{c.relation}</span>
+                                <span className="text-xs text-stone-500 px-2 py-1 bg-white rounded-full">{c.relation}</span>
                                 <button onClick={() => onRemove(c.id)} className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors"><X className="w-4 h-4 text-red-400" /></button>
                             </div>
                         </GlassCard>
@@ -581,16 +581,16 @@ function EmergencyContactsModal({ contacts, onClose, onAdd, onRemove }: { contac
                 <AnimatePresence>
                     {showForm ? (
                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-3 mb-4">
-                            <input type="text" placeholder="Name" value={nc.name} onChange={e => setNc({ ...nc, name: e.target.value })} className="w-full p-3 bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-action" />
-                            <input type="tel" placeholder="Phone Number" value={nc.phone} onChange={e => setNc({ ...nc, phone: e.target.value })} className="w-full p-3 bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-action" />
-                            <input type="text" placeholder="Relation (Family, Friend, Local)" value={nc.relation} onChange={e => setNc({ ...nc, relation: e.target.value })} className="w-full p-3 bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-action" />
+                            <input type="text" placeholder="Name" value={nc.name} onChange={e => setNc({ ...nc, name: e.target.value })} className="w-full p-3 bg-stone-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-action" />
+                            <input type="tel" placeholder="Phone Number" value={nc.phone} onChange={e => setNc({ ...nc, phone: e.target.value })} className="w-full p-3 bg-stone-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-action" />
+                            <input type="text" placeholder="Relation (Family, Friend, Local)" value={nc.relation} onChange={e => setNc({ ...nc, relation: e.target.value })} className="w-full p-3 bg-stone-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-action" />
                             <div className="flex gap-2">
-                                <button onClick={() => setShowForm(false)} className="flex-1 py-3 bg-slate-800 rounded-xl font-bold">Cancel</button>
+                                <button onClick={() => setShowForm(false)} className="flex-1 py-3 bg-stone-100 rounded-xl font-bold">Cancel</button>
                                 <button onClick={handleAdd} className="flex-1 py-3 bg-action rounded-xl font-bold">Add Contact</button>
                             </div>
                         </motion.div>
                     ) : (
-                        <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowForm(true)} className="w-full py-3 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center gap-2 text-secondary hover:border-action hover:text-action transition-colors">
+                        <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowForm(true)} className="w-full py-3 border-2 border-dashed border-stone-200 rounded-xl flex items-center justify-center gap-2 text-stone-500 hover:border-action hover:text-action transition-colors">
                             <Plus className="w-5 h-5" /> Add Emergency Contact
                         </motion.button>
                     )}
@@ -608,20 +608,20 @@ function ReportAlertModal({ userLocation, onClose, onSubmit }: { userLocation: U
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-end justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="relative w-full max-w-md bg-surface rounded-t-3xl p-6">
-                <div className="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-6" />
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="relative w-full max-w-md bg-white rounded-t-3xl p-6">
+                <div className="w-12 h-1.5 bg-stone-700 rounded-full mx-auto mb-6" />
                 <h2 className="text-xl font-bold mb-4">Report Safety Alert</h2>
                 <div className="flex gap-2 mb-4">
                     {(['warning', 'caution', 'info'] as const).map(t => (
-                        <button key={t} onClick={() => setType(t)} className={cn("flex-1 py-2 rounded-xl text-sm font-bold capitalize transition-all", type === t ? (t === 'warning' ? 'bg-red-500/20 text-red-400' : t === 'caution' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400') : 'bg-surface/50 text-secondary')}>{t}</button>
+                        <button key={t} onClick={() => setType(t)} className={cn("flex-1 py-2 rounded-xl text-sm font-bold capitalize transition-all", type === t ? (t === 'warning' ? 'bg-red-500/20 text-red-400' : t === 'caution' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400') : 'bg-white/50 text-stone-500')}>{t}</button>
                     ))}
                 </div>
-                <input type="text" placeholder="Alert title..." value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 bg-slate-800 rounded-xl mb-3 focus:outline-none focus:ring-2 focus:ring-action" />
-                <textarea placeholder="Describe the safety concern..." value={desc} onChange={e => setDesc(e.target.value)} rows={3} className="w-full p-3 bg-slate-800 rounded-xl mb-3 focus:outline-none focus:ring-2 focus:ring-action resize-none" />
-                <input type="text" placeholder="Area name" value={area} onChange={e => setArea(e.target.value)} className="w-full p-3 bg-slate-800 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-action" />
-                {userLocation && <p className="text-xs text-secondary mb-4">📍 GPS: {userLocation.lat.toFixed(4)}, {userLocation.lon.toFixed(4)}</p>}
+                <input type="text" placeholder="Alert title..." value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 bg-stone-100 rounded-xl mb-3 focus:outline-none focus:ring-2 focus:ring-action" />
+                <textarea placeholder="Describe the safety concern..." value={desc} onChange={e => setDesc(e.target.value)} rows={3} className="w-full p-3 bg-stone-100 rounded-xl mb-3 focus:outline-none focus:ring-2 focus:ring-action resize-none" />
+                <input type="text" placeholder="Area name" value={area} onChange={e => setArea(e.target.value)} className="w-full p-3 bg-stone-100 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-action" />
+                {userLocation && <p className="text-xs text-stone-500 mb-4">📍 GPS: {userLocation.lat.toFixed(4)}, {userLocation.lon.toFixed(4)}</p>}
                 <div className="flex gap-2">
-                    <button onClick={onClose} className="flex-1 py-3 bg-slate-800 rounded-xl font-bold">Cancel</button>
+                    <button onClick={onClose} className="flex-1 py-3 bg-stone-100 rounded-xl font-bold">Cancel</button>
                     <button onClick={() => { if (title) onSubmit({ type, title, description: desc, lat: userLocation?.lat, lon: userLocation?.lon, area, countryCode: userLocation?.countryCode }); }} disabled={!title} className="flex-1 py-3 bg-action rounded-xl font-bold disabled:opacity-50">Report</button>
                 </div>
             </motion.div>

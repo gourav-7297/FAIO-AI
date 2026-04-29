@@ -54,29 +54,29 @@ export default function TrainsView() {
     };
 
     return (
-        <div className="space-y-4 pb-24">
+        <div className="space-y-6 pb-24 p-5">
             {/* Header */}
-            <div className="text-center pt-2 pb-4">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 mb-3">
-                    <Train className="w-4 h-4 text-blue-400" />
-                    <span className="text-blue-300 text-sm font-medium">Train Booking</span>
+            <div className="text-center pt-8 pb-4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 mb-4">
+                    <Train className="w-4 h-4 text-blue-600" />
+                    <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Train Booking</span>
                 </div>
-                <h2 className="text-xl font-bold text-white">Search & Book Trains</h2>
-                <p className="text-white/50 text-sm mt-1">
+                <h2 className="text-3xl font-black text-stone-900 tracking-tighter">Search & Book Trains</h2>
+                <p className="text-stone-500 text-sm mt-1 font-medium">
                     Find trains via IRCTC and trusted platforms
                 </p>
             </div>
 
             {/* Search Form */}
-            <GlassCard className="p-4 space-y-3">
+            <GlassCard className="p-6 space-y-4 border border-stone-100 shadow-soft">
                 {/* From Station */}
                 <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-400" />
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
                     <input
                         value={fromStation ? `${fromStation.name} (${fromStation.code})` : fromQuery}
                         onChange={e => handleFromChange(e.target.value)}
                         placeholder="From station..."
-                        className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30"
+                        className="w-full pl-11 pr-4 py-4 bg-stone-50 border border-stone-100 rounded-2xl text-stone-900 font-bold placeholder:text-stone-300 focus:outline-none focus:border-stone-900 transition-colors"
                     />
                     <AnimatePresence>
                         {fromSuggestions.length > 0 && !fromStation && (
@@ -84,7 +84,7 @@ export default function TrainsView() {
                                 initial={{ opacity: 0, y: -4 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -4 }}
-                                className="absolute z-20 left-0 right-0 top-full mt-1 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl"
+                                className="absolute z-20 left-0 right-0 top-full mt-2 bg-white border border-stone-100 rounded-2xl overflow-hidden shadow-2xl"
                             >
                                 {fromSuggestions.map(s => (
                                     <button
@@ -95,13 +95,13 @@ export default function TrainsView() {
                                             setFromSuggestions([]);
                                             toRef.current?.focus();
                                         }}
-                                        className="w-full text-left px-4 py-2.5 text-sm text-white/70 hover:bg-white/10 transition-colors"
+                                        className="w-full text-left px-5 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors border-b border-stone-50 last:border-0"
                                     >
                                         <div className="flex justify-between items-center">
-                                            <span>{s.name}</span>
-                                            <span className="text-white/30 font-mono text-xs">{s.code}</span>
+                                            <span className="font-bold">{s.name}</span>
+                                            <span className="text-stone-400 font-black text-[10px] uppercase">{s.code}</span>
                                         </div>
-                                        <span className="text-white/30 text-xs">{s.city}</span>
+                                        <span className="text-stone-400 text-[10px] font-bold">{s.city}</span>
                                     </button>
                                 ))}
                             </motion.div>
@@ -110,21 +110,21 @@ export default function TrainsView() {
                 </div>
 
                 {/* Arrow */}
-                <div className="flex justify-center">
-                    <div className="p-1.5 rounded-full bg-white/5 border border-white/10">
-                        <ChevronDown className="w-4 h-4 text-white/30" />
+                <div className="flex justify-center -my-2 relative z-10">
+                    <div className="p-2 rounded-2xl bg-white border border-stone-100 shadow-sm">
+                        <ChevronDown className="w-4 h-4 text-stone-400" />
                     </div>
                 </div>
 
                 {/* To Station */}
                 <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-400" />
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
                     <input
                         ref={toRef}
                         value={toStation ? `${toStation.name} (${toStation.code})` : toQuery}
                         onChange={e => handleToChange(e.target.value)}
                         placeholder="To station..."
-                        className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30"
+                        className="w-full pl-11 pr-4 py-4 bg-stone-50 border border-stone-100 rounded-2xl text-stone-900 font-bold placeholder:text-stone-300 focus:outline-none focus:border-stone-900 transition-colors"
                     />
                     <AnimatePresence>
                         {toSuggestions.length > 0 && !toStation && (
@@ -132,7 +132,7 @@ export default function TrainsView() {
                                 initial={{ opacity: 0, y: -4 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -4 }}
-                                className="absolute z-20 left-0 right-0 top-full mt-1 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl"
+                                className="absolute z-20 left-0 right-0 top-full mt-2 bg-white border border-stone-100 rounded-2xl overflow-hidden shadow-2xl"
                             >
                                 {toSuggestions.map(s => (
                                     <button
@@ -142,13 +142,13 @@ export default function TrainsView() {
                                             setToQuery('');
                                             setToSuggestions([]);
                                         }}
-                                        className="w-full text-left px-4 py-2.5 text-sm text-white/70 hover:bg-white/10 transition-colors"
+                                        className="w-full text-left px-5 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors border-b border-stone-50 last:border-0"
                                     >
                                         <div className="flex justify-between items-center">
-                                            <span>{s.name}</span>
-                                            <span className="text-white/30 font-mono text-xs">{s.code}</span>
+                                            <span className="font-bold">{s.name}</span>
+                                            <span className="text-stone-400 font-black text-[10px] uppercase">{s.code}</span>
                                         </div>
-                                        <span className="text-white/30 text-xs">{s.city}</span>
+                                        <span className="text-stone-400 text-[10px] font-bold">{s.city}</span>
                                     </button>
                                 ))}
                             </motion.div>
@@ -158,23 +158,23 @@ export default function TrainsView() {
 
                 {/* Date */}
                 <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                     <input
                         type="date"
                         value={date}
                         min={getDefaultDate(0)}
                         onChange={e => setDate(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white"
+                        className="w-full pl-11 pr-4 py-4 bg-stone-50 border border-stone-100 rounded-2xl text-stone-900 font-bold focus:outline-none focus:border-stone-900 transition-colors"
                     />
                 </div>
 
                 {/* Search Button */}
                 <button
                     onClick={handleSearch}
-                    className="w-full py-3.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:brightness-110 transition-all"
+                    className="w-full py-5 bg-stone-900 hover:bg-stone-800 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-stone-900/10 transition-all"
                 >
                     <Search className="w-4 h-4" />
-                    Find Trains
+                    Commence Search
                 </button>
             </GlassCard>
 
@@ -185,53 +185,53 @@ export default function TrainsView() {
                         variants={container}
                         initial="hidden"
                         animate="show"
-                        className="space-y-3"
+                        className="space-y-4"
                     >
                         {/* Route Summary */}
-                        <div className="flex items-center justify-center gap-2 text-white/60 text-sm py-1">
+                        <div className="flex items-center justify-center gap-3 text-stone-500 text-sm py-4 bg-stone-50 rounded-2xl border border-stone-100">
                             <div className="text-center">
-                                <span className="font-medium text-white">{fromStation.name}</span>
-                                <span className="text-white/30 text-xs ml-1">({fromStation.code})</span>
+                                <span className="font-black text-stone-900">{fromStation.name}</span>
+                                <span className="text-stone-400 text-[10px] font-black ml-1 uppercase">{fromStation.code}</span>
                             </div>
-                            <ArrowRight className="w-4 h-4 flex-shrink-0" />
+                            <ArrowRight className="w-4 h-4 text-stone-300" />
                             <div className="text-center">
-                                <span className="font-medium text-white">{toStation.name}</span>
-                                <span className="text-white/30 text-xs ml-1">({toStation.code})</span>
+                                <span className="font-black text-stone-900">{toStation.name}</span>
+                                <span className="text-stone-400 text-[10px] font-black ml-1 uppercase">{toStation.code}</span>
                             </div>
                         </div>
 
-                        <p className="text-white/40 text-xs px-1">
-                            Book on any of these trusted platforms:
+                        <p className="text-stone-400 text-[10px] font-black uppercase tracking-widest px-1">
+                            Available Booking Nodes
                         </p>
 
                         {TRAIN_PARTNERS.map(partner => (
                             <motion.div key={partner.name} variants={item}>
-                                <GlassCard className="p-4 hover:bg-white/[0.04] transition-colors">
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div className="flex items-center gap-3">
+                                <GlassCard className="p-6 hover:bg-white transition-all border border-stone-100 shadow-soft group">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="flex items-center gap-4">
                                             <div
-                                                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                                                style={{ backgroundColor: partner.color + '20' }}
+                                                className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner"
+                                                style={{ backgroundColor: partner.color + '10' }}
                                             >
                                                 {partner.logo}
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <h3 className="text-white font-semibold">{partner.name}</h3>
+                                                    <h3 className="text-stone-900 font-black tracking-tight">{partner.name}</h3>
                                                     {partner.isOfficial && (
-                                                        <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-300 text-[10px] rounded-full font-medium flex items-center gap-0.5">
+                                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] rounded-full font-black uppercase tracking-tighter flex items-center gap-1">
                                                             <Shield className="w-2.5 h-2.5" /> Official
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className="text-white/40 text-xs">{partner.description}</p>
+                                                <p className="text-stone-400 text-[11px] font-medium leading-relaxed">{partner.description}</p>
                                             </div>
                                         </div>
                                     </div>
 
                                     <button
                                         onClick={() => openPartnerBooking(partner, fromStation.code, toStation.code, date)}
-                                        className="w-full mt-3 py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-colors text-white"
+                                        className="w-full mt-2 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all text-white shadow-lg group-hover:scale-[1.02]"
                                         style={{ backgroundColor: partner.color }}
                                     >
                                         {partner.isOfficial ? 'Book on IRCTC' : `Check on ${partner.name}`}
@@ -242,9 +242,9 @@ export default function TrainsView() {
                         ))}
 
                         {/* Info Note */}
-                        <div className="px-4 py-3 bg-white/5 rounded-xl border border-white/10">
-                            <p className="text-white/40 text-xs text-center">
-                                🚂 IRCTC is the official Indian Railways platform. Other platforms may offer additional features like waitlist prediction and live tracking.
+                        <div className="px-6 py-4 bg-stone-50 rounded-2xl border border-stone-100">
+                            <p className="text-stone-400 text-[10px] font-bold text-center leading-relaxed">
+                                IRCTC is the official Indian Railways platform. Other platforms may offer additional features like waitlist prediction and live tracking.
                             </p>
                         </div>
                     </motion.div>

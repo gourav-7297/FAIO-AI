@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": true
+  },
+  "imports": {
+    "hono": "https://deno.land/x/hono@v4.3.11/mod.ts",
+    "hono/middleware": "https://deno.land/x/hono@v4.3.11/middleware.ts",
+    "openai": "https://esm.sh/openai@4.56.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
+  }
+}

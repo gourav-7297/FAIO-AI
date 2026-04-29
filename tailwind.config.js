@@ -7,42 +7,45 @@ export default {
     theme: {
         extend: {
             colors: {
-                background: '#020617', // Deepest slate
-                surface: '#0F172A', // Slightly lighter
+                background: '#FAFAF8',
+                surface: '#FFFFFF',
                 primary: {
-                    DEFAULT: '#F8FAFC', // Off-white
-                    foreground: '#020617'
+                    DEFAULT: '#C2785C',   // Warm terracotta
+                    light: '#D49A82',     // Lighter terracotta
+                    dark: '#A8624A',      // Darker terracotta
+                    foreground: '#FFFFFF'
                 },
                 secondary: {
-                    DEFAULT: '#94A3B8', // Muted slate
-                    foreground: '#F8FAFC'
+                    DEFAULT: '#9C958D',   // Warm muted gray for secondary text
+                    light: '#F5F2EE',     // Warm off-white for backgrounds
+                    foreground: '#3D3632' // Warm charcoal text
                 },
                 action: {
-                    DEFAULT: '#3B82F6', // Azure Blue
-                    hover: '#2563EB',
+                    DEFAULT: '#3D3632',   // Warm charcoal for primary actions
+                    hover: '#524B46',
                 },
-                safety: '#EF4444', // Sunset Red
-                accent: '#8B5CF6', // Violet for premium feel
-                // Agent colors
+                accent: '#C2785C',        // Same as primary
+                sage: '#8BAA8D',          // Muted green
+                sand: '#E0D5C5',          // Sand/beige
+                warmgray: '#A09890',      // Warm muted gray
+                // Agent colors (muted warm tones)
                 agent: {
-                    itinerary: '#3B82F6',
-                    liveUpdate: '#F59E0B',
-                    localSecrets: '#8B5CF6',
-                    budget: '#10B981',
-                    safety: '#EF4444',
-                    sustainability: '#06B6D4',
+                    itinerary: '#6B8FAD',   // Muted steel blue
+                    liveUpdate: '#C4944A',  // Muted gold
+                    localSecrets: '#8B7BAD', // Muted purple
+                    budget: '#7BA47E',      // Muted sage
+                    safety: '#C47070',      // Muted rose
+                    sustainability: '#6BA3A3', // Muted teal
                 }
             },
             fontFamily: {
-                sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+                sans: ['"Inter"', 'sans-serif'],
                 heading: ['"Outfit"', 'sans-serif'],
             },
             animation: {
                 'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                 'fade-in': 'fadeIn 0.2s ease-out',
-                'shimmer': 'shimmer 2s infinite',
-                'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
-                'float': 'float 3s ease-in-out infinite',
+                'float': 'float 4s ease-in-out infinite',
             },
             keyframes: {
                 slideUp: {
@@ -53,22 +56,20 @@ export default {
                     '0%': { opacity: '0' },
                     '100%': { opacity: '1' },
                 },
-                shimmer: {
-                    '0%': { transform: 'translateX(-100%)' },
-                    '100%': { transform: 'translateX(100%)' },
-                },
-                pulseGlow: {
-                    '0%, 100%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)' },
-                    '50%': { boxShadow: '0 0 40px rgba(59, 130, 246, 0.6)' },
-                },
                 float: {
                     '0%, 100%': { transform: 'translateY(0)' },
-                    '50%': { transform: 'translateY(-10px)' },
+                    '50%': { transform: 'translateY(-6px)' },
                 }
             },
-            backdropBlur: {
-                xs: '2px',
+            boxShadow: {
+                'card': '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
+                'card-hover': '0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)',
+                'nav': '0 -2px 20px rgba(0,0,0,0.06)',
             },
+            borderRadius: {
+                '3xl': '1.5rem',
+                '4xl': '2rem',
+            }
         },
     },
     plugins: [],

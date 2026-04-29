@@ -47,11 +47,11 @@ export function DocumentsView() {
         <div className="p-5 pt-12 min-h-screen pb-32">
             <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
                 <div className="flex items-center gap-2 mb-1">
-                    <FileText className="w-5 h-5 text-action" />
-                    <span className="text-xs text-action font-bold uppercase tracking-wider">Travel</span>
+                    <FileText className="w-5 h-5 text-primary" />
+                    <span className="text-xs text-primary font-bold uppercase tracking-wider">Travel</span>
                 </div>
-                <h1 className="text-3xl font-bold">Documents</h1>
-                <p className="text-secondary text-sm">Store & manage your travel documents</p>
+                <h1 className="text-3xl font-bold text-stone-800">Documents</h1>
+                <p className="text-stone-500 text-sm">Store & manage your travel documents</p>
             </motion.header>
 
             {/* Expiry alerts */}
@@ -62,7 +62,7 @@ export function DocumentsView() {
                             <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs text-rose-400 font-bold">EXPIRED</p>
-                                <p className="text-[10px] text-secondary truncate">{d.title} — expired {Math.abs(getDaysUntilExpiry(d.expiryDate!))} days ago</p>
+                                <p className="text-[10px] text-stone-500 truncate">{d.title} — expired {Math.abs(getDaysUntilExpiry(d.expiryDate!))} days ago</p>
                             </div>
                         </GlassCard>
                     ))}
@@ -71,7 +71,7 @@ export function DocumentsView() {
                             <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs text-amber-400 font-bold">Expiring Soon</p>
-                                <p className="text-[10px] text-secondary truncate">{d.title} — {getDaysUntilExpiry(d.expiryDate!)} days left</p>
+                                <p className="text-[10px] text-stone-500 truncate">{d.title} — {getDaysUntilExpiry(d.expiryDate!)} days left</p>
                             </div>
                         </GlassCard>
                     ))}
@@ -81,14 +81,14 @@ export function DocumentsView() {
             {/* Filter */}
             <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
                 <button onClick={() => setFilter('all')}
-                    className={cn("px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap flex-shrink-0",
-                        filter === 'all' ? "bg-action text-white" : "bg-white/5 text-secondary")}>
+                    className={cn("px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap flex-shrink-0 shadow-sm",
+                        filter === 'all' ? "bg-primary text-white" : "bg-stone-100 text-stone-500")}>
                     All ({docs.length})
                 </button>
                 {DOC_TYPES.filter(t => docs.some(d => d.type === t)).map(t => (
                     <button key={t} onClick={() => setFilter(t)}
-                        className={cn("px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap flex-shrink-0",
-                            filter === t ? "bg-action text-white" : "bg-white/5 text-secondary")}>
+                        className={cn("px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap flex-shrink-0 shadow-sm",
+                            filter === t ? "bg-primary text-white" : "bg-stone-100 text-stone-500")}>
                         {DOC_EMOJIS[t]} {t}
                     </button>
                 ))}
@@ -111,7 +111,7 @@ export function DocumentsView() {
 
             {/* Add button */}
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowAdd(true)}
-                className="fixed bottom-24 right-5 w-14 h-14 rounded-2xl bg-gradient-to-r from-action to-purple-500 text-white shadow-lg flex items-center justify-center z-40">
+                className="fixed bottom-24 right-5 w-14 h-14 rounded-2xl bg-primary text-white shadow-premium flex items-center justify-center z-40">
                 <Plus className="w-6 h-6" />
             </motion.button>
 
@@ -139,12 +139,12 @@ function DocCard({ doc, onDelete, onCopy, delay }: { doc: TravelDocument; onDele
                             {DOC_EMOJIS[doc.type]}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-white truncate">{doc.title}</p>
+                            <p className="text-sm font-bold text-stone-800 truncate">{doc.title}</p>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-secondary">{doc.type}</span>
+                                <span className="text-[10px] text-stone-500">{doc.type}</span>
                                 {doc.number && (
                                     <button onClick={e => { e.stopPropagation(); onCopy(doc.number); }}
-                                        className="flex items-center gap-0.5 text-[9px] text-action hover:text-white">
+                                        className="flex items-center gap-0.5 text-[9px] text-stone-400 hover:text-stone-800">
                                         <Copy className="w-2.5 h-2.5" /> {doc.number.slice(0, 4)}••••
                                     </button>
                                 )}
@@ -157,38 +157,38 @@ function DocCard({ doc, onDelete, onCopy, delay }: { doc: TravelDocument; onDele
                                 {daysLeft <= 0 ? 'Expired' : `${daysLeft}d left`}
                             </span>
                         )}
-                        <ChevronDown className={cn("w-4 h-4 text-secondary transition-transform", expanded && "rotate-180")} />
+                        <ChevronDown className={cn("w-4 h-4 text-stone-400 transition-transform", expanded && "rotate-180")} />
                     </div>
                 </div>
 
                 <AnimatePresence>
                     {expanded && (
                         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                            className="border-t border-white/5 p-3 space-y-2">
+                            className="border-t border-stone-100 p-3 space-y-2">
                             {doc.number && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[10px] text-secondary">Number</span>
-                                    <button onClick={() => onCopy(doc.number)} className="flex items-center gap-1 text-xs text-white font-mono">
-                                        {doc.number} <Copy className="w-3 h-3 text-action" />
+                                    <span className="text-[10px] text-stone-500">Number</span>
+                                    <button onClick={() => onCopy(doc.number)} className="flex items-center gap-1 text-xs text-stone-800 font-mono">
+                                        {doc.number} <Copy className="w-3 h-3 text-stone-400" />
                                     </button>
                                 </div>
                             )}
                             {doc.issueDate && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[10px] text-secondary">Issued</span>
-                                    <span className="text-xs text-white">{doc.issueDate}</span>
+                                    <span className="text-[10px] text-stone-500">Issued</span>
+                                    <span className="text-xs text-stone-800">{doc.issueDate}</span>
                                 </div>
                             )}
                             {doc.expiryDate && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[10px] text-secondary">Expires</span>
-                                    <span className="text-xs text-white">{doc.expiryDate}</span>
+                                    <span className="text-[10px] text-stone-500">Expires</span>
+                                    <span className="text-xs text-stone-800">{doc.expiryDate}</span>
                                 </div>
                             )}
                             {doc.notes && (
                                 <div>
-                                    <span className="text-[10px] text-secondary">Notes</span>
-                                    <p className="text-xs text-white mt-0.5">{doc.notes}</p>
+                                    <span className="text-[10px] text-stone-500">Notes</span>
+                                    <p className="text-xs text-stone-800 mt-0.5">{doc.notes}</p>
                                 </div>
                             )}
                             <button onClick={() => onDelete(doc.id)}
@@ -220,7 +220,7 @@ function AddDocModal({ onClose, onAdd }: { onClose: () => void; onAdd: (doc: Omi
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center p-4" onClick={onClose}>
             <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
-                className="w-full max-w-md bg-surface rounded-2xl p-5 space-y-3 border border-white/10 max-h-[80vh] overflow-y-auto"
+                className="w-full max-w-md bg-white rounded-2xl p-5 space-y-3 border border-stone-200 max-h-[80vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
                     <h2 className="font-bold text-lg">Add Document</h2>
@@ -228,12 +228,12 @@ function AddDocModal({ onClose, onAdd }: { onClose: () => void; onAdd: (doc: Omi
                 </div>
 
                 <div>
-                    <p className="text-[10px] text-secondary mb-1">Document Type</p>
+                    <p className="text-[10px] text-stone-500 mb-1">Document Type</p>
                     <div className="grid grid-cols-4 gap-1.5">
                         {DOC_TYPES.map(t => (
                             <button key={t} onClick={() => setType(t)}
                                 className={cn("p-2 rounded-xl text-[9px] font-bold text-center",
-                                    type === t ? "bg-action text-white" : "bg-white/5 text-secondary")}>
+                                    type === t ? "bg-stone-800 text-white" : "bg-stone-50 text-stone-500")}>
                                 <span className="text-lg block">{DOC_EMOJIS[t]}</span>{t}
                             </button>
                         ))}
@@ -241,26 +241,26 @@ function AddDocModal({ onClose, onAdd }: { onClose: () => void; onAdd: (doc: Omi
                 </div>
 
                 <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Document title (e.g. Indian Passport)"
-                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white outline-none" />
+                    className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm text-stone-800 outline-none" />
 
                 <input value={number} onChange={e => setNumber(e.target.value)} placeholder="Document number"
-                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white outline-none font-mono" />
+                    className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm text-stone-800 outline-none font-mono" />
 
                 <div className="grid grid-cols-2 gap-2">
                     <div>
-                        <p className="text-[10px] text-secondary mb-1">Issue Date</p>
+                        <p className="text-[10px] text-stone-500 mb-1">Issue Date</p>
                         <input type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)}
-                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white outline-none" />
+                            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm text-stone-800 outline-none" />
                     </div>
                     <div>
-                        <p className="text-[10px] text-secondary mb-1">Expiry Date</p>
+                        <p className="text-[10px] text-stone-500 mb-1">Expiry Date</p>
                         <input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)}
-                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white outline-none" />
+                            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm text-stone-800 outline-none" />
                     </div>
                 </div>
 
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (optional)" rows={2}
-                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white outline-none resize-none" />
+                    className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm text-stone-800 outline-none resize-none" />
 
                 <motion.button whileTap={{ scale: 0.97 }} onClick={handleSubmit}
                     className="w-full py-3 rounded-xl bg-gradient-to-r from-action to-purple-500 text-white font-bold flex items-center justify-center gap-2">

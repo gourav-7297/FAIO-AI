@@ -87,44 +87,44 @@ export function LoginView() {
                 <motion.div
                     animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0], scale: [1, 1.2, 0.9, 1] }}
                     transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute -top-32 -left-32 w-96 h-96 bg-action/20 rounded-full blur-[100px]"
+                    className="absolute -top-32 -left-32 w-96 h-96 bg-stone-200/40 rounded-full blur-[100px]"
                 />
                 <motion.div
                     animate={{ x: [0, -30, 20, 0], y: [0, 30, -30, 0], scale: [1, 0.9, 1.1, 1] }}
                     transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute -bottom-32 -right-32 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px]"
+                    className="absolute -bottom-32 -right-32 w-96 h-96 bg-accent-sand/30 rounded-full blur-[100px]"
                 />
                 <motion.div
                     animate={{ x: [0, 20, -10, 0], y: [0, -20, 30, 0] }}
                     transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute top-1/3 left-1/2 -translate-x-1/2 w-64 h-64 bg-teal-500/10 rounded-full blur-[80px]"
+                    className="absolute top-1/3 left-1/2 -translate-x-1/2 w-64 h-64 bg-stone-100/50 rounded-full blur-[80px]"
                 />
 
                 {/* Floating travel icons */}
                 <motion.div
                     animate={{ y: [0, -20, 0], rotate: [0, 10, 0] }}
                     transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute top-[12%] right-[10%] text-white/5"
+                    className="absolute top-[12%] right-[10%] text-stone-200/20"
                 >
                     <Plane className="w-16 h-16" />
                 </motion.div>
                 <motion.div
                     animate={{ y: [0, 15, 0], rotate: [0, -8, 0] }}
                     transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                    className="absolute bottom-[15%] left-[8%] text-white/5"
+                    className="absolute bottom-[15%] left-[8%] text-stone-200/20"
                 >
                     <Globe className="w-20 h-20" />
                 </motion.div>
                 <motion.div
                     animate={{ y: [0, -12, 0], rotate: [0, 15, 0] }}
                     transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-                    className="absolute top-[35%] left-[5%] text-white/5"
+                    className="absolute top-[35%] left-[5%] text-stone-200/20"
                 >
                     <MapPin className="w-12 h-12" />
                 </motion.div>
 
                 {/* Animated dots grid */}
-                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.02) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
             </div>
 
             {/* Main content */}
@@ -166,8 +166,8 @@ export function LoginView() {
                                     <span className="text-lg">{FEATURES[featureIndex].emoji}</span>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-white">{FEATURES[featureIndex].title}</p>
-                                    <p className="text-xs text-secondary">{FEATURES[featureIndex].desc}</p>
+                                    <p className="text-sm font-bold text-stone-800">{FEATURES[featureIndex].title}</p>
+                                    <p className="text-xs text-stone-500">{FEATURES[featureIndex].desc}</p>
                                 </div>
                             </motion.div>
                         </AnimatePresence>
@@ -177,15 +177,15 @@ export function LoginView() {
                         {FEATURES.map((_, i) => (
                             <div
                                 key={i}
-                                className={`h-1 rounded-full transition-all duration-500 ${i === featureIndex ? 'w-5 bg-action' : 'w-1.5 bg-white/20'}`}
+                                className={`h-1 rounded-full transition-all duration-500 ${i === featureIndex ? 'w-5 bg-stone-800' : 'w-1.5 bg-stone-200'}`}
                             />
                         ))}
                     </div>
                 </motion.div>
 
                 {/* Glass card */}
-                <div className="relative overflow-hidden rounded-3xl bg-surface/60 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/20">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent -translate-x-full animate-shimmer pointer-events-none" />
+                <div className="relative overflow-hidden rounded-3xl bg-white border border-stone-200 shadow-2xl shadow-stone-200/50">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-stone-50/50 to-transparent -translate-x-full animate-shimmer pointer-events-none" />
 
                     <div className="relative z-10 p-7">
                         {/* Mode switcher */}
@@ -195,8 +195,8 @@ export function LoginView() {
                                     key={m}
                                     onClick={() => { setMode(m); setError(''); }}
                                     className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${mode === m
-                                        ? 'bg-gradient-to-r from-action to-purple-500 text-white shadow-lg shadow-action/30'
-                                        : 'text-secondary hover:text-white'
+                                        ? 'bg-stone-800 text-white shadow-lg shadow-stone-200'
+                                        : 'text-stone-400 hover:text-stone-800'
                                         }`}
                                 >
                                     {m === 'signin' ? 'Sign In' : 'Sign Up'}
@@ -210,7 +210,7 @@ export function LoginView() {
                             whileTap={{ scale: 0.99 }}
                             onClick={handleGoogleSignIn}
                             disabled={isGoogleLoading}
-                            className="w-full flex items-center justify-center gap-3 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-3 py-3 rounded-2xl bg-stone-50 hover:bg-stone-100 border border-stone-200 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isGoogleLoading ? (
                                 <Loader2 className="w-5 h-5 animate-spin text-white" />
@@ -231,9 +231,9 @@ export function LoginView() {
 
                         {/* Divider */}
                         <div className="flex items-center gap-4 my-5">
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                            <span className="text-[10px] text-secondary/70 font-medium uppercase tracking-wider">or with email</span>
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                            <div className="flex-1 h-px bg-stone-100" />
+                            <span className="text-[10px] text-stone-400 font-medium uppercase tracking-wider">or with email</span>
+                            <div className="flex-1 h-px bg-stone-100" />
                         </div>
 
                         {/* Form */}
@@ -248,13 +248,13 @@ export function LoginView() {
                                         transition={{ duration: 0.2 }}
                                     >
                                         <div className="relative group">
-                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-secondary group-focus-within:text-action transition-colors" />
+                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-stone-400 group-focus-within:text-stone-800 transition-colors" />
                                             <input
                                                 type="text"
                                                 placeholder="Username (optional)"
                                                 value={username}
                                                 onChange={(e) => setUsername(e.target.value)}
-                                                className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-secondary/60 outline-none focus:border-action/50 focus:bg-white/[0.07] transition-all duration-200 text-sm"
+                                                className="w-full pl-12 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-2xl text-stone-800 placeholder:text-stone-400 outline-none focus:border-stone-800 transition-all duration-200 text-sm"
                                             />
                                         </div>
                                     </motion.div>
@@ -262,19 +262,19 @@ export function LoginView() {
                             </AnimatePresence>
 
                             <div className="relative group">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-secondary group-focus-within:text-action transition-colors" />
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-stone-400 group-focus-within:text-stone-800 transition-colors" />
                                 <input
                                     type="email"
                                     placeholder="Email address"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
-                                    className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-secondary/60 outline-none focus:border-action/50 focus:bg-white/[0.07] transition-all duration-200 text-sm"
+                                    className="w-full pl-12 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-2xl text-stone-800 placeholder:text-stone-400 outline-none focus:border-stone-800 transition-all duration-200 text-sm"
                                 />
                             </div>
 
                             <div className="relative group">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-secondary group-focus-within:text-action transition-colors" />
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-stone-400 group-focus-within:text-stone-800 transition-colors" />
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     placeholder="Password"
@@ -282,7 +282,7 @@ export function LoginView() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
                                     minLength={6}
-                                    className="w-full pl-12 pr-12 py-3 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-secondary/60 outline-none focus:border-action/50 focus:bg-white/[0.07] transition-all duration-200 text-sm"
+                                    className="w-full pl-12 pr-12 py-3 bg-stone-50 border border-stone-200 rounded-2xl text-stone-800 placeholder:text-stone-400 outline-none focus:border-stone-800 transition-all duration-200 text-sm"
                                 />
                                 <button
                                     type="button"
@@ -313,7 +313,7 @@ export function LoginView() {
                                 whileTap={{ scale: isLoading ? 1 : 0.99 }}
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-action to-purple-500 text-white font-bold text-sm shadow-lg shadow-action/30 hover:shadow-action/50 transition-shadow duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-3.5 rounded-2xl bg-stone-800 text-white font-bold text-sm shadow-lg shadow-stone-200 hover:bg-stone-900 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />

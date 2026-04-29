@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 @tailwind base;
@@ -7,56 +7,48 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    /* Add other shadcn variables if I were using the full init, but I'll stick to simple for now or map them */
+    --background: 40 20% 98%;     /* #FAFAF8 warm off-white */
+    --foreground: 25 10% 22%;     /* #3D3632 warm charcoal */
+    --primary: 20 45% 55%;        /* #C2785C terracotta */
+    --action: 25 10% 22%;         /* #3D3632 warm charcoal */
+    --card: 0 0% 100%;            /* pure white cards */
+    --muted: 30 10% 60%;          /* #A09890 warm gray */
+    --border: 30 15% 90%;         /* #E8E4DF warm border */
+    --accent-sage: 130 15% 55%;   /* #8BAA8D sage green */
+    --accent-sand: 35 30% 85%;    /* #E0D5C5 sand */
   }
 
   body {
-    @apply bg-background text-primary antialiased;
+    @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))] antialiased;
     font-family: 'Inter', sans-serif;
+    transition: background-color 0.3s ease;
+  }
+
+  h1, h2, h3, h4, .font-heading {
+    font-family: 'Outfit', sans-serif;
   }
 }
 
 @layer utilities {
-
-  /* Glassmorphism utilities */
-  .glass {
-    @apply bg-surface/80 backdrop-blur-xl border border-white/10;
+  .shadow-card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
   }
 
-  .glass-light {
-    @apply bg-white/5 backdrop-blur-lg border border-white/10;
+  .shadow-card-hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
   }
 
-  .glass-card {
-    @apply bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
+  .shadow-nav {
+    box-shadow: 0 -2px 20px rgba(0,0,0,0.06);
   }
 
-  /* Glow effects */
-  .glow-action {
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+  /* Clean card utility */
+  .card {
+    @apply bg-white rounded-2xl border border-stone-200/60 shadow-card;
   }
 
-  .glow-purple {
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
-  }
-
-  .glow-green {
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
-  }
-
-  /* Text gradients */
-  .text-gradient-blue {
-    @apply bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent;
-  }
-
-  .text-gradient-purple {
-    @apply bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent;
-  }
-
-  .text-gradient-green {
-    @apply bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent;
+  .card-hover {
+    @apply card hover:shadow-card-hover hover:border-stone-300/60 transition-all duration-200;
   }
 
   /* No scrollbar utility */
@@ -69,54 +61,59 @@
     scrollbar-width: none;
   }
 
-  /* Safe area padding */
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
-/* Custom Scrollbar for premium feel */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #3B82F6 0%, #8B5CF6 100%);
-  border-radius: 3px;
+  background: #D4CFC8;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #2563EB 0%, #7C3AED 100%);
+  background: #B8B0A6;
 }
 
 /* Selection styling */
 ::selection {
-  background: rgba(59, 130, 246, 0.3);
-  color: white;
-}
-
-/* Focus styles */
-*:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.5);
-  outline-offset: 2px;
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
+  background: rgba(194, 120, 92, 0.15);
+  color: #3D3632;
 }
 
 /* FAIO Brand styling */
 .faio-logo {
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  @apply text-stone-800;
+}
+
+/* View transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 250ms, transform 250ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.page-exit {
+  opacity: 1;
+}
+.page-exit-active {
+  opacity: 0;
+  transform: scale(0.99);
+  transition: opacity 180ms, transform 180ms;
 }

@@ -1,13 +1,10 @@
 // ============================
 // FOURSQUARE SERVICE
-// Real places data via Foursquare Places API v2
-// Provides hotels, restaurants, cafes, attractions with real data
+// Real places data via faio-api Edge Function (secure proxy)
+// NO API KEYS in this file.
 // ============================
 
-const FSQ_CLIENT_ID = import.meta.env.VITE_FOURSQUARE_CLIENT_ID || '';
-const FSQ_CLIENT_SECRET = import.meta.env.VITE_FOURSQUARE_CLIENT_SECRET || '';
-const FSQ_BASE = 'https://api.foursquare.com/v2';
-const FSQ_VERSION = '20231010'; // API version date
+import { fetchEdgeFn } from '../lib/edgeFn';
 
 export interface FoursquarePlace {
     id: string;
@@ -54,26 +51,13 @@ export const FSQ_CATEGORIES = {
 
 // ─── Category display mapping ────────────────────
 const CATEGORY_EMOJI: Record<string, string> = {
-    'Hotel':            '🏨',
-    'Resort':           '🏖️',
-    'Hostel':           '🛏️',
-    'Restaurant':       '🍽️',
-    'Café':             '☕',
-    'Coffee Shop':      '☕',
-    'Bar':              '🍸',
-    'Nightclub':        '🎶',
-    'Museum':           '🏛️',
-    'Park':             '🌳',
-    'Monument':         '🗽',
-    'Temple':           '🛕',
-    'Beach':            '🏖️',
-    'Shopping Mall':    '🛍️',
-    'Pharmacy':         '💊',
-    'Hospital':         '🏥',
-    'ATM':              '💳',
-    'Airport':          '✈️',
-    'Train Station':    '🚉',
-    'Bus Station':      '🚌',
+    'Hotel': '🏨', 'Resort': '🏖️', 'Hostel': '🛏️',
+    'Restaurant': '🍽️', 'Café': '☕', 'Coffee Shop': '☕',
+    'Bar': '🍸', 'Nightclub': '🎶', 'Museum': '🏛️',
+    'Park': '🌳', 'Monument': '🗽', 'Temple': '🛕',
+    'Beach': '🏖️', 'Shopping Mall': '🛍️', 'Pharmacy': '💊',
+    'Hospital': '🏥', 'ATM': '💳', 'Airport': '✈️',
+    'Train Station': '🚉', 'Bus Station': '🚌',
 };
 
 function getEmojiForCategory(catName: string): string {
@@ -83,16 +67,7 @@ function getEmojiForCategory(catName: string): string {
     return '📍';
 }
 
-// ─── Auth params ─────────────────────────────────
-function authParams(): string {
-    return `client_id=${FSQ_CLIENT_ID}&client_secret=${FSQ_CLIENT_SECRET}&v=${FSQ_VERSION}`;
-}
-
-function isConfigured(): boolean {
-    return !!(FSQ_CLIENT_ID && FSQ_CLIENT_SECRET);
-}
-
-// ─── Parse venue to FoursquarePlace ──────────────
+// ─── Parse raw venue to FoursquarePlace ──────────
 function parseVenue(venue: any): FoursquarePlace {
     const cat = venue.categories?.[0];
     const catName = cat?.name || 'Place';
@@ -110,7 +85,7 @@ function parseVenue(venue: any): FoursquarePlace {
         distance: venue.location?.distance,
         phone: venue.contact?.formattedPhone || venue.contact?.phone,
         website: venue.url,
-        rating: venue.rating ? venue.rating / 2 : undefined, // FSQ uses 0-10, normalize to 0-5
+        rating: venue.rating ? venue.rating / 2 : undefined,
         price: venue.price?.tier,
         photos: [],
         isVerified: venue.verified || false,
@@ -121,40 +96,29 @@ function parseVenue(venue: any): FoursquarePlace {
 // PUBLIC API
 // ═══════════════════════════════════════════════════
 
-/**
- * Search for places near a city/location string.
- * Returns real venues from Foursquare.
- */
 export async function searchPlaces(
     near: string,
     query: string = '',
     categoryId?: string,
     limit: number = 20
 ): Promise<FoursquarePlace[]> {
-    if (!isConfigured()) {
-        console.warn('Foursquare: Not configured (missing API keys)');
-        return [];
-    }
-
     try {
-        let url = `${FSQ_BASE}/venues/search?${authParams()}&near=${encodeURIComponent(near)}&limit=${limit}`;
-        if (query) url += `&query=${encodeURIComponent(query)}`;
-        if (categoryId) url += `&categoryId=${categoryId}`;
+        const queryParams: Record<string, string> = { near, limit: limit.toString() };
+        if (query) queryParams.query = query;
+        if (categoryId) queryParams.categoryId = categoryId;
 
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`Foursquare API error: ${resp.status}`);
-
-        const data = await resp.json();
-        return (data.response?.venues || []).map(parseVenue);
+        const venues = await fetchEdgeFn<any[]>({
+            method: 'GET',
+            path: '/places/search',
+            query: queryParams,
+        });
+        return (venues || []).map(parseVenue);
     } catch (error) {
         console.error('Foursquare search error:', error);
         return [];
     }
 }
 
-/**
- * Search for places near coordinates (lat/lon).
- */
 export async function searchPlacesNearby(
     lat: number,
     lon: number,
@@ -163,21 +127,22 @@ export async function searchPlacesNearby(
     limit: number = 20,
     radius: number = 5000
 ): Promise<FoursquarePlace[]> {
-    if (!isConfigured()) {
-        console.warn('Foursquare: Not configured (missing API keys)');
-        return [];
-    }
-
     try {
-        let url = `${FSQ_BASE}/venues/search?${authParams()}&ll=${lat},${lon}&radius=${radius}&limit=${limit}`;
-        if (query) url += `&query=${encodeURIComponent(query)}`;
-        if (categoryId) url += `&categoryId=${categoryId}`;
+        const queryParams: Record<string, string> = {
+            lat: lat.toString(),
+            lon: lon.toString(),
+            limit: limit.toString(),
+            radius: radius.toString(),
+        };
+        if (query) queryParams.query = query;
+        if (categoryId) queryParams.categoryId = categoryId;
 
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`Foursquare API error: ${resp.status}`);
-
-        const data = await resp.json();
-        return (data.response?.venues || []).map(parseVenue);
+        const venues = await fetchEdgeFn<any[]>({
+            method: 'GET',
+            path: '/places/nearby',
+            query: queryParams,
+        });
+        return (venues || []).map(parseVenue);
     } catch (error) {
         console.error('Foursquare nearby search error:', error);
         return [];
@@ -203,7 +168,6 @@ export async function searchBars(near: string, limit = 15): Promise<FoursquarePl
 }
 
 export async function searchAttractions(near: string, limit = 15): Promise<FoursquarePlace[]> {
-    // Combine museums, monuments, parks, temples, beaches
     const results = await Promise.all([
         searchPlaces(near, '', FSQ_CATEGORIES.museum, 5),
         searchPlaces(near, '', FSQ_CATEGORIES.monument, 5),
@@ -214,10 +178,6 @@ export async function searchAttractions(near: string, limit = 15): Promise<Fours
     return results.flat().slice(0, limit);
 }
 
-/**
- * Get a comprehensive overview of a destination.
- * Returns hotels, restaurants, cafes, and attractions.
- */
 export async function getDestinationOverview(city: string): Promise<{
     hotels: FoursquarePlace[];
     restaurants: FoursquarePlace[];
@@ -230,27 +190,16 @@ export async function getDestinationOverview(city: string): Promise<{
         searchCafes(city, 10),
         searchAttractions(city, 10),
     ]);
-
     return { hotels, restaurants, cafes, attractions };
 }
 
-/**
- * Get highly rated places that aren't verified chains (simulated 'Hidden Gems')
- */
 export async function searchHiddenGems(city: string, limit = 15): Promise<FoursquarePlace[]> {
-    // Search a broad category (food, drinks, arts) with a larger limit to have a pool to filter
     const places = await searchPlaces(city, '', [FSQ_CATEGORIES.cafe, FSQ_CATEGORIES.restaurant, FSQ_CATEGORIES.bar, FSQ_CATEGORIES.museum, FSQ_CATEGORIES.park].join(','), 50);
-    
-    // Filter out verified chains, or places with massive popularity, prioritize high rating if available
-    const hiddenGems = places.filter(p => !p.isVerified).sort(() => 0.5 - Math.random()); // Randomize slightly for variety
-    
-    // Return unique categories if possible
+    const hiddenGems = places.filter(p => !p.isVerified).sort(() => 0.5 - Math.random());
     return hiddenGems.slice(0, limit);
 }
 
-/**
- * Check if Foursquare is configured and working.
- */
 export function isFoursquareAvailable(): boolean {
-    return isConfigured();
+    // Always available via the Edge Function
+    return true;
 }

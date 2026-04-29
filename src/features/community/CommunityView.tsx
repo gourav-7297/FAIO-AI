@@ -133,7 +133,7 @@ export function CommunityView() {
                 <input
                     type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search stories, trips, people..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-surface/80 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-action placeholder:text-slate-500"
+                    className="w-full pl-10 pr-4 py-2.5 bg-surface/80 border border-stone-700 rounded-xl text-sm focus:outline-none focus:border-action placeholder:text-stone-500"
                 />
             </div>
 
@@ -687,7 +687,7 @@ function CreatePostModal({ userId, user, onClose, onCreated }: { userId?: string
             className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-end justify-center"
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
-            <motion.div initial={{ y: 300 }} animate={{ y: 0 }} exit={{ y: 300 }} className="w-full max-w-lg bg-slate-900 rounded-t-3xl p-6 pb-10 space-y-4 max-h-[90vh] overflow-y-auto">
+            <motion.div initial={{ y: 300 }} animate={{ y: 0 }} exit={{ y: 300 }} className="w-full max-w-lg bg-stone-900 rounded-t-3xl p-6 pb-10 space-y-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold">Share Your Story</h3>
                     <button onClick={onClose} className="text-secondary hover:text-white"><X className="w-5 h-5" /></button>
@@ -697,19 +697,19 @@ function CreatePostModal({ userId, user, onClose, onCreated }: { userId?: string
                     value={caption} onChange={(e) => setCaption(e.target.value)}
                     placeholder="What's your travel story? ✈️"
                     rows={3}
-                    className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-action text-white resize-none"
+                    className="w-full bg-surface/50 border border-stone-700 rounded-xl px-4 py-3 outline-none focus:border-action text-white resize-none"
                 />
 
                 <div className="grid grid-cols-2 gap-2">
                     <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-secondary flex-shrink-0" />
                         <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
-                            placeholder="City" className="w-full bg-surface/50 border border-slate-700 rounded-xl px-3 py-2 outline-none focus:border-action text-sm" />
+                            placeholder="City" className="w-full bg-surface/50 border border-stone-700 rounded-xl px-3 py-2 outline-none focus:border-action text-sm" />
                     </div>
                     <div className="flex items-center gap-2">
                         <Globe className="w-4 h-4 text-secondary flex-shrink-0" />
                         <input type="text" value={country} onChange={(e) => setCountry(e.target.value)}
-                            placeholder="Country" className="w-full bg-surface/50 border border-slate-700 rounded-xl px-3 py-2 outline-none focus:border-action text-sm" />
+                            placeholder="Country" className="w-full bg-surface/50 border border-stone-700 rounded-xl px-3 py-2 outline-none focus:border-action text-sm" />
                     </div>
                 </div>
 
@@ -735,7 +735,7 @@ function CreatePostModal({ userId, user, onClose, onCreated }: { userId?: string
                 ) : (
                     <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full py-3 border-2 border-dashed border-slate-600 rounded-xl flex items-center justify-center gap-2 text-secondary hover:text-white hover:border-action/50 transition-colors"
+                        className="w-full py-3 border-2 border-dashed border-stone-600 rounded-xl flex items-center justify-center gap-2 text-secondary hover:text-white hover:border-action/50 transition-colors"
                     >
                         <ImagePlus className="w-5 h-5" />
                         <span className="text-sm font-medium">Add Photo</span>
@@ -744,7 +744,7 @@ function CreatePostModal({ userId, user, onClose, onCreated }: { userId?: string
 
                 <input type="text" value={tags} onChange={(e) => setTags(e.target.value)}
                     placeholder="Tags (comma separated: Beach, Culture, Food)"
-                    className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:border-action text-sm" />
+                    className="w-full bg-surface/50 border border-stone-700 rounded-xl px-4 py-2.5 outline-none focus:border-action text-sm" />
 
                 <button
                     onClick={handleSubmit} disabled={loading || !caption.trim() || !location.trim()}
@@ -808,44 +808,44 @@ function CreateTripModal({ userId, user, onClose, onCreated }: { userId?: string
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center"
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
-            <motion.div initial={{ y: 400 }} animate={{ y: 0 }} exit={{ y: 400 }} className="w-full max-w-lg bg-slate-900 rounded-t-3xl p-6 pb-24 space-y-3 max-h-[85vh] overflow-y-auto">
+            <motion.div initial={{ y: 400 }} animate={{ y: 0 }} exit={{ y: 400 }} className="w-full max-w-lg bg-stone-900 rounded-t-3xl p-6 pb-24 space-y-3 max-h-[85vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold">Host a Group Trip</h3>
                     <button onClick={onClose} className="text-secondary hover:text-white"><X className="w-5 h-5" /></button>
                 </div>
 
                 <input value={destination} onChange={e => setDestination(e.target.value)}
-                    placeholder="Where are you going? 🌍" className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-action" />
+                    placeholder="Where are you going? 🌍" className="w-full bg-surface/50 border border-stone-700 rounded-xl px-4 py-3 outline-none focus:border-action" />
 
                 <textarea value={description} onChange={e => setDescription(e.target.value)}
                     placeholder="Describe your trip..." rows={2}
-                    className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-action text-sm resize-none" />
+                    className="w-full bg-surface/50 border border-stone-700 rounded-xl px-4 py-3 outline-none focus:border-action text-sm resize-none" />
 
                 <div className="grid grid-cols-2 gap-2">
                     <div>
                         <label className="text-xs text-secondary mb-1 block">Start Date</label>
                         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                            className="w-full bg-surface/50 border border-slate-700 rounded-xl px-3 py-2 text-sm outline-none" />
+                            className="w-full bg-surface/50 border border-stone-700 rounded-xl px-3 py-2 text-sm outline-none" />
                     </div>
                     <div>
                         <label className="text-xs text-secondary mb-1 block">End Date</label>
                         <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                            className="w-full bg-surface/50 border border-slate-700 rounded-xl px-3 py-2 text-sm outline-none" />
+                            className="w-full bg-surface/50 border border-stone-700 rounded-xl px-3 py-2 text-sm outline-none" />
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                     <input value={spotsTotal} onChange={e => setSpotsTotal(e.target.value)} type="number"
-                        placeholder="Max spots" className="bg-surface/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none" />
+                        placeholder="Max spots" className="bg-surface/50 border border-stone-700 rounded-xl px-4 py-2.5 text-sm outline-none" />
                     <input value={price} onChange={e => setPrice(e.target.value)} type="number"
-                        placeholder="Price (USD)" className="bg-surface/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none" />
+                        placeholder="Price (USD)" className="bg-surface/50 border border-stone-700 rounded-xl px-4 py-2.5 text-sm outline-none" />
                 </div>
 
                 <input value={vibes} onChange={e => setVibes(e.target.value)}
-                    placeholder="Vibes: Adventure, Foodie, Budget..." className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none" />
+                    placeholder="Vibes: Adventure, Foodie, Budget..." className="w-full bg-surface/50 border border-stone-700 rounded-xl px-4 py-2.5 text-sm outline-none" />
 
                 <input value={includes} onChange={e => setIncludes(e.target.value)}
-                    placeholder="What's included: Accommodation, Transport..." className="w-full bg-surface/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none" />
+                    placeholder="What's included: Accommodation, Transport..." className="w-full bg-surface/50 border border-stone-700 rounded-xl px-4 py-2.5 text-sm outline-none" />
 
                 <button
                     onClick={handleSubmit} disabled={loading || !destination.trim() || !startDate || !endDate}

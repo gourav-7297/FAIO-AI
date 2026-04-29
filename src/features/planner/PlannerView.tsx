@@ -127,7 +127,7 @@ export function PlannerView() {
                                         "h-1.5 flex-1 rounded-full transition-all duration-500",
                                         currentStepIndex >= i
                                             ? "bg-gradient-to-r from-action to-purple-500"
-                                            : "bg-slate-800"
+                                            : "bg-stone-800"
                                     )}
                                 />
                             ))}
@@ -183,7 +183,7 @@ export function PlannerView() {
                                     <input
                                         type="text"
                                         placeholder="e.g., Tokyo, Japan"
-                                        className="w-full bg-transparent rounded-xl py-4 pl-12 pr-4 text-lg focus:outline-none placeholder:text-slate-600"
+                                        className="w-full bg-transparent rounded-xl py-4 pl-12 pr-4 text-lg focus:outline-none placeholder:text-stone-600"
                                         value={data.destination}
                                         onChange={(e) => setData({ ...data, destination: e.target.value })}
                                         autoFocus
@@ -211,7 +211,7 @@ export function PlannerView() {
                                                 "p-4 rounded-xl border text-left transition-all",
                                                 data.destination.includes(place.city)
                                                     ? "bg-action/10 border-action"
-                                                    : "bg-surface/50 border-slate-800 hover:border-slate-600"
+                                                    : "bg-surface/50 border-stone-800 hover:border-stone-600"
                                             )}
                                         >
                                             <span className="text-2xl mb-2 block">{place.emoji}</span>
@@ -263,7 +263,7 @@ export function PlannerView() {
                                     <button
                                         key={d.label}
                                         onClick={() => setQuickDuration(d.days)}
-                                        className="px-4 py-2 bg-surface/50 border border-slate-800 rounded-full text-sm hover:border-action hover:text-action transition-colors"
+                                        className="px-4 py-2 bg-surface/50 border border-stone-800 rounded-full text-sm hover:border-action hover:text-action transition-colors"
                                     >
                                         {d.label}
                                     </button>
@@ -296,7 +296,7 @@ export function PlannerView() {
                                             "p-5 rounded-2xl border transition-all duration-300 flex flex-col items-center gap-2",
                                             data.travelers === item.val
                                                 ? "bg-action/10 border-action shadow-lg shadow-action/10"
-                                                : "bg-surface border-slate-800 hover:border-slate-600"
+                                                : "bg-surface border-stone-800 hover:border-stone-600"
                                         )}
                                     >
                                         <span className="text-3xl">{item.emoji}</span>
@@ -317,7 +317,7 @@ export function PlannerView() {
                             className="grid grid-cols-2 gap-4"
                         >
                             {[
-                                { val: 1, label: 'Budget', icon: '$', desc: 'Under $500', color: 'from-slate-500 to-slate-600' },
+                                { val: 1, label: 'Budget', icon: '$', desc: 'Under $500', color: 'from-stone-500 to-stone-600' },
                                 { val: 2, label: 'Standard', icon: '$$', desc: '$500 - $1500', color: 'from-blue-500 to-cyan-500' },
                                 { val: 3, label: 'Premium', icon: '$$$', desc: '$1500 - $3000', color: 'from-purple-500 to-pink-500' },
                                 { val: 4, label: 'Luxury', icon: '$$$$', desc: '$3000+', color: 'from-amber-500 to-orange-500' }
@@ -331,7 +331,7 @@ export function PlannerView() {
                                         "p-5 rounded-2xl border transition-all duration-300 flex flex-col items-center gap-2 relative overflow-hidden",
                                         data.budget === item.val
                                             ? "border-white/30 shadow-lg"
-                                            : "bg-surface border-slate-800 hover:border-slate-600"
+                                            : "bg-surface border-stone-800 hover:border-stone-600"
                                     )}
                                 >
                                     {data.budget === item.val && (
@@ -382,7 +382,7 @@ export function PlannerView() {
                                                 "p-4 rounded-xl border transition-all duration-200 text-left",
                                                 isSelected
                                                     ? "bg-white text-black border-white"
-                                                    : "bg-surface border-slate-800 hover:border-slate-600"
+                                                    : "bg-surface border-stone-800 hover:border-stone-600"
                                             )}
                                         >
                                             <span className="text-2xl block mb-1">{style.emoji}</span>
@@ -435,7 +435,7 @@ export function PlannerView() {
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={goBack}
-                                className="py-4 px-6 rounded-2xl font-bold bg-surface border border-slate-700 text-secondary hover:text-white transition-colors"
+                                className="py-4 px-6 rounded-2xl font-bold bg-surface border border-stone-700 text-secondary hover:text-white transition-colors"
                             >
                                 <ArrowLeft className="w-5 h-5" />
                             </motion.button>
@@ -448,7 +448,7 @@ export function PlannerView() {
                             className={cn(
                                 "flex-1 py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all",
                                 !canProceed()
-                                    ? "bg-slate-800 text-slate-500 cursor-not-allowed"
+                                    ? "bg-stone-800 text-stone-500 cursor-not-allowed"
                                     : "bg-gradient-to-r from-action to-purple-500 text-white hover:shadow-xl hover:shadow-action/30"
                             )}
                         >
@@ -641,7 +641,7 @@ function ItineraryResult({ data, tripData, onReset, onSave, onRegenerate }: Itin
             <div className="flex gap-2">
                 <motion.button whileTap={{ scale: 0.95 }} onClick={handleSave}
                     className={cn("flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all border",
-                        saved ? "bg-emerald-500/10 border-emerald-500 text-emerald-400" : "bg-surface border-slate-700 text-secondary hover:text-white"
+                        saved ? "bg-emerald-500/10 border-emerald-500 text-emerald-400" : "bg-surface border-stone-700 text-secondary hover:text-white"
                     )}
                 >
                     {saved ? <Check className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
@@ -649,14 +649,14 @@ function ItineraryResult({ data, tripData, onReset, onSave, onRegenerate }: Itin
                 </motion.button>
                 <motion.button whileTap={{ scale: 0.95 }} onClick={handleCopyTrip}
                     className={cn("flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all border",
-                        copied ? "bg-action/10 border-action text-action" : "bg-surface border-slate-700 text-secondary hover:text-white"
+                        copied ? "bg-action/10 border-action text-action" : "bg-surface border-stone-700 text-secondary hover:text-white"
                     )}
                 >
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {copied ? 'Copied!' : 'Share'}
                 </motion.button>
                 <motion.button whileTap={{ scale: 0.95 }} onClick={onRegenerate}
-                    className="py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-surface border border-slate-700 text-secondary hover:text-white transition-all"
+                    className="py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-surface border border-stone-700 text-secondary hover:text-white transition-all"
                 >
                     <RotateCcw className="w-4 h-4" />
                 </motion.button>
@@ -674,7 +674,7 @@ function ItineraryResult({ data, tripData, onReset, onSave, onRegenerate }: Itin
                                 "px-4 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2",
                                 activeTab === tab.id
                                     ? "bg-white text-black"
-                                    : "bg-surface border border-slate-700 text-secondary hover:text-white"
+                                    : "bg-surface border border-stone-700 text-secondary hover:text-white"
                             )}
                         >
                             <Icon className="w-3.5 h-3.5" />
@@ -720,7 +720,7 @@ function ItineraryResult({ data, tripData, onReset, onSave, onRegenerate }: Itin
                 </div>
                 <button
                     onClick={() => setLocalBackupMode(!localBackupMode)}
-                    className={cn("w-12 h-6 rounded-full p-1 transition-colors", showBackups ? "bg-action" : "bg-slate-700")}
+                    className={cn("w-12 h-6 rounded-full p-1 transition-colors", showBackups ? "bg-action" : "bg-stone-700")}
                 >
                     <motion.div
                         className="w-4 h-4 bg-white rounded-full"
@@ -946,7 +946,7 @@ function ActivityCard({ activity, showBackup, isRaining }: { activity: any; show
                     "flex-1 p-3 rounded-xl border transition-all mb-2",
                     isBackupActive
                         ? "bg-blue-500/10 border-blue-500/30"
-                        : "bg-surface/50 border-slate-800"
+                        : "bg-surface/50 border-stone-800"
                 )}
             >
                 <div className="flex items-start justify-between mb-1.5">
@@ -995,7 +995,7 @@ function ActivityCard({ activity, showBackup, isRaining }: { activity: any; show
                 </div>
 
                 {showBackup && activity.backup && !isBackupActive && (
-                    <div className="mt-2 pt-2 border-t border-slate-700 flex items-center gap-2 text-xs text-secondary">
+                    <div className="mt-2 pt-2 border-t border-stone-700 flex items-center gap-2 text-xs text-secondary">
                         <CloudRain className="w-3 h-3" />
                         <span>Backup: {activity.backup}</span>
                     </div>
@@ -1058,7 +1058,7 @@ function SmartPackingModal({ tripData, isRaining }: { tripData: any; isRaining: 
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-surface border border-slate-700 w-full max-w-sm rounded-2xl p-6 relative z-10 shadow-2xl max-h-[80vh] overflow-y-auto"
+                            className="bg-surface border border-stone-700 w-full max-w-sm rounded-2xl p-6 relative z-10 shadow-2xl max-h-[80vh] overflow-y-auto"
                         >
                             <button onClick={() => setIsOpen(false)} className="absolute right-4 top-4 text-secondary hover:text-white">
                                 <X className="w-5 h-5" />
@@ -1077,7 +1077,7 @@ function SmartPackingModal({ tripData, isRaining }: { tripData: any; isRaining: 
                                         <div className="space-y-2">
                                             {section.items.map((item: string) => (
                                                 <div key={item} className="flex items-center gap-3">
-                                                    <SquareCheck className="w-5 h-5 text-slate-600" />
+                                                    <SquareCheck className="w-5 h-5 text-stone-600" />
                                                     <span>{item}</span>
                                                 </div>
                                             ))}

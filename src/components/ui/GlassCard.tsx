@@ -18,45 +18,30 @@ export function GlassCard({
     hover = true,
     onClick
 }: GlassCardProps) {
+    // Subtle warm tint backgrounds
     const gradients = {
-        blue: 'from-blue-500/10 to-cyan-500/5',
-        purple: 'from-purple-500/10 to-pink-500/5',
-        green: 'from-emerald-500/10 to-teal-500/5',
-        orange: 'from-orange-500/10 to-amber-500/5',
-        pink: 'from-pink-500/10 to-rose-500/5',
-        none: '',
-    };
-
-    const glowColors = {
-        blue: 'shadow-blue-500/20',
-        purple: 'shadow-purple-500/20',
-        green: 'shadow-emerald-500/20',
-        orange: 'shadow-orange-500/20',
-        pink: 'shadow-pink-500/20',
-        none: '',
+        blue: 'bg-sky-50/40',
+        purple: 'bg-stone-50',
+        green: 'bg-emerald-50/40',
+        orange: 'bg-amber-50/40',
+        pink: 'bg-rose-50/40',
+        none: 'bg-white',
     };
 
     return (
         <motion.div
-            whileHover={hover ? { scale: 1.02, y: -2 } : undefined}
-            whileTap={onClick ? { scale: 0.98 } : undefined}
+            whileHover={hover ? { y: -1 } : undefined}
+            whileTap={onClick ? { scale: 0.99 } : undefined}
             onClick={onClick}
             className={cn(
                 "relative overflow-hidden rounded-2xl",
-                "bg-gradient-to-br",
                 gradients[gradient],
-                "backdrop-blur-xl",
-                "border border-white/10",
-                "bg-surface/80",
-                glow && `shadow-lg ${glowColors[gradient]}`,
-                hover && "transition-all duration-300 cursor-pointer",
+                "border border-stone-200/60",
+                "shadow-card",
+                hover && "transition-all duration-200 cursor-pointer hover:shadow-card-hover",
                 className
             )}
         >
-            {/* Shimmer effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-shimmer pointer-events-none" />
-
-            {/* Content */}
             <div className="relative z-10">
                 {children}
             </div>
@@ -82,9 +67,9 @@ export function GlassButton({
     onClick
 }: GlassButtonProps) {
     const variants = {
-        primary: 'bg-action hover:bg-action-hover text-white shadow-lg shadow-action/30',
-        secondary: 'bg-white/10 hover:bg-white/20 text-white border border-white/20',
-        ghost: 'bg-transparent hover:bg-white/10 text-white',
+        primary: 'bg-primary hover:bg-primary-dark text-white shadow-card',
+        secondary: 'bg-stone-100 hover:bg-stone-200 text-stone-800',
+        ghost: 'bg-transparent hover:bg-stone-50 text-stone-700',
     };
 
     const sizes = {
@@ -95,13 +80,12 @@ export function GlassButton({
 
     return (
         <motion.button
-            whileHover={{ scale: disabled ? 1 : 1.02 }}
+            whileHover={{ scale: disabled ? 1 : 1.01 }}
             whileTap={{ scale: disabled ? 1 : 0.98 }}
             onClick={onClick}
             disabled={disabled}
             className={cn(
-                "rounded-xl font-bold transition-all duration-200",
-                "backdrop-blur-sm",
+                "rounded-xl font-semibold transition-all duration-200",
                 variants[variant],
                 sizes[size],
                 disabled && "opacity-50 cursor-not-allowed",

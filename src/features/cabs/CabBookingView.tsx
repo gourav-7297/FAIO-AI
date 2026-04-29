@@ -52,12 +52,12 @@ export default function CabBookingView() {
         <div className="space-y-4 pb-24">
             {/* Header */}
             <div className="text-center pt-2 pb-4">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 mb-3">
-                    <Car className="w-4 h-4 text-yellow-400" />
-                    <span className="text-yellow-300 text-sm font-medium">Tourist Cab Directory</span>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-100 mb-3">
+                    <Car className="w-4 h-4 text-amber-600" />
+                    <span className="text-amber-700 text-sm font-medium">Tourist Cab Directory</span>
                 </div>
-                <h2 className="text-xl font-bold text-white">Find Trusted Cab Providers</h2>
-                <p className="text-white/50 text-sm mt-1">
+                <h2 className="text-xl font-bold text-stone-800">Find Trusted Cab Providers</h2>
+                <p className="text-stone-500 text-sm mt-1">
                     Browse verified agencies • Call or WhatsApp directly
                 </p>
             </div>
@@ -66,15 +66,15 @@ export default function CabBookingView() {
             <GlassCard className="p-4">
                 <div className="flex gap-2">
                     <div className="relative flex-1">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                         <input
                             value={selectedCity || ''}
                             placeholder="Select a city..."
                             readOnly
                             onClick={() => setShowCityDropdown(!showCityDropdown)}
-                            className="w-full pl-10 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 cursor-pointer"
+                            className="w-full pl-10 pr-10 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-800 placeholder:text-stone-400 cursor-pointer outline-none focus:border-primary/50"
                         />
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
 
                         <AnimatePresence>
                             {showCityDropdown && (
@@ -82,15 +82,15 @@ export default function CabBookingView() {
                                     initial={{ opacity: 0, y: -4 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -4 }}
-                                    className="absolute z-20 left-0 right-0 top-full mt-1 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl max-h-60 overflow-y-auto shadow-2xl"
+                                    className="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-stone-200 rounded-xl max-h-60 overflow-y-auto shadow-xl"
                                 >
                                     {cities.map(city => (
                                         <button
                                             key={city}
                                             onClick={() => handleCitySelect(city)}
                                             className={cn(
-                                                "w-full text-left px-4 py-2.5 text-sm hover:bg-white/10 transition-colors",
-                                                selectedCity === city ? "text-yellow-400 bg-yellow-500/5" : "text-white/70"
+                                                "w-full text-left px-4 py-2.5 text-sm hover:bg-stone-50 transition-colors",
+                                                selectedCity === city ? "text-primary font-bold bg-stone-100" : "text-stone-600"
                                             )}
                                         >
                                             {city}
@@ -103,7 +103,7 @@ export default function CabBookingView() {
                     {selectedCity && (
                         <button
                             onClick={handleShowAll}
-                            className="px-4 py-3 text-xs text-white/50 hover:text-white/80 bg-white/5 border border-white/10 rounded-xl transition-colors"
+                            className="px-4 py-3 text-xs text-stone-500 hover:text-stone-800 bg-stone-50 border border-stone-200 rounded-xl transition-colors shadow-sm"
                         >
                             All
                         </button>
@@ -117,7 +117,7 @@ export default function CabBookingView() {
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         placeholder="Search by name, service..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder:text-white/30"
+                        className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-800 text-sm placeholder:text-stone-400 outline-none focus:border-primary/50"
                     />
                 </div>
             </GlassCard>

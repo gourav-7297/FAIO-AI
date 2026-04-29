@@ -118,5 +118,5 @@ export const DOC_COLORS: Record<DocType, string> = {
     'Hotel Booking': 'from-purple-500 to-violet-500',
     'ID Card': 'from-cyan-500 to-blue-500',
     Vaccination: 'from-green-500 to-emerald-500',
-    Other: 'from-slate-500 to-gray-500',
+    Other: 'from-stone-500 to-gray-500',
 };

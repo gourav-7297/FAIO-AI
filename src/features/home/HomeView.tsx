@@ -4,7 +4,7 @@ import {
     Calendar, Sparkles, ArrowRight,
     CloudSun, Navigation, TrendingUp,
     Leaf, ChevronRight, Thermometer, Droplets, Send, MessageCircle, Zap, Search, X,
-    Clock, MapPin, Plane, Star, Users, Globe
+    Clock, MapPin, Plane, Star, Users, Globe, Shield, Backpack, FileText, Car, BookOpen
 } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useAIAgents } from '../../context/AIAgentContext';
@@ -83,28 +83,28 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
             <motion.header
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex justify-between items-start"
+                className="flex justify-between items-end mb-4"
             >
                 <div>
-                    <h1 className="text-3xl font-bold">
+                    <h1 className="text-4xl font-black text-stone-900 tracking-tight leading-none">
                         {greeting},
                         <br />
-                        <span className="faio-logo">Traveler</span>
+                        <span className="text-primary">Explorer</span>
                     </h1>
-                    <p className="text-secondary mt-1 text-sm">Ready for your next adventure?</p>
+                    <p className="text-stone-400 mt-2 text-[10px] font-black uppercase tracking-[0.2em]">FAIO Intelligence System</p>
                 </div>
                 <div className="flex items-center gap-3">
                     {isAITyping && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-action/10 rounded-full">
-                            <div className="w-2 h-2 bg-action rounded-full animate-pulse" />
-                            <span className="text-xs text-action font-medium">AI thinking...</span>
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-stone-50 rounded-full border border-stone-100">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                            <span className="text-[9px] text-stone-900 font-black uppercase tracking-widest">Processing</span>
                         </div>
                     )}
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-action to-purple-500 flex items-center justify-center ring-2 ring-white/10">
+                    <div className="w-14 h-14 rounded-[20px] bg-white flex items-center justify-center border border-stone-100 overflow-hidden shadow-premium p-1">
                         <img
                             src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
                             alt="User"
-                            className="w-10 h-10 rounded-full"
+                            className="w-full h-full rounded-[16px] object-cover"
                         />
                     </div>
                 </div>
@@ -118,101 +118,113 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
             >
                 {/* AI Contextual Tip */}
                 <motion.div variants={item}>
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-action/10 to-purple-500/10 border border-action/20">
-                        <Sparkles className="w-4 h-4 text-action flex-shrink-0" />
-                        <p className="text-sm text-white/90">{aiTip}</p>
+                    <div className="flex flex-col gap-3 p-4 rounded-2xl bg-white border border-stone-200 shadow-card relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-8 -mt-8 blur-2xl" />
+                        <div className="flex items-center gap-3 relative z-10">
+                            <Sparkles className="w-5 h-5 text-primary flex-shrink-0" />
+                            <p className="text-sm font-medium text-stone-700">{aiTip}</p>
+                        </div>
                     </div>
                 </motion.div>
 
                 {/* AI Search Card */}
                 <motion.div variants={item}>
-                    <GlassCard gradient="purple" glow className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-action to-purple-500 flex items-center justify-center">
-                                <Sparkles className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="flex-1">
-                                <input
-                                    type="text"
-                                    placeholder="Ask FAIO anything about travel..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    onKeyDown={async (e) => {
-                                        if (e.key === 'Enter' && searchQuery.trim()) {
-                                            await sendChatMessage(searchQuery);
-                                            setSearchQuery('');
-                                            onOpenChat?.();
-                                        }
-                                    }}
-                                    className="w-full bg-transparent border-none outline-none text-white placeholder:text-white/50 font-medium"
-                                />
-                                <p className="text-xs text-white/60 mt-0.5">Powered by FAIO AI ✨</p>
-                            </div>
-                            <button
-                                onClick={async () => {
-                                    if (searchQuery.trim()) {
+                    <div className="p-1.5 bg-white rounded-[32px] border border-stone-100 shadow-premium flex items-center gap-4 group transition-all hover:border-stone-200">
+                        <div className="w-14 h-14 rounded-2xl bg-stone-50 flex items-center justify-center border border-stone-100 group-hover:bg-white transition-colors">
+                            <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+                        </div>
+                        <div className="flex-1">
+                            <input
+                                type="text"
+                                placeholder="Where to next?"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={async (e) => {
+                                    if (e.key === 'Enter' && searchQuery.trim()) {
                                         await sendChatMessage(searchQuery);
                                         setSearchQuery('');
                                         onOpenChat?.();
-                                    } else {
-                                        onOpenChat?.();
                                     }
                                 }}
-                                className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
-                            >
-                                <Send className="w-5 h-5 text-white/60" />
-                            </button>
+                                className="w-full bg-transparent border-none outline-none text-stone-900 placeholder:text-stone-400 font-black text-sm uppercase tracking-widest"
+                            />
+                            <p className="text-[9px] font-black text-stone-300 uppercase tracking-widest mt-0.5">Quantum Search Protocol</p>
                         </div>
-                    </GlassCard>
+                        <button
+                            onClick={async () => {
+                                if (searchQuery.trim()) {
+                                    await sendChatMessage(searchQuery);
+                                    setSearchQuery('');
+                                    onOpenChat?.();
+                                } else {
+                                    onOpenChat?.();
+                                }
+                            }}
+                            className="w-12 h-12 bg-stone-900 rounded-[20px] flex items-center justify-center transition-all hover:bg-stone-800 active:scale-95 shadow-lg mr-1"
+                        >
+                            <Send className="w-5 h-5 text-white" />
+                        </button>
+                    </div>
                 </motion.div>
 
                 {/* Book Your Travel */}
                 <motion.div variants={item}>
-                    <h2 className="font-bold text-sm mb-3 flex items-center gap-2">
-                        <Plane className="w-4 h-4 text-action" /> Book Travel
-                    </h2>
-                    <div className="grid grid-cols-4 gap-2.5">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 flex items-center gap-2">
+                            <Zap className="w-3 h-3" /> Booking Hub
+                        </h2>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
                         {[
-                            { label: 'Flights', color: 'from-sky-500 to-blue-600', emoji: '✈️', tab: 'flights' as TabType },
-                            { label: 'Trains', color: 'from-orange-500 to-red-500', emoji: '🚆', tab: 'trains' as TabType },
-                            { label: 'Buses', color: 'from-teal-500 to-cyan-600', emoji: '🚌', tab: 'buses' as TabType },
-                            { label: 'Hotels', color: 'from-rose-500 to-pink-500', emoji: '🏨', tab: 'hotels' as TabType },
+                            { label: 'Flights', color: 'from-sky-50 to-blue-50/20', iconColor: 'text-blue-500', emoji: '✈️', tab: 'flights' as TabType, desc: 'AERIAL VECTORS' },
+                            { label: 'Hotels', color: 'from-rose-50 to-pink-50/20', iconColor: 'text-rose-500', emoji: '🏨', tab: 'hotels' as TabType, desc: 'STAY PROTOCOLS' },
+                            { label: 'Trains', color: 'from-orange-50 to-amber-50/20', iconColor: 'text-orange-500', emoji: '🚆', tab: 'trains' as TabType, desc: 'RAIL NETWORKS' },
+                            { label: 'Buses', color: 'from-emerald-50 to-teal-50/20', iconColor: 'text-teal-500', emoji: '🚌', tab: 'buses' as TabType, desc: 'TRANSIT LOOPS' },
                         ].map((action, i) => (
-                            <motion.div key={i} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.93 }}
+                            <motion.div key={i} whileTap={{ scale: 0.98 }}
                                 className="cursor-pointer" onClick={() => onNavigate?.(action.tab)}>
-                                <div className={`aspect-square rounded-2xl bg-gradient-to-br ${action.color} flex flex-col items-center justify-center shadow-lg gap-1`}>
-                                    <span className="text-2xl">{action.emoji}</span>
-                                    <span className="text-[10px] font-bold text-white/90">{action.label}</span>
+                                <div className="p-6 rounded-[32px] bg-white border border-stone-100 shadow-premium flex flex-col gap-4 relative overflow-hidden group hover:border-stone-200 transition-all">
+                                    <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${action.color} blur-2xl group-hover:scale-125 transition-transform`} />
+                                    <div className={`w-14 h-14 rounded-2xl bg-white border border-stone-50 flex items-center justify-center text-3xl shadow-soft z-10`}>
+                                        {action.emoji}
+                                    </div>
+                                    <div className="z-10">
+                                        <span className="block text-sm font-black text-stone-900 uppercase tracking-wider">{action.label}</span>
+                                        <span className="block text-[8px] font-black text-stone-400 uppercase tracking-widest mt-1.5">{action.desc}</span>
+                                    </div>
                                 </div>
                             </motion.div>
                         ))}
                     </div>
                 </motion.div>
 
-                {/* Travel Tools - Scrollable */}
+                {/* Travel Ecosystem */}
                 <motion.div variants={item}>
-                    <h2 className="font-bold text-sm mb-3 flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-purple-400" /> Travel Tools
-                    </h2>
-                    <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
+                     <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 flex items-center gap-2">
+                            <Shield className="w-3 h-3 text-stone-400" /> Utility Ecosystem
+                        </h2>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
                         {[
-                            { label: 'Plan Trip', color: 'from-blue-500 to-cyan-500', emoji: '🗓️', tab: 'planner' as TabType },
-                            { label: 'Explore', color: 'from-emerald-500 to-teal-500', emoji: '🔮', tab: 'explore' as TabType },
-                            { label: 'Cabs', color: 'from-amber-500 to-orange-500', emoji: '🚖', tab: 'cabs' as TabType },
-                            { label: 'Visa Info', color: 'from-violet-500 to-purple-500', emoji: '🛂', tab: 'visa' as TabType },
-                            { label: 'Packing', color: 'from-lime-500 to-green-500', emoji: '🎒', tab: 'packing' as TabType },
-                            { label: 'Documents', color: 'from-cyan-500 to-blue-500', emoji: '📄', tab: 'documents' as TabType },
-                            { label: 'Budget', color: 'from-indigo-500 to-blue-500', emoji: '💰', tab: 'wallet' as TabType },
-                            { label: 'Safety', color: 'from-red-500 to-rose-500', emoji: '🛡️', tab: 'safety' as TabType },
-                        ].map((action, i) => (
-                            <motion.div key={i} whileTap={{ scale: 0.93 }}
-                                className="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0"
-                                onClick={() => onNavigate?.(action.tab)}>
-                                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md`}>
-                                    <span className="text-base">{action.emoji}</span>
+                            { label: 'VISA PORTAL', icon: <Globe className="w-5 h-5" />, tab: 'visa' as TabType, color: 'text-indigo-500', bg: 'bg-indigo-50' },
+                            { label: 'SAFE PASSAGE', icon: <Shield className="w-5 h-5" />, tab: 'safety' as TabType, color: 'text-rose-500', bg: 'bg-rose-50' },
+                            { label: 'UNIT PREP', icon: <Backpack className="w-5 h-5" />, tab: 'packing' as TabType, color: 'text-teal-500', bg: 'bg-teal-50' },
+                            { label: 'DATA VAULT', icon: <FileText className="w-5 h-5" />, tab: 'documents' as TabType, color: 'text-sky-500', bg: 'bg-sky-50' },
+                            { label: 'GROUND OPS', icon: <Car className="w-5 h-5" />, tab: 'cabs' as TabType, color: 'text-amber-500', bg: 'bg-amber-50' },
+                            { label: 'LOCAL KNOWLEDGE', icon: <BookOpen className="w-5 h-5" />, tab: 'guides' as TabType, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+                        ].map((opt, i) => (
+                            <motion.button
+                                key={i}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => onNavigate?.(opt.tab)}
+                                className="flex flex-col items-center gap-3 p-5 rounded-[28px] bg-white border border-stone-100 shadow-sm group hover:border-stone-200 transition-all"
+                            >
+                                <div className={`w-12 h-12 rounded-2xl ${opt.bg} flex items-center justify-center ${opt.color}`}>
+                                    {opt.icon}
                                 </div>
-                                <span className="text-[9px] font-medium text-secondary whitespace-nowrap">{action.label}</span>
-                            </motion.div>
+                                <span className="text-[9px] font-black text-stone-900 text-center leading-none uppercase tracking-widest">{opt.label}</span>
+                            </motion.button>
                         ))}
                     </div>
                 </motion.div>
@@ -221,73 +233,73 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
                 {tripData ? (
                     <motion.div variants={item}>
                         <div className="flex justify-between items-center mb-3">
-                            <h2 className="font-bold flex items-center gap-2">
-                                <Plane className="w-4 h-4 text-action" />
+                            <h2 className="font-bold text-stone-800 flex items-center gap-2">
+                                <Plane className="w-4 h-4 text-primary" />
                                 {tripCountdown && tripCountdown.daysUntil > 0 ? 'Upcoming Trip' : 'Active Trip'}
                             </h2>
                             <button
-                                className="text-action text-xs font-medium flex items-center gap-1"
+                                className="text-primary text-xs font-bold flex items-center gap-1 hover:underline"
                                 onClick={() => onNavigate?.('planner')}
                             >
                                 View details <ChevronRight className="w-3 h-3" />
                             </button>
                         </div>
-                        <GlassCard gradient="blue" glow className="p-5">
+                        <GlassCard className="p-5 border border-stone-100 bg-white" glow>
                             <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <span className="px-2 py-1 rounded-full bg-action/20 text-action text-[10px] font-bold uppercase tracking-wider">
+                                    <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider">
                                         {tripCountdown && tripCountdown.daysUntil > 0 ? `${tripCountdown.daysUntil} days to go` : 'Active'}
                                     </span>
-                                    <h3 className="text-2xl font-bold mt-2">{tripData.destination}</h3>
-                                    <div className="flex items-center gap-2 text-secondary text-sm mt-1">
+                                    <h3 className="text-2xl font-black text-stone-900 mt-2">{tripData.destination}</h3>
+                                    <div className="flex items-center gap-2 text-stone-500 font-medium text-sm mt-1">
                                         <Calendar className="w-4 h-4" />
                                         <span>{tripData.startDate} — {tripData.endDate}</span>
                                     </div>
                                     {tripData.travelers && (
-                                        <div className="flex items-center gap-1 text-secondary text-xs mt-1">
+                                        <div className="flex items-center gap-1 text-stone-500 font-medium text-xs mt-1">
                                             <Users className="w-3.5 h-3.5" />
                                             <span>{tripData.travelers} traveler{tripData.travelers > 1 ? 's' : ''}</span>
                                         </div>
                                     )}
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-xs text-secondary">Est. Cost</p>
-                                    <p className="text-lg font-bold text-emerald-400">${tripData.totalCost.toFixed(0)}</p>
+                                    <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Est. Cost</p>
+                                    <p className="text-xl font-black text-emerald-600">${tripData.totalCost.toFixed(0)}</p>
                                 </div>
                             </div>
 
                             {/* Trip Stats */}
                             <div className="grid grid-cols-4 gap-2">
-                                <div className="text-center p-2 bg-white/5 rounded-xl">
-                                    <Clock className="w-4 h-4 mx-auto text-blue-400 mb-1" />
-                                    <p className="font-bold text-sm">{tripData.itinerary.length}d</p>
-                                    <p className="text-[9px] text-secondary">Duration</p>
+                                <div className="text-center p-2.5 bg-white rounded-xl border border-stone-100 shadow-sm">
+                                    <Clock className="w-4 h-4 mx-auto text-blue-500 mb-1" />
+                                    <p className="font-bold text-sm text-stone-900">{tripData.itinerary.length}d</p>
+                                    <p className="text-[9px] font-bold text-stone-400 uppercase">Duration</p>
                                 </div>
-                                <div className="text-center p-2 bg-white/5 rounded-xl">
-                                    <MapPin className="w-4 h-4 mx-auto text-action mb-1" />
-                                    <p className="font-bold text-sm">{tripData.itinerary.reduce((s: number, d: any) => s + d.activities.length, 0)}</p>
-                                    <p className="text-[9px] text-secondary">Activities</p>
+                                <div className="text-center p-2.5 bg-white rounded-xl border border-stone-100 shadow-sm">
+                                    <MapPin className="w-4 h-4 mx-auto text-primary mb-1" />
+                                    <p className="font-bold text-sm text-stone-900">{tripData.itinerary.reduce((s: number, d: any) => s + d.activities.length, 0)}</p>
+                                    <p className="text-[9px] font-bold text-stone-400 uppercase">Activities</p>
                                 </div>
-                                <div className="text-center p-2 bg-white/5 rounded-xl">
-                                    <Star className="w-4 h-4 mx-auto text-amber-400 mb-1" />
-                                    <p className="font-bold text-sm">{tripData.sustainabilityScore}</p>
-                                    <p className="text-[9px] text-secondary">Eco Score</p>
+                                <div className="text-center p-2.5 bg-white rounded-xl border border-stone-100 shadow-sm">
+                                    <Star className="w-4 h-4 mx-auto text-amber-500 mb-1" />
+                                    <p className="font-bold text-sm text-stone-900">{tripData.sustainabilityScore}</p>
+                                    <p className="text-[9px] font-bold text-stone-400 uppercase">Eco Score</p>
                                 </div>
-                                <div className="text-center p-2 bg-white/5 rounded-xl">
-                                    <Leaf className="w-4 h-4 mx-auto text-teal-400 mb-1" />
-                                    <p className="font-bold text-sm">{tripData.carbonFootprint}kg</p>
-                                    <p className="text-[9px] text-secondary">CO2</p>
+                                <div className="text-center p-2.5 bg-white rounded-xl border border-stone-100 shadow-sm">
+                                    <Leaf className="w-4 h-4 mx-auto text-teal-500 mb-1" />
+                                    <p className="font-bold text-sm text-stone-900">{tripData.carbonFootprint}kg</p>
+                                    <p className="text-[9px] font-bold text-stone-400 uppercase">CO2</p>
                                 </div>
                             </div>
 
                             {/* Today's First Activity */}
                             {tripData.itinerary[0]?.activities?.[0] && (
-                                <div className="mt-4 p-3 bg-white/5 rounded-xl flex items-center gap-3">
-                                    <div className="w-2 h-full bg-action rounded-full" />
+                                <div className="mt-4 p-3.5 bg-white border border-stone-100 rounded-xl flex items-center gap-3 shadow-sm">
+                                    <div className="w-1.5 h-10 bg-primary rounded-full" />
                                     <div className="flex-1">
-                                        <p className="text-[10px] text-action font-bold uppercase">Next Up</p>
-                                        <p className="font-bold text-sm">{tripData.itinerary[0].activities[0].title}</p>
-                                        <p className="text-xs text-secondary">{tripData.itinerary[0].activities[0].time} · {tripData.itinerary[0].activities[0].duration}</p>
+                                        <p className="text-[10px] text-stone-600 font-medium uppercase tracking-[0.2em] mb-4">Financial Pulse</p>
+                                        <p className="font-bold text-sm text-stone-900">{tripData.itinerary[0].activities[0].title}</p>
+                                        <p className="text-xs font-medium text-stone-500">{tripData.itinerary[0].activities[0].time} · {tripData.itinerary[0].activities[0].duration}</p>
                                     </div>
                                 </div>
                             )}
@@ -296,18 +308,18 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
                 ) : (
                     <motion.div variants={item}>
                         <div className="flex justify-between items-center mb-3">
-                            <h2 className="font-bold">Start Planning</h2>
+                            <h2 className="font-bold text-stone-800">Start Planning</h2>
                         </div>
-                        <GlassCard gradient="blue" className="p-5 cursor-pointer" onClick={() => onNavigate?.('planner')}>
+                        <GlassCard className="p-5 cursor-pointer bg-gradient-to-br from-rose-50 to-orange-50 border-rose-100" onClick={() => onNavigate?.('planner')}>
                             <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-action to-purple-500 flex items-center justify-center animate-float">
-                                    <Sparkles className="w-7 h-7 text-white" />
+                                <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center animate-float shadow-lg shadow-primary/30">
+                                    <Sparkles className="w-6 h-6 text-white" />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="font-bold text-lg">Let AI plan your trip</h3>
-                                    <p className="text-secondary text-sm">6 agents collaborate for the perfect itinerary</p>
+                                    <h3 className="font-bold text-lg text-stone-900">Let AI plan your trip</h3>
+                                    <p className="text-stone-600 font-medium text-sm">6 agents collaborate for the perfect itinerary</p>
                                 </div>
-                                <ArrowRight className="w-5 h-5 text-action" />
+                                <ArrowRight className="w-5 h-5 text-primary" />
                             </div>
                         </GlassCard>
                     </motion.div>
@@ -317,13 +329,13 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
                 {savedTrips.length > 0 && !tripData && (
                     <motion.div variants={item}>
                         <div className="flex justify-between items-center mb-3">
-                            <h2 className="font-bold flex items-center gap-2">
-                                <Globe className="w-4 h-4 text-purple-400" />
+                            <h2 className="font-bold text-stone-800 flex items-center gap-2">
+                                <Globe className="w-4 h-4 text-purple-500" />
                                 Recent Trips
                             </h2>
-                            <span className="text-xs text-secondary">{savedTrips.length} saved</span>
+                            <span className="text-xs font-medium text-stone-500">{savedTrips.length} saved</span>
                         </div>
-                        <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
+                        <div className="flex gap-4 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
                             {savedTrips.slice(0, 5).map((trip, i) => (
                                 <motion.div
                                     key={i}
@@ -332,19 +344,19 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
                                     className="min-w-[160px] cursor-pointer"
                                     onClick={() => onNavigate?.('planner')}
                                 >
-                                    <GlassCard className="p-4">
+                                    <GlassCard className="p-4 bg-white border-stone-100">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <div className="w-8 h-8 rounded-lg bg-action/10 flex items-center justify-center">
-                                                <MapPin className="w-4 h-4 text-action" />
+                                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                                                <MapPin className="w-4 h-4 text-blue-500" />
                                             </div>
                                             <div>
-                                                <p className="font-bold text-sm truncate max-w-[100px]">{trip.destination}</p>
+                                                <p className="font-bold text-sm text-stone-900 truncate max-w-[100px]">{trip.destination}</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 text-[10px] text-secondary">
+                                        <div className="flex items-center gap-2 text-[11px] font-bold text-stone-500">
                                             <span>{trip.itinerary.length}d</span>
                                             <span>·</span>
-                                            <span>${trip.totalCost.toFixed(0)}</span>
+                                            <span className="text-emerald-600">${trip.totalCost.toFixed(0)}</span>
                                         </div>
                                     </GlassCard>
                                 </motion.div>
@@ -355,8 +367,8 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
 
                 {/* Real Weather Widget */}
                 <motion.div variants={item}>
-                    <GlassCard className="p-4">
-                        <div className="flex items-center justify-between mb-3">
+                    <GlassCard className="p-5">
+                        <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 {isEditingLocation ? (
                                     <form
@@ -377,18 +389,18 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
                                             onBlur={() => {
                                                 setTimeout(() => setIsEditingLocation(false), 200);
                                             }}
-                                            className="bg-white/10 border border-white/20 rounded px-2 py-0.5 text-sm font-bold w-32 outline-none focus:border-action"
+                                            className="bg-stone-100 border border-stone-200 rounded-full px-3 py-1 text-sm font-bold w-32 outline-none focus:border-primary text-stone-900"
                                             placeholder="City..."
                                         />
-                                        <button type="submit" className="p-1 hover:bg-white/10 rounded-full">
-                                            <Search className="w-3 h-3 text-action" />
+                                        <button type="submit" className="p-1 hover:bg-stone-100 rounded-full transition-colors">
+                                            <Search className="w-4 h-4 text-primary" />
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setIsEditingLocation(false)}
-                                            className="p-1 hover:bg-white/10 rounded-full"
+                                            className="p-1 hover:bg-stone-100 rounded-full transition-colors"
                                         >
-                                            <X className="w-3 h-3 text-secondary" />
+                                            <X className="w-4 h-4 text-stone-400" />
                                         </button>
                                     </form>
                                 ) : (
@@ -399,44 +411,44 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
                                         }}
                                         className="flex items-center gap-2 group"
                                     >
-                                        <h3 className="font-bold text-sm">Weather in {currentCity}</h3>
-                                        <Search className="w-3 h-3 text-secondary group-hover:text-white transition-colors" />
+                                        <h3 className="font-bold text-sm text-stone-900">Weather in {currentCity}</h3>
+                                        <Search className="w-3.5 h-3.5 text-stone-400 group-hover:text-primary transition-colors" />
                                     </button>
                                 )}
-                                <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded">LIVE</span>
+                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black tracking-wider uppercase rounded-full">LIVE</span>
                             </div>
                         </div>
 
                         {weather ? (
                             <>
-                                <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center justify-between mb-5">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-4xl">{getWeatherEmoji(weather.icon)}</span>
+                                        <span className="text-5xl drop-shadow-sm">{getWeatherEmoji(weather.icon)}</span>
                                         <div>
-                                            <p className="text-3xl font-bold">{weather.temperature}°C</p>
-                                            <p className="text-sm text-secondary capitalize">{weather.description}</p>
+                                            <p className="text-3xl font-black text-stone-900">{weather.temperature}°C</p>
+                                            <p className="text-sm font-bold text-stone-500 capitalize">{weather.description}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="flex items-center gap-1 text-sm text-secondary">
-                                            <Thermometer className="w-4 h-4" />
+                                        <div className="flex items-center gap-1.5 text-sm font-medium text-stone-500">
+                                            <Thermometer className="w-4 h-4 text-rose-400" />
                                             <span>Feels {weather.feelsLike}°</span>
                                         </div>
-                                        <div className="flex items-center gap-1 text-sm text-secondary">
-                                            <Droplets className="w-4 h-4" />
-                                            <span>{weather.humidity}% humidity</span>
+                                        <div className="flex items-center gap-1.5 text-sm font-medium text-stone-500 mt-1">
+                                            <Droplets className="w-4 h-4 text-blue-400" />
+                                            <span>{weather.humidity}% hum</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Mini Forecast */}
                                 {forecast.length > 0 && (
-                                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                                    <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
                                         {forecast.slice(0, 5).map((day, i) => (
-                                            <div key={i} className="flex-shrink-0 text-center p-2 bg-surface/50 rounded-xl min-w-[56px]">
-                                                <p className="text-[10px] text-secondary">{day.dayName}</p>
-                                                <span className="text-lg">{getWeatherEmoji(day.icon)}</span>
-                                                <p className="text-xs font-bold">{day.tempMax}°</p>
+                                            <div key={i} className="flex-shrink-0 text-center p-2.5 bg-stone-50 border border-stone-100 rounded-2xl min-w-[60px]">
+                                                <p className="text-[10px] font-bold text-stone-400 uppercase">{day.dayName}</p>
+                                                <span className="text-2xl block my-1">{getWeatherEmoji(day.icon)}</span>
+                                                <p className="text-sm font-black text-stone-800">{day.tempMax}°</p>
                                             </div>
                                         ))}
                                     </div>
@@ -444,32 +456,32 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
 
                                 {/* Weather Alert */}
                                 {weatherAlert && (
-                                    <div className={`mt-3 p-2 rounded-xl flex items-center gap-2 ${weatherAlert.severity === 'high' ? 'bg-red-500/10 text-red-400' :
-                                        weatherAlert.severity === 'medium' ? 'bg-amber-500/10 text-amber-400' :
-                                            'bg-blue-500/10 text-blue-400'
+                                    <div className={`mt-4 p-3 rounded-xl flex items-center gap-2 ${weatherAlert.severity === 'high' ? 'bg-red-50 text-red-700 border border-red-100' :
+                                        weatherAlert.severity === 'medium' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                                            'bg-blue-50 text-blue-700 border border-blue-100'
                                         }`}>
-                                        <CloudSun className="w-4 h-4" />
-                                        <span className="text-xs">{weatherAlert.description}</span>
+                                        <CloudSun className="w-5 h-5 flex-shrink-0" />
+                                        <span className="text-sm font-bold">{weatherAlert.description}</span>
                                     </div>
                                 )}
                             </>
                         ) : (
                             <div className="grid grid-cols-2 gap-3">
-                                <div className={`p-3 rounded-xl ${isRaining ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-surface/50'}`}>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <CloudSun className={`w-4 h-4 ${isRaining ? 'text-blue-400' : 'text-secondary'}`} />
-                                        <span className="text-xs text-secondary">Weather</span>
+                                <div className={`p-4 rounded-2xl border ${isRaining ? 'bg-blue-50 border-blue-100' : 'bg-stone-50 border-stone-100'}`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <CloudSun className={`w-5 h-5 ${isRaining ? 'text-blue-500' : 'text-stone-400'}`} />
+                                        <span className="text-xs font-bold text-stone-500">Weather</span>
                                     </div>
-                                    <p className={`font-bold ${isRaining ? 'text-blue-400' : 'text-white'}`}>
+                                    <p className={`font-black text-lg ${isRaining ? 'text-blue-700' : 'text-stone-900'}`}>
                                         {isRaining ? 'Rainy' : 'Clear'}
                                     </p>
                                 </div>
-                                <div className={`p-3 rounded-xl ${isHighTraffic ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-surface/50'}`}>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Navigation className={`w-4 h-4 ${isHighTraffic ? 'text-amber-400' : 'text-secondary'}`} />
-                                        <span className="text-xs text-secondary">Traffic</span>
+                                <div className={`p-4 rounded-2xl border ${isHighTraffic ? 'bg-amber-50 border-amber-100' : 'bg-stone-50 border-stone-100'}`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Navigation className={`w-5 h-5 ${isHighTraffic ? 'text-amber-500' : 'text-stone-400'}`} />
+                                        <span className="text-xs font-bold text-stone-500">Traffic</span>
                                     </div>
-                                    <p className={`font-bold ${isHighTraffic ? 'text-amber-400' : 'text-white'}`}>
+                                    <p className={`font-black text-lg ${isHighTraffic ? 'text-amber-700' : 'text-stone-900'}`}>
                                         {isHighTraffic ? 'Heavy' : 'Light'}
                                     </p>
                                 </div>
@@ -481,24 +493,24 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
                 {/* FAIO AI Assistant */}
                 <motion.div variants={item}>
                     <div className="flex justify-between items-center mb-3">
-                        <h2 className="font-bold flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-action" />
+                        <h2 className="font-bold text-stone-800 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-primary" />
                             FAIO AI
                         </h2>
-                        <span className="text-xs text-secondary flex items-center gap-1">
-                            <Zap className="w-3 h-3" /> Powered by Groq
+                        <span className="text-[10px] font-bold text-stone-400 flex items-center gap-1 uppercase tracking-wider">
+                            <Zap className="w-3 h-3 text-amber-500" /> Powered by Groq
                         </span>
                     </div>
-                    <GlassCard className="p-4" onClick={() => onOpenChat?.()}>
-                        <div className="flex items-center gap-3 mb-4 cursor-pointer">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-action to-purple-500 flex items-center justify-center">
-                                <MessageCircle className="w-6 h-6 text-white" />
+                    <GlassCard className="p-5" onClick={() => onOpenChat?.()}>
+                        <div className="flex items-center gap-4 mb-5 cursor-pointer">
+                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                <MessageCircle className="w-6 h-6 text-primary" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-bold">Chat with FAIO</h3>
-                                <p className="text-xs text-secondary">Your personal AI travel companion</p>
+                                <h3 className="font-bold text-stone-900 text-lg">Chat with FAIO</h3>
+                                <p className="text-sm font-medium text-stone-500">Your personal AI travel companion</p>
                             </div>
-                            <ArrowRight className="w-5 h-5 text-action" />
+                            <ArrowRight className="w-5 h-5 text-stone-400" />
                         </div>
 
                         {/* Quick Prompt Chips */}
@@ -520,7 +532,7 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
                                         await sendChatMessage(chip.query);
                                         onOpenChat?.();
                                     }}
-                                    className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-slate-700 rounded-full text-xs transition-colors"
+                                    className="px-3.5 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-full text-xs font-bold text-stone-600 transition-colors"
                                 >
                                     {chip.label}
                                 </motion.button>
@@ -533,26 +545,26 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
                 {savedTrips.length > 0 && (
                     <motion.div variants={item}>
                         <div className="flex justify-between items-center mb-3">
-                            <h2 className="font-bold flex items-center gap-2">
-                                <TrendingUp className="w-4 h-4 text-emerald-400" />
+                            <h2 className="font-bold text-stone-800 flex items-center gap-2">
+                                <TrendingUp className="w-4 h-4 text-emerald-500" />
                                 Your Stats
                             </h2>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
-                            <GlassCard className="p-3 text-center">
-                                <Plane className="w-5 h-5 mx-auto text-action mb-1" />
-                                <p className="text-lg font-bold">{savedTrips.length}</p>
-                                <p className="text-[10px] text-secondary">Trips Planned</p>
+                            <GlassCard className="p-4 text-center border-stone-100 bg-white">
+                                <Plane className="w-6 h-6 mx-auto text-blue-500 mb-2" />
+                                <p className="text-xl font-black text-stone-900">{savedTrips.length}</p>
+                                <p className="text-[9px] font-bold uppercase tracking-wide text-stone-400">Trips Planned</p>
                             </GlassCard>
-                            <GlassCard className="p-3 text-center">
-                                <Globe className="w-5 h-5 mx-auto text-purple-400 mb-1" />
-                                <p className="text-lg font-bold">{new Set(savedTrips.map(t => t.destination)).size}</p>
-                                <p className="text-[10px] text-secondary">Destinations</p>
+                            <GlassCard className="p-4 text-center border-stone-100 bg-white">
+                                <Globe className="w-6 h-6 mx-auto text-purple-500 mb-2" />
+                                <p className="text-xl font-black text-stone-900">{new Set(savedTrips.map(t => t.destination)).size}</p>
+                                <p className="text-[9px] font-bold uppercase tracking-wide text-stone-400">Destinations</p>
                             </GlassCard>
-                            <GlassCard className="p-3 text-center">
-                                <Leaf className="w-5 h-5 mx-auto text-teal-400 mb-1" />
-                                <p className="text-lg font-bold">{Math.round(savedTrips.reduce((s, t) => s + (t.sustainabilityScore || 0), 0) / savedTrips.length)}</p>
-                                <p className="text-[10px] text-secondary">Avg Eco</p>
+                            <GlassCard className="p-4 text-center border-stone-100 bg-white">
+                                <Leaf className="w-6 h-6 mx-auto text-teal-500 mb-2" />
+                                <p className="text-xl font-black text-stone-900">{Math.round(savedTrips.reduce((s, t) => s + (t.sustainabilityScore || 0), 0) / savedTrips.length)}</p>
+                                <p className="text-[9px] font-bold uppercase tracking-wide text-stone-400">Avg Eco</p>
                             </GlassCard>
                         </div>
                     </motion.div>
@@ -561,48 +573,44 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
                 {/* Trending Destinations */}
                 <motion.div variants={item}>
                     <div className="flex justify-between items-center mb-3">
-                        <h2 className="font-bold">Trending Now</h2>
-                        <button className="text-sm text-secondary flex items-center gap-1">
-                            See all <ArrowRight className="w-4 h-4" />
+                        <h2 className="font-bold text-stone-800">Trending Now</h2>
+                        <button className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
+                            See all <ArrowRight className="w-3 h-3" />
                         </button>
                     </div>
 
-                    <div className="flex gap-4 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar snap-x">
+                    <div className="flex gap-6 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar snap-x">
                         {[
-                            { name: 'Kyoto', country: 'Japan', image: 'from-red-500 to-orange-500', rating: '4.9', tag: 'Culture' },
-                            { name: 'Santorini', country: 'Greece', image: 'from-blue-400 to-cyan-300', rating: '4.8', tag: 'Romance' },
-                            { name: 'Bali', country: 'Indonesia', image: 'from-emerald-500 to-teal-500', rating: '4.7', tag: 'Wellness' },
-                            { name: 'Reykjavik', country: 'Iceland', image: 'from-purple-500 to-indigo-500', rating: '4.8', tag: 'Adventure' },
-                            { name: 'Marrakech', country: 'Morocco', image: 'from-amber-500 to-red-500', rating: '4.6', tag: 'Foodie' },
+                            { name: 'Kyoto', country: 'Japan', image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=400&auto=format&fit=crop', rating: '4.9', tag: 'Culture' },
+                            { name: 'Santorini', country: 'Greece', image: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=400&auto=format&fit=crop', rating: '4.8', tag: 'Romance' },
+                            { name: 'Bali', country: 'Indonesia', image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=400&auto=format&fit=crop', rating: '4.7', tag: 'Wellness' },
+                            { name: 'Reykjavik', country: 'Iceland', image: 'https://images.unsplash.com/photo-1476610182048-b716b8518aae?q=80&w=400&auto=format&fit=crop', rating: '4.8', tag: 'Adventure' },
                         ].map((place, i) => (
                             <motion.div
                                 key={i}
-                                className="min-w-[180px] h-[220px] rounded-3xl relative overflow-hidden snap-center group cursor-pointer"
+                                className="min-w-[240px] h-[320px] rounded-[40px] relative overflow-hidden snap-center group cursor-pointer shadow-premium border border-stone-100"
                                 whileHover={{ scale: 1.02 }}
                                 onClick={() => onNavigate?.('planner')}
                             >
-                                <div className={`absolute inset-0 bg-gradient-to-br ${place.image} opacity-90 group-hover:scale-110 transition-transform duration-500`} />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                                <img src={place.image} alt={place.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-transparent to-transparent" />
 
                                 {/* Tags */}
-                                <div className="absolute top-3 left-3 flex gap-2">
-                                    <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-full flex items-center gap-1">
-                                        <Sparkles className="w-3 h-3 text-white" />
-                                        <span className="text-[10px] text-white font-bold">AI Pick</span>
-                                    </div>
-                                    <div className="px-2 py-1 bg-black/30 backdrop-blur-md rounded-full">
-                                        <span className="text-[10px] text-white font-bold">{place.tag}</span>
+                                <div className="absolute top-6 left-6 flex gap-2">
+                                    <div className="px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-2xl flex items-center gap-1.5 shadow-soft">
+                                        <Sparkles className="w-3 h-3 text-primary" />
+                                        <span className="text-[9px] text-stone-900 font-black uppercase tracking-wider">AI RECOMMEND</span>
                                     </div>
                                 </div>
 
-                                <div className="absolute bottom-4 left-4 right-4">
+                                <div className="absolute bottom-6 left-6 right-6">
                                     <div className="flex items-end justify-between">
                                         <div>
-                                            <h3 className="text-lg font-bold text-white">{place.name}</h3>
-                                            <p className="text-white/80 text-sm">{place.country}</p>
+                                            <h3 className="text-2xl font-black text-white leading-tight">{place.name}</h3>
+                                            <p className="text-white/80 font-black text-[10px] uppercase tracking-widest mt-1">{place.country}</p>
                                         </div>
-                                        <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg">
-                                            <span className="text-xs font-bold text-white">⭐ {place.rating}</span>
+                                        <div className="px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-xl border border-white/30 text-white font-black text-xs">
+                                            {place.rating}
                                         </div>
                                     </div>
                                 </div>

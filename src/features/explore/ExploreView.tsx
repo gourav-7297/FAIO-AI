@@ -274,7 +274,7 @@ export function ExploreView() {
         setIsLoadingVibes(true);
         try {
             if (isFoursquareAvailable()) {
-                const gems = await searchHiddenGems(targetCity || 'Delhi', 15); // Fallback to a major city if none
+                const gems = await searchHiddenGems(targetCity || 'Delhi', 15); 
                 if (gems.length > 0) {
                     setVibePlaces(gems.map(foursquareToVibe));
                 } else {
@@ -288,15 +288,12 @@ export function ExploreView() {
         }
     };
 
-    // Auto-search on Real Places tab if trip destination set
     useEffect(() => {
-        const target = tripData?.destination || 'Delhi'; // Fallback city
+        const target = tripData?.destination || 'Delhi';
         if (tripData?.destination && !hasSearched) {
             setSearchCity(tripData.destination);
             handleCitySearch(tripData.destination);
         }
-        
-        // Always load vibes on mount
         loadVibes(target);
     }, [tripData?.destination]);
 
@@ -308,7 +305,6 @@ export function ExploreView() {
         });
     };
 
-    // ─── Real Places: Search by city ─────────────
     const handleCitySearch = async (city?: string) => {
         const target = city || searchCity;
         if (!target.trim()) { showToast('Enter a city name to explore', 'info'); return; }
@@ -340,12 +336,9 @@ export function ExploreView() {
             }
         } catch { showToast('Failed to search places', 'error'); }
         finally { setIsLoading(false); }
-
-        // Also fetch Hidden Gems for Local Vibes tab
         loadVibes(target);
     };
 
-    // ─── Discover nearby ─────────────────────────
     const discoverNearby = async () => {
         setIsLoadingNearby(true);
         try {
@@ -361,11 +354,10 @@ export function ExploreView() {
             const fsqNames = new Set(results.map(r => r.name.toLowerCase()));
             const merged = [...results, ...overpassDisplay.filter(p => !fsqNames.has(p.name.toLowerCase()))];
             
-            // Set these as the main places grid so the user sees a full list!
             setPlaces(merged);
             setHasSearched(true);
             setSearchCity('Current Location');
-            setActiveTab('places'); // Ensure they are on the places tab to see them
+            setActiveTab('places');
             
             if (merged.length > 0) showToast(`Found ${merged.length} places near you!`, 'success');
             else showToast('No places found nearby', 'info');
@@ -373,7 +365,6 @@ export function ExploreView() {
         finally { setIsLoadingNearby(false); }
     };
 
-    // ─── Filtered lists ──────────────────────────
     const filteredVibes = vibePlaces.filter(p => {
         if (vibeCategory !== 'all' && p.category !== vibeCategory) return false;
         if (showHiddenOnly && !p.isHidden) return false;
@@ -384,7 +375,6 @@ export function ExploreView() {
         return true;
     });
 
-    // Pick top vibe place for AI Pick
     const aiPick = vibePlaces.length > 0 ? vibePlaces.reduce((prev, current) => (prev.rating > current.rating) ? prev : current) : null;
 
     const filteredPlaces = places.filter(p => {
@@ -402,314 +392,282 @@ export function ExploreView() {
     }));
 
     return (
-        <div className="p-5 pt-12 min-h-screen pb-32">
-            {/* Header */}
-            <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
-                <div className="flex items-center gap-2 mb-1">
-                    <Gem className="w-5 h-5 text-action" />
-                    <span className="text-xs text-action font-bold uppercase tracking-wider">Discover</span>
+        <div className="min-h-screen bg-white pb-32">
+            {/* STICKY HEADER */}
+            <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-stone-100 px-6 py-8">
+                <div className="flex items-center justify-between mb-2">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">Curated Intelligence</span>
+                        </div>
+                        <h1 className="text-3xl font-black text-stone-900 tracking-tight">Discovery</h1>
+                    </div>
+                    <div className="flex gap-2">
+                        <motion.button whileTap={{ scale: 0.95 }} onClick={discoverNearby}
+                            className="w-12 h-12 rounded-2xl bg-stone-50 flex items-center justify-center text-stone-900 hover:bg-stone-100 transition-all">
+                            <Navigation className="w-5 h-5" />
+                        </motion.button>
+                        <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                            <Compass className="w-5 h-5" />
+                        </div>
+                    </div>
                 </div>
-                <h1 className="text-3xl font-bold">Explore</h1>
-                <p className="text-secondary text-sm">
-                    {tripData ? `Discover ${tripData.destination}` : 'Find hidden gems & real places worldwide'}
+                <p className="text-stone-400 text-sm font-medium">
+                    {tripData ? `Exploring ${tripData.destination}` : 'Global hidden gems and real hotspots'}
                 </p>
-            </motion.header>
 
-            {/* ═══ TAB SWITCHER ═══ */}
-            <div className="flex gap-1 mb-5 p-1 bg-surface/80 rounded-2xl border border-slate-700/50">
-                <button
-                    onClick={() => setActiveTab('vibes')}
-                    className={cn(
-                        "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
-                        activeTab === 'vibes'
-                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/20"
-                            : "text-secondary hover:text-white"
-                    )}
-                >
-                    <Sparkles className="w-4 h-4" />
-                    Local Vibes
-                </button>
-                <button
-                    onClick={() => setActiveTab('places')}
-                    className={cn(
-                        "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
-                        activeTab === 'places'
-                            ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/20"
-                            : "text-secondary hover:text-white"
-                    )}
-                >
-                    <Globe className="w-4 h-4" />
-                    Real Places
-                </button>
+                {/* TAB SWITCHER */}
+                <div className="mt-8 p-1.5 bg-stone-100 rounded-[24px] flex gap-2">
+                    <button onClick={() => setActiveTab('vibes')}
+                        className={cn(
+                            "flex-1 flex items-center justify-center gap-2 py-3 rounded-[18px] text-[11px] font-black uppercase tracking-widest transition-all",
+                            activeTab === 'vibes' ? "bg-white text-stone-900 shadow-soft" : "text-stone-400 hover:text-stone-600"
+                        )}>
+                        <Sparkles className={cn("w-4 h-4", activeTab === 'vibes' ? "text-primary" : "text-stone-400")} />
+                        Local Vibes
+                    </button>
+                    <button onClick={() => setActiveTab('places')}
+                        className={cn(
+                            "flex-1 flex items-center justify-center gap-2 py-3 rounded-[18px] text-[11px] font-black uppercase tracking-widest transition-all",
+                            activeTab === 'places' ? "bg-white text-stone-900 shadow-soft" : "text-stone-400 hover:text-stone-600"
+                        )}>
+                        <Globe className={cn("w-4 h-4", activeTab === 'places' ? "text-blue-500" : "text-stone-400")} />
+                        Real Places
+                    </button>
+                </div>
             </div>
 
-            {/* ═══════════════════════════════════ */}
-            {/* TAB 1: LOCAL VIBES                  */}
-            {/* ═══════════════════════════════════ */}
-            {activeTab === 'vibes' && (
-                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
-                    {/* Search + Hidden Filter */}
-                    <div className="flex gap-2 mb-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
-                            <input type="text" value={vibeSearch} onChange={(e) => setVibeSearch(e.target.value)}
-                                placeholder="Search places…"
-                                className="w-full pl-10 pr-4 py-2.5 bg-surface/80 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-action placeholder:text-slate-500" />
-                        </div>
-                        <button onClick={() => setShowHiddenOnly(!showHiddenOnly)}
-                            className={cn("px-3 py-2.5 rounded-xl border text-sm font-medium flex items-center gap-1 transition-all",
-                                showHiddenOnly ? "bg-action text-white border-action" : "bg-surface/80 border-slate-700 text-secondary hover:text-white")}>
-                            <Eye className="w-4 h-4" /> Hidden
-                        </button>
-                    </div>
-
-                    {/* Category Filters */}
-                    <div className="flex gap-2 mb-5 overflow-x-auto no-scrollbar pb-1">
-                        {VIBE_FILTERS.map(cat => (
-                            <button key={cat.id} onClick={() => setVibeCategory(cat.id)}
-                                className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all whitespace-nowrap flex-shrink-0",
-                                    vibeCategory === cat.id ? "bg-action text-white" : "bg-surface/50 text-secondary hover:text-white")}>
-                                <cat.icon className="w-4 h-4" />
-                                <span className="text-xs font-medium">{cat.label}</span>
+            <div className="px-6 mt-6">
+                {/* ═══════════════════════════════════ */}
+                {/* TAB 1: LOCAL VIBES                  */}
+                {/* ═══════════════════════════════════ */}
+                {activeTab === 'vibes' && (
+                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+                        {/* Search + Hidden Filter */}
+                        <div className="flex gap-3">
+                            <div className="relative flex-1 group">
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 group-focus-within:text-primary transition-colors" />
+                                <input type="text" value={vibeSearch} onChange={(e) => setVibeSearch(e.target.value)}
+                                    placeholder="Search the underground..."
+                                    className="w-full pl-12 pr-5 py-4 bg-stone-50 border border-stone-200 rounded-[20px] text-sm font-bold focus:ring-2 ring-primary/10 placeholder:text-stone-300 text-stone-900 transition-all" />
+                            </div>
+                            <button onClick={() => setShowHiddenOnly(!showHiddenOnly)}
+                                className={cn("px-5 rounded-[20px] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+                                    showHiddenOnly ? "bg-stone-900 text-white shadow-lg" : "bg-white border border-stone-100 text-stone-400 hover:border-stone-200")}>
+                                <Eye className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Hidden</span>
                             </button>
-                        ))}
-                    </div>
+                        </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-2 mb-5">
-                        <GlassCard className="p-2.5 text-center">
-                            <Compass className="w-4 h-4 mx-auto text-action mb-1" />
-                            <p className="text-sm font-bold">{vibePlaces.length}</p>
-                            <p className="text-[9px] text-secondary">Places</p>
-                        </GlassCard>
-                        <GlassCard className="p-2.5 text-center">
-                            <Eye className="w-4 h-4 mx-auto text-purple-400 mb-1" />
-                            <p className="text-sm font-bold">{vibePlaces.filter(p => p.isHidden).length}</p>
-                            <p className="text-[9px] text-secondary">Hidden</p>
-                        </GlassCard>
-                        <GlassCard className="p-2.5 text-center">
-                            <Bookmark className="w-4 h-4 mx-auto text-amber-400 mb-1" />
-                            <p className="text-sm font-bold">{savedPlaces.size}</p>
-                            <p className="text-[9px] text-secondary">Saved</p>
-                        </GlassCard>
-                    </div>
+                        {/* Category Filters */}
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-2 px-2">
+                            {VIBE_FILTERS.map(cat => (
+                                <button key={cat.id} onClick={() => setVibeCategory(cat.id)}
+                                    className={cn("flex items-center gap-2.5 px-5 py-3 rounded-2xl transition-all whitespace-nowrap flex-shrink-0 border",
+                                        vibeCategory === cat.id ? "bg-stone-900 text-white border-stone-900 shadow-soft" : "bg-white text-stone-400 border-stone-100 hover:border-stone-200")}>
+                                    <cat.icon className={cn("w-3.5 h-3.5", vibeCategory === cat.id ? "text-primary" : "text-stone-400")} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{cat.label}</span>
+                                </button>
+                            ))}
+                        </div>
 
-                    {/* AI Pick of the Day */}
-                    {aiPick && (
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mb-5">
-                            <GlassCard gradient="purple" glow className="p-5 cursor-pointer" onClick={() => setSelectedVibe(aiPick)}>
-                                <div className="flex items-center gap-2 mb-3">
-                                    <Sparkles className="w-5 h-5 text-amber-300" />
-                                    <span className="text-xs text-amber-300 font-bold uppercase tracking-wider">AI Pick of the Day</span>
-                                </div>
-                                <div className="flex gap-4">
-                                    <div className="flex-1">
-                                        <h3 className="text-xl font-bold text-white mb-1 line-clamp-1">{aiPick.name}</h3>
-                                        <p className="text-sm text-white/80 mb-3 line-clamp-2">{aiPick.description}</p>
-                                        <div className="flex items-center gap-3">
-                                            <span className="flex items-center gap-1 text-xs text-white/70"><Star className="w-3 h-3 text-amber-400 fill-amber-400" /> {aiPick.rating.toFixed(1)}</span>
-                                            <span className="flex items-center gap-1 text-xs text-emerald-300"><Clock className="w-3 h-3" /> {aiPick.openNow ? 'Open Now' : 'Closed'}</span>
+                        {/* AI Pick of the Day */}
+                        {aiPick && (
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative group cursor-pointer" onClick={() => setSelectedVibe(aiPick)}>
+                                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-purple-600 rounded-[40px] opacity-10 group-hover:opacity-20 blur-xl transition-all" />
+                                <div className="relative bg-white border border-stone-100 rounded-[32px] overflow-hidden shadow-soft">
+                                    <div className="absolute top-0 right-0 p-6">
+                                        <div className="px-3 py-1.5 bg-primary rounded-full flex items-center gap-1.5 shadow-lg">
+                                            <Sparkles className="w-3 h-3 text-white" />
+                                            <span className="text-[9px] font-black text-white uppercase tracking-widest">AI Pick</span>
                                         </div>
                                     </div>
-                                    <div className="w-20 h-20 rounded-xl overflow-hidden shadow-lg flex-shrink-0">
-                                        <img src={aiPick.image} alt={aiPick.name} className="w-full h-full object-cover" />
+                                    <div className="flex flex-col md:flex-row h-full">
+                                        <div className="p-8 flex-1 flex flex-col justify-between">
+                                            <div>
+                                                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-3">Trending Underground</p>
+                                                <h3 className="text-2xl font-black text-stone-900 mb-3 tracking-tight">{aiPick.name}</h3>
+                                                <p className="text-sm text-stone-400 font-medium mb-6 line-clamp-2 leading-relaxed">{aiPick.description}</p>
+                                            </div>
+                                            <div className="flex items-center gap-6">
+                                                <div className="flex items-center gap-2">
+                                                    <Star className="w-4 h-4 text-primary fill-primary" />
+                                                    <span className="text-sm font-black text-stone-900">{aiPick.rating.toFixed(1)}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="w-4 h-4 text-emerald-400" />
+                                                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">{aiPick.openNow ? 'Open Now' : 'Closed'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="md:w-48 h-48 md:h-auto overflow-hidden">
+                                            <img src={aiPick.image} alt={aiPick.name} className="w-full h-full object-cover grayscale-[0.2] group-hover:scale-110 transition-all duration-700" />
+                                        </div>
                                     </div>
                                 </div>
-                            </GlassCard>
-                        </motion.div>
-                    )}
-
-                    {/* Nearby Places */}
-                    <NearbySection
-                        nearbyPlaces={nearbyPlaces} isLoadingNearby={isLoadingNearby}
-                        showNearbyMap={showNearbyMap} setShowNearbyMap={setShowNearbyMap}
-                        discoverNearby={discoverNearby} nearbyMarkers={nearbyMarkers}
-                    />
-
-                    <h2 className="font-bold text-sm flex items-center gap-1.5 mb-3">
-                        <Gem className="w-4 h-4 text-purple-400" />
-                        Hidden Gems & Local Secrets
-                    </h2>
-                    
-                    {isLoadingVibes ? (
-                        <div className="flex flex-col items-center justify-center p-10 text-secondary">
-                            <Loader2 className="w-8 h-8 animate-spin mb-3 text-action" />
-                            <p className="text-sm">Finding local hidden gems in {searchCity || 'your area'}...</p>
-                        </div>
-                    ) : (
-                        <AnimatePresence mode="wait">
-                            <motion.div key={vibeCategory + showHiddenOnly + vibeSearch}
-                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                className="space-y-3">
-                                {filteredVibes.length === 0 ? (
-                                    <GlassCard className="p-8 text-center">
-                                    <Compass className="w-10 h-10 text-secondary/30 mx-auto mb-3" />
-                                    <p className="text-secondary text-sm">No places match your filters</p>
-                                </GlassCard>
-                            ) : (
-                                filteredVibes.map((place, i) => (
-                                    <VibePlaceCard key={place.id} place={place} delay={i * 0.05}
-                                        isSaved={savedPlaces.has(place.id)} onSave={() => toggleSave(place.id)}
-                                        onClick={() => setSelectedVibe(place)} />
-                                ))
-                            )}
-                        </motion.div>
-                    </AnimatePresence>
-                    )}
-
-                    {/* Vibe Detail Modal */}
-                    <AnimatePresence>
-                        {selectedVibe && (
-                            <VibeDetailModal place={selectedVibe} onClose={() => setSelectedVibe(null)}
-                                isSaved={savedPlaces.has(selectedVibe.id)} onSave={() => toggleSave(selectedVibe.id)} />
+                            </motion.div>
                         )}
-                    </AnimatePresence>
 
-                    {/* CTA to switch */}
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-5">
-                        <GlassCard gradient="blue" className="p-4 text-center cursor-pointer" onClick={() => setActiveTab('places')}>
-                            <Globe className="w-6 h-6 mx-auto text-cyan-300 mb-2" />
-                            <p className="text-sm font-bold text-white">Want real hotels, restaurants & cafés?</p>
-                            <p className="text-xs text-cyan-200 mt-1">Switch to Real Places →</p>
-                        </GlassCard>
-                    </motion.div>
-                </motion.div>
-            )}
-
-            {/* ═══════════════════════════════════ */}
-            {/* TAB 2: REAL PLACES (Foursquare)     */}
-            {/* ═══════════════════════════════════ */}
-            {activeTab === 'places' && (
-                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
-                    {/* City Search */}
-                    <div className="flex gap-2 mb-4">
-                        <div className="relative flex-1">
-                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
-                            <input type="text" value={searchCity} onChange={(e) => setSearchCity(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleCitySearch()}
-                                placeholder="City (Mumbai, Paris)…"
-                                className="w-full pl-10 pr-4 py-2.5 bg-surface/80 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-action placeholder:text-slate-500" />
-                        </div>
-                        <motion.button whileTap={{ scale: 0.95 }} onClick={() => handleCitySearch()} disabled={isLoading}
-                            className="px-4 py-2.5 rounded-xl bg-action text-white text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 flex-shrink-0">
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                            Explore
-                        </motion.button>
-                        <motion.button whileTap={{ scale: 0.95 }} onClick={discoverNearby} disabled={isLoadingNearby}
-                            className="px-3 py-2.5 rounded-xl bg-surface border border-slate-700 text-secondary hover:text-white flex items-center justify-center flex-shrink-0"
-                            title="Find places near my GPS location">
-                            {isLoadingNearby ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
-                        </motion.button>
-                    </div>
-
-                    {/* Quick filter */}
-                    {hasSearched && (
-                        <div className="flex gap-2 mb-3">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
-                                <input type="text" value={realSearch} onChange={(e) => setRealSearch(e.target.value)}
-                                    placeholder="Filter results…"
-                                    className="w-full pl-10 pr-4 py-2 bg-surface/80 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-action placeholder:text-slate-500" />
+                        {/* Hidden Gems List Header */}
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-xl font-black text-stone-900 tracking-tight">Curation</h2>
+                                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">Verified Local Knowledge</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="px-4 py-2 bg-stone-50 rounded-xl flex items-center gap-2">
+                                    <Gem className="w-3.5 h-3.5 text-purple-500" />
+                                    <span className="text-sm font-black text-stone-900">{vibePlaces.length}</span>
+                                </div>
                             </div>
                         </div>
-                    )}
+                        
+                        {isLoadingVibes ? (
+                            <div className="flex flex-col items-center justify-center py-20">
+                                <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mb-6">
+                                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                                </div>
+                                <p className="text-[11px] font-black text-stone-400 uppercase tracking-widest">Compiling Local Intel...</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4">
+                                {filteredVibes.length === 0 ? (
+                                    <div className="py-20 text-center">
+                                        <Compass className="w-12 h-12 text-stone-200 mx-auto mb-4" />
+                                        <p className="text-sm font-black text-stone-400 uppercase tracking-widest">No Signal Found</p>
+                                    </div>
+                                ) : (
+                                    filteredVibes.map((place, i) => (
+                                        <VibePlaceCard key={place.id} place={place} delay={i * 0.05}
+                                            isSaved={savedPlaces.has(place.id)} onSave={() => toggleSave(place.id)}
+                                            onClick={() => setSelectedVibe(place)} />
+                                    ))
+                                )}
+                            </div>
+                        )}
 
-                    {/* Category Filters */}
-                    <div className="flex gap-2 mb-5 overflow-x-auto no-scrollbar pb-1">
-                        {REAL_FILTERS.map(cat => (
-                            <button key={cat.id} onClick={() => setRealCategory(cat.id)}
-                                className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all whitespace-nowrap flex-shrink-0",
-                                    realCategory === cat.id ? "bg-action text-white" : "bg-surface/50 text-secondary hover:text-white")}>
-                                <cat.icon className="w-4 h-4" />
-                                <span className="text-xs font-medium">{cat.label}</span>
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Stats */}
-                    {hasSearched && (
-                        <div className="grid grid-cols-3 gap-2 mb-5">
-                            <GlassCard className="p-2.5 text-center">
-                                <Compass className="w-4 h-4 mx-auto text-action mb-1" />
-                                <p className="text-sm font-bold">{places.length}</p>
-                                <p className="text-[9px] text-secondary">Found</p>
-                            </GlassCard>
-                            <GlassCard className="p-2.5 text-center">
-                                <Eye className="w-4 h-4 mx-auto text-purple-400 mb-1" />
-                                <p className="text-sm font-bold">{filteredPlaces.length}</p>
-                                <p className="text-[9px] text-secondary">Showing</p>
-                            </GlassCard>
-                            <GlassCard className="p-2.5 text-center">
-                                <Bookmark className="w-4 h-4 mx-auto text-amber-400 mb-1" />
-                                <p className="text-sm font-bold">{savedPlaces.size}</p>
-                                <p className="text-[9px] text-secondary">Saved</p>
-                            </GlassCard>
+                        {/* Switch CTA */}
+                        <div className="pt-8">
+                            <motion.button whileTap={{ scale: 0.98 }} onClick={() => setActiveTab('places')}
+                                className="w-full p-8 bg-stone-50 rounded-[40px] border border-stone-100 flex items-center justify-between group hover:border-primary/20 transition-all">
+                                <div className="text-left">
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Need Concrete Details?</p>
+                                    <h4 className="text-xl font-black text-stone-900">Switch to Verified Entities</h4>
+                                    <p className="text-xs text-stone-400 font-medium mt-1">Real hotels, confirmed restaurants & global hotspots</p>
+                                </div>
+                                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-stone-900 shadow-soft group-hover:bg-primary group-hover:text-white transition-all">
+                                    <Globe className="w-5 h-5" />
+                                </div>
+                            </motion.button>
                         </div>
-                    )}
-
-                    {hasSearched && (
-                        <div className="flex items-center gap-2 mb-4">
-                            <span className="text-[10px] text-secondary/60 flex items-center gap-1">
-                                <Sparkles className="w-3 h-3" /> Powered by Foursquare — real, verified places
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Nearby */}
-                    <NearbySection
-                        nearbyPlaces={nearbyPlaces} isLoadingNearby={isLoadingNearby}
-                        showNearbyMap={showNearbyMap} setShowNearbyMap={setShowNearbyMap}
-                        discoverNearby={discoverNearby} nearbyMarkers={nearbyMarkers}
-                    />
-
-                    {/* Real Places Grid */}
-                    <AnimatePresence mode="wait">
-                        <motion.div key={realCategory + realSearch}
-                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                            className="space-y-3">
-                            {!hasSearched ? (
-                                <GlassCard gradient="blue" glow className="p-6 text-center">
-                                    <Globe className="w-12 h-12 text-cyan-300 mx-auto mb-3 opacity-60" />
-                                    <h3 className="text-lg font-bold text-white mb-2">Explore Any City</h3>
-                                    <p className="text-sm text-white/70 mb-1">Search for real hotels, restaurants, cafés, and attractions</p>
-                                    <p className="text-xs text-white/50">Powered by Foursquare</p>
-                                </GlassCard>
-                            ) : isLoading ? (
-                                <GlassCard className="p-8 text-center">
-                                    <Loader2 className="w-8 h-8 text-action mx-auto animate-spin mb-3" />
-                                    <p className="text-sm text-secondary">Searching real places in {searchCity}...</p>
-                                </GlassCard>
-                            ) : filteredPlaces.length === 0 ? (
-                                <GlassCard className="p-8 text-center">
-                                    <Compass className="w-10 h-10 text-secondary/30 mx-auto mb-3" />
-                                    <p className="text-secondary text-sm">No places match your filters</p>
-                                </GlassCard>
-                            ) : (
-                                filteredPlaces.map((place, i) => (
-                                    <RealPlaceCard key={place.id} place={place} delay={i * 0.03}
-                                        isSaved={savedPlaces.has(place.id)} onSave={() => toggleSave(place.id)}
-                                        onClick={() => setSelectedPlace(place)} />
-                                ))
-                            )}
-                        </motion.div>
-                    </AnimatePresence>
-
-                    {/* CTA to switch */}
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-5">
-                        <GlassCard gradient="purple" className="p-4 text-center cursor-pointer" onClick={() => setActiveTab('vibes')}>
-                            <Sparkles className="w-6 h-6 mx-auto text-amber-300 mb-2" />
-                            <p className="text-sm font-bold text-white">Discover hidden gems & local secrets</p>
-                            <p className="text-xs text-purple-200 mt-1">Switch to Local Vibes →</p>
-                        </GlassCard>
                     </motion.div>
-                </motion.div>
-            )}
+                )}
 
-            {/* Detail Modal */}
+                {/* ═══════════════════════════════════ */}
+                {/* TAB 2: REAL PLACES                  */}
+                {/* ═══════════════════════════════════ */}
+                {activeTab === 'places' && (
+                    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+                        {/* City Search Bar */}
+                        <div className="bg-stone-50 rounded-[32px] p-8 border border-stone-100 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-8 opacity-5">
+                                <Globe className="w-32 h-32 text-stone-900" />
+                            </div>
+                            <div className="relative z-10">
+                                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4">Global Search Engine</p>
+                                <h2 className="text-2xl font-black text-stone-900 mb-6 tracking-tight">Where to next?</h2>
+                                <div className="flex gap-3">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                                        <input type="text" value={searchCity} onChange={(e) => setSearchCity(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleCitySearch()}
+                                            placeholder="Enter destination..."
+                                            className="w-full pl-12 pr-5 py-4 bg-white border border-stone-200 rounded-[20px] text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:ring-2 ring-primary/10 transition-all" />
+                                    </div>
+                                    <button onClick={() => handleCitySearch()} disabled={isLoading}
+                                        className="px-6 rounded-[20px] bg-stone-900 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-stone-200 disabled:opacity-50 transition-all">
+                                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Category Filters */}
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-2 px-2">
+                            {REAL_FILTERS.map(cat => (
+                                <button key={cat.id} onClick={() => setRealCategory(cat.id)}
+                                    className={cn("flex items-center gap-2.5 px-5 py-3 rounded-2xl transition-all whitespace-nowrap flex-shrink-0 border",
+                                        realCategory === cat.id ? "bg-stone-900 text-white border-stone-900 shadow-soft" : "bg-white text-stone-400 border-stone-100 hover:border-stone-200")}>
+                                    <cat.icon className={cn("w-3.5 h-3.5", realCategory === cat.id ? "text-blue-500" : "text-stone-400")} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{cat.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Real Places Grid */}
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-xl font-black text-stone-900 tracking-tight">Verified Entities</h2>
+                                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">Sourced from Global Database</p>
+                                </div>
+                                <div className="px-4 py-2 bg-stone-50 rounded-xl flex items-center gap-2">
+                                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                                    <span className="text-sm font-black text-stone-900">{filteredPlaces.length}</span>
+                                </div>
+                            </div>
+
+                            {isLoading ? (
+                                <div className="flex flex-col items-center justify-center py-20">
+                                    <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mb-6">
+                                        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                                    </div>
+                                    <p className="text-[11px] font-black text-stone-400 uppercase tracking-widest">Querying Real World Data...</p>
+                                </div>
+                            ) : !hasSearched ? (
+                                <div className="py-20 text-center bg-stone-50 rounded-[40px] border-2 border-dashed border-stone-100">
+                                    <Globe className="w-12 h-12 text-stone-200 mx-auto mb-4" />
+                                    <p className="text-sm font-black text-stone-400 uppercase tracking-widest">Enter a city to explore</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4">
+                                    {filteredPlaces.map((place, i) => (
+                                        <RealPlaceCard key={place.id} place={place} delay={i * 0.03}
+                                            isSaved={savedPlaces.has(place.id)} onSave={() => toggleSave(place.id)}
+                                            onClick={() => setSelectedPlace(place)} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Switch CTA */}
+                        <div className="pt-8">
+                            <motion.button whileTap={{ scale: 0.98 }} onClick={() => setActiveTab('vibes')}
+                                className="w-full p-8 bg-stone-50 rounded-[40px] border border-stone-100 flex items-center justify-between group hover:border-primary/20 transition-all">
+                                <div className="text-left">
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Bored of the mainstream?</p>
+                                    <h4 className="text-xl font-black text-stone-900">Switch to Hidden Gems</h4>
+                                    <p className="text-xs text-stone-400 font-medium mt-1">Discover secret spots & local underground favorites</p>
+                                </div>
+                                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-stone-900 shadow-soft group-hover:bg-primary group-hover:text-white transition-all">
+                                    <Sparkles className="w-5 h-5" />
+                                </div>
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                )}
+            </div>
+
+            {/* MODALS */}
             <AnimatePresence>
                 {selectedPlace && (
                     <PlaceDetailModal place={selectedPlace} onClose={() => setSelectedPlace(null)}
                         isSaved={savedPlaces.has(selectedPlace.id)} onSave={() => toggleSave(selectedPlace.id)} />
+                )}
+                {selectedVibe && (
+                    <VibeDetailModal place={selectedVibe} onClose={() => setSelectedVibe(null)}
+                        isSaved={savedPlaces.has(selectedVibe.id)} onSave={() => toggleSave(selectedVibe.id)} />
                 )}
             </AnimatePresence>
         </div>
@@ -723,194 +681,215 @@ function NearbySection({ nearbyPlaces, isLoadingNearby, showNearbyMap, setShowNe
     nearbyPlaces: DisplayPlace[]; isLoadingNearby: boolean; showNearbyMap: boolean;
     setShowNearbyMap: (v: boolean) => void; discoverNearby: () => void; nearbyMarkers: MapMarker[];
 }) {
-    if (nearbyPlaces.length === 0) return null; // Don't show if empty, we use the main grid now
+    if (nearbyPlaces.length === 0) return null;
 
     return (
-        <div className="mb-5">
-            <div className="flex items-center justify-between mb-3">
-                <h2 className="font-bold text-sm flex items-center gap-1.5">
-                    <Navigation className="w-4 h-4 text-blue-400" /> Nearby Places
-                </h2>
-                <div className="flex gap-1.5">
-                    {nearbyPlaces.length > 0 && (
-                        <button onClick={() => setShowNearbyMap(!showNearbyMap)}
-                            className={cn("flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold",
-                                showNearbyMap ? "bg-action/20 text-action" : "bg-white/5 text-secondary")}>
-                            <MapPinned className="w-3 h-3" /> Map
-                        </button>
-                    )}
+        <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <h2 className="text-xl font-black text-stone-900 tracking-tight">Proximity</h2>
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">Real-time Location Pulse</p>
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={() => setShowNearbyMap(!showNearbyMap)}
+                        className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                            showNearbyMap ? "bg-stone-900 text-white shadow-lg" : "bg-stone-50 text-stone-400")}>
+                        <MapPinned className="w-3.5 h-3.5" />
+                    </button>
                     <motion.button whileTap={{ scale: 0.95 }} onClick={discoverNearby} disabled={isLoadingNearby}
-                        className="flex items-center gap-1 px-3 py-1 rounded-lg bg-action/20 text-action text-[10px] font-bold disabled:opacity-50">
-                        {isLoadingNearby ? <Loader2 className="w-3 h-3 animate-spin" /> : <Navigation className="w-3 h-3" />}
-                        {nearbyPlaces.length > 0 ? 'Refresh' : 'Discover'}
+                        className="px-4 py-2 bg-primary rounded-xl text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-50 shadow-lg shadow-primary/20">
+                        {isLoadingNearby ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Refresh'}
                     </motion.button>
                 </div>
             </div>
+            
             {showNearbyMap && nearbyMarkers.length > 0 && (
-                <div className="mb-3"><MapView markers={nearbyMarkers} height="220px" showUserLocation /></div>
+                <div className="mb-6 rounded-[32px] overflow-hidden border border-stone-100 shadow-soft">
+                    <MapView markers={nearbyMarkers} height="280px" showUserLocation />
+                </div>
             )}
-            {nearbyPlaces.length > 0 && (
-                <div className="grid gap-2">
-                    {nearbyPlaces.slice(0, 8).map(place => (
-                        <GlassCard key={place.id} className="p-3 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-lg flex-shrink-0">
+
+            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 pb-4">
+                {nearbyPlaces.slice(0, 8).map(place => (
+                    <motion.div key={place.id} whileTap={{ scale: 0.98 }}
+                        className="w-64 flex-shrink-0 bg-white p-4 rounded-[28px] border border-stone-100 shadow-soft flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-stone-50 flex items-center justify-center text-lg shadow-inner">
                                 {place.category.split(' ')[0]}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold text-white truncate">{place.name}</p>
-                                <p className="text-[10px] text-secondary truncate">{place.address || place.category}</p>
+                                <p className="text-[13px] font-black text-stone-900 truncate">{place.name}</p>
+                                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest truncate">{place.address || place.category}</p>
                             </div>
-                            {place.rating && (
-                                <span className="flex items-center gap-0.5 text-xs text-amber-400">
-                                    <Star className="w-3 h-3 fill-amber-400" />{place.rating.toFixed(1)}
-                                </span>
-                            )}
-                            <MapPin className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
-                        </GlassCard>
-                    ))}
-                </div>
-            )}
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-stone-50">
+                            {place.rating ? (
+                                <div className="flex items-center gap-1">
+                                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                                    <span className="text-[11px] font-black text-stone-900">{place.rating.toFixed(1)}</span>
+                                </div>
+                            ) : <div />}
+                            <div className="flex items-center gap-1 px-2 py-1 bg-stone-50 rounded-lg text-[9px] font-black text-stone-400 uppercase tracking-widest">
+                                <Navigation className="w-2.5 h-2.5" />
+                                {place.distance || 'Nearby'}
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+                {/* Expedition Essentials (Utilities) */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="mt-12 px-6 pb-32">
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 className="text-xl font-black text-stone-900 tracking-tight uppercase tracking-[0.1em]">Expedition Essentials</h2>
+                            <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-1">Advanced Travel Intelligence</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        {[
+                            { label: 'Cab Booking', color: 'from-amber-400 to-amber-500', emoji: '🚖', tab: 'cabs' as any, desc: 'City Transit' },
+                            { label: 'Visa Guide', color: 'from-purple-400 to-purple-500', emoji: '🛂', tab: 'visa' as any, desc: 'Global Entry' },
+                            { label: 'Smart Packing', color: 'from-lime-400 to-lime-500', emoji: '🎒', tab: 'packing' as any, desc: 'Inventory' },
+                            { label: 'Vault Docs', color: 'from-cyan-400 to-cyan-500', emoji: '📄', tab: 'documents' as any, desc: 'Security' },
+                            { label: 'Trip Budget', color: 'from-indigo-400 to-indigo-500', emoji: '💰', tab: 'wallet' as any, desc: 'Finance' },
+                            { label: 'Safety Shield', color: 'from-rose-400 to-rose-500', emoji: '🛡️', tab: 'safety' as any, desc: 'Protection' },
+                        ].map((action, i) => (
+                            <motion.div key={i} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                                className="cursor-pointer">
+                                <div className="p-4 rounded-[2.5rem] bg-stone-50 border border-stone-100 shadow-sm flex flex-col gap-3 relative overflow-hidden group">
+                                    <div className={`absolute top-0 right-0 w-12 h-12 bg-gradient-to-br ${action.color} opacity-10 rounded-bl-3xl group-hover:scale-110 transition-transform`} />
+                                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white text-xl shadow-sm`}>
+                                        {action.emoji}
+                                    </div>
+                                    <div>
+                                        <span className="block text-xs font-black text-stone-900 truncate">{action.label}</span>
+                                        <span className="block text-[9px] font-bold text-stone-500 uppercase tracking-wider truncate">{action.desc}</span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+            </div>
         </div>
     );
 }
 
 // ══════════════════════════════════════════════════
-// VIBE PLACE CARD (original style)
+// VIBE PLACE CARD
 // ══════════════════════════════════════════════════
 function VibePlaceCard({ place, delay, isSaved, onSave, onClick }: { place: VibePlace; delay: number; isSaved: boolean; onSave: () => void; onClick: () => void }) {
     const categoryIcons: Record<string, React.ElementType> = {
         cafe: Coffee, food: Utensils, culture: Palette, nature: TreePine,
         nightlife: Music, shopping: ShoppingBag, photo: Camera,
     };
-    const categoryColors: Record<string, string> = {
-        cafe: 'from-amber-500 to-orange-500', food: 'from-red-500 to-pink-500',
-        culture: 'from-purple-500 to-indigo-500', nature: 'from-emerald-500 to-teal-500',
-        nightlife: 'from-violet-500 to-purple-500', shopping: 'from-rose-500 to-pink-500',
-        photo: 'from-cyan-500 to-blue-500',
-    };
     const Icon = categoryIcons[place.category] || Compass;
-    const gradient = categoryColors[place.category] || 'from-gray-500 to-gray-600';
 
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
-            onClick={onClick} className="cursor-pointer">
-            <GlassCard className="overflow-hidden">
-                <div className="relative h-32 overflow-hidden">
-                    <img src={place.image} alt={place.name} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+            onClick={onClick} className="group cursor-pointer bg-stone-50 rounded-[32px] border border-stone-100 shadow-sm overflow-hidden hover:border-primary/20 transition-all duration-300">
+            <div className="relative aspect-[16/10] overflow-hidden">
+                <img src={place.image} alt={place.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-transparent to-transparent" />
+                
+                <div className="absolute top-4 left-4 flex gap-2">
                     {place.isHidden && (
-                        <div className="absolute top-2 left-2">
-                            <span className="px-1.5 py-0.5 bg-purple-500/90 backdrop-blur-sm text-white text-[9px] font-bold rounded">SECRET</span>
+                        <div className="px-3 py-1.5 bg-stone-900/40 backdrop-blur-md border border-white/20 rounded-full flex items-center gap-1.5">
+                            <Eye className="w-3 h-3 text-primary" />
+                            <span className="text-[9px] font-black text-white uppercase tracking-widest">Secret</span>
                         </div>
                     )}
-                    <button onClick={onSave} className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                        <Bookmark className={cn("w-4 h-4 transition-colors", isSaved ? "text-amber-400 fill-amber-400" : "text-white")} />
-                    </button>
-                    <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
-                        <h3 className="font-bold text-sm text-white drop-shadow-md truncate max-w-[70%]">{place.name}</h3>
-                        <div className="flex flex-col items-end">
-                            <span className="flex items-center gap-0.5 text-xs text-white">
-                                <Star className="w-3 h-3 text-amber-400 fill-amber-400" /> <span className="font-bold">{place.rating}</span>
-                            </span>
-                            <span className="text-[10px] text-white/80">{place.distance} • {place.price}</span>
-                        </div>
-                    </div>
                 </div>
 
-                <div className="p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className={cn("w-6 h-6 rounded-full flex items-center justify-center bg-gradient-to-br flex-shrink-0", gradient)}>
-                            <Icon className="w-3.5 h-3.5 text-white" />
-                        </div>
-                        <span className={cn("text-[10px] font-bold", place.openNow ? "text-emerald-400" : "text-red-400")}>
-                            {place.openNow ? 'Open Now' : 'Closed'}
-                        </span>
+                <button onClick={(e) => { e.stopPropagation(); onSave(); }}
+                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-primary transition-all">
+                    <Bookmark className={cn("w-4 h-4", isSaved && "fill-current")} />
+                </button>
+
+                <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between">
+                    <div>
+                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">{place.category}</p>
+                        <h3 className="text-lg font-black text-white tracking-tight leading-tight">{place.name}</h3>
                     </div>
-                    
-                    <p className="text-xs text-secondary line-clamp-2 leading-relaxed mb-2">{place.description}</p>
-                    <div className="flex items-center gap-1 mb-2 flex-wrap">
-                        {place.tags.map((tag, i) => (
-                            <span key={i} className="px-2 py-0.5 bg-surface/80 text-secondary text-[10px] rounded-full border border-slate-700/50">{tag}</span>
-                        ))}
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/50">
-                        <div className="flex items-center gap-1 text-[10px] text-secondary">
-                            <TrendingUp className="w-3 h-3 text-action" /><span>{place.visitors} visitors</span>
-                        </div>
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}`, '_blank');
-                            }}
-                            className="flex items-center gap-1 text-[10px] text-action font-bold">
-                            <Navigation className="w-3 h-3" /> Directions
-                        </button>
+                    <div className="bg-white/20 backdrop-blur-md rounded-2xl px-3 py-1.5 flex items-center gap-1.5">
+                        <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                        <span className="text-xs font-black text-white">{place.rating}</span>
                     </div>
                 </div>
-            </GlassCard>
+            </div>
+
+            <div className="p-6 space-y-4">
+                <p className="text-xs text-stone-500 font-medium leading-relaxed line-clamp-2">{place.description}</p>
+                
+                <div className="flex items-center justify-between pt-4 border-t border-stone-100">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5">
+                            <Navigation className="w-3 h-3 text-stone-400" />
+                            <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{place.distance}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <Icon className="w-3 h-3 text-primary" />
+                            <span className={cn("text-[10px] font-black uppercase tracking-widest", place.openNow ? "text-emerald-500" : "text-red-500")}>
+                                {place.openNow ? 'Active' : 'Locked'}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3 text-indigo-400" />
+                        <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{place.visitors}</span>
+                    </div>
+                </div>
+            </div>
         </motion.div>
     );
 }
 
 // ══════════════════════════════════════════════════
-// REAL PLACE CARD (with photo)
+// REAL PLACE CARD
 // ══════════════════════════════════════════════════
 function RealPlaceCard({ place, delay, isSaved, onSave, onClick }: { place: DisplayPlace; delay: number; isSaved: boolean; onSave: () => void; onClick: () => void }) {
-    const categoryColors: Record<string, string> = {
-        hotel: 'from-blue-500 to-indigo-500', food: 'from-red-500 to-pink-500',
-        cafe: 'from-amber-500 to-orange-500', culture: 'from-purple-500 to-indigo-500',
-        nature: 'from-emerald-500 to-teal-500', nightlife: 'from-violet-500 to-purple-500',
-        shopping: 'from-rose-500 to-pink-500', photo: 'from-cyan-500 to-blue-500',
-    };
-    const gradient = categoryColors[place.categoryId] || 'from-gray-500 to-gray-600';
-
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
-            onClick={onClick} className="cursor-pointer">
-            <GlassCard className="overflow-hidden">
-                <div className="relative h-36 overflow-hidden">
-                    <img src={place.image} alt={place.name} className="w-full h-full object-cover" loading="lazy" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                    <div className="absolute top-2 left-2 flex gap-1.5">
+            onClick={onClick} className="group cursor-pointer bg-white rounded-[32px] border border-stone-100 shadow-soft overflow-hidden hover:border-primary/20 transition-all duration-300 flex">
+            <div className="w-32 sm:w-40 relative flex-shrink-0 overflow-hidden">
+                <img src={place.image} alt={place.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/10" />
+            </div>
+            
+            <div className="p-5 flex-1 flex flex-col justify-between min-w-0">
+                <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{place.categoryId}</p>
+                        {place.rating && (
+                            <div className="flex items-center gap-1">
+                                <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                                <span className="text-xs font-black text-stone-900">{place.rating.toFixed(1)}</span>
+                            </div>
+                        )}
+                    </div>
+                    <h3 className="text-base font-black text-stone-900 tracking-tight leading-tight mb-2 line-clamp-1">{place.name}</h3>
+                    <div className="flex items-center gap-2">
+                        <MapPin className="w-3 h-3 text-stone-400" />
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest truncate">{place.address || place.city}</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between mt-4">
+                    <div className="flex items-center gap-3">
                         {place.source === 'foursquare' && (
-                            <span className="px-2 py-0.5 bg-blue-500/90 text-white text-[9px] font-bold rounded-full backdrop-blur-sm">✓ VERIFIED</span>
+                            <div className="flex items-center gap-1 text-[9px] font-black text-blue-500 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded-lg">
+                                <Globe className="w-2.5 h-2.5" />
+                                Verified
+                            </div>
                         )}
-                        {place.price && (
-                            <span className="px-2 py-0.5 bg-emerald-500/90 text-white text-[9px] font-bold rounded-full backdrop-blur-sm">{place.price}</span>
-                        )}
+                        {place.price && <span className="text-[10px] font-black text-stone-900">{place.price}</span>}
                     </div>
                     <button onClick={(e) => { e.stopPropagation(); onSave(); }}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                        <Bookmark className={cn("w-4 h-4 transition-colors", isSaved ? "text-amber-400 fill-amber-400" : "text-white")} />
+                        className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-all", 
+                            isSaved ? "bg-primary/10 text-primary" : "bg-stone-50 text-stone-400 hover:text-stone-900")}>
+                        <Bookmark className={cn("w-3.5 h-3.5", isSaved && "fill-current")} />
                     </button>
-                    <div className="absolute bottom-2 left-3 right-3">
-                        <h3 className="font-bold text-sm text-white drop-shadow-lg truncate">{place.name}</h3>
-                        <div className="flex items-center gap-2 mt-0.5">
-                            {place.rating && (
-                                <span className="flex items-center gap-0.5 text-xs text-white">
-                                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                                    <span className="font-bold">{place.rating.toFixed(1)}</span>
-                                </span>
-                            )}
-                            <span className="text-[10px] text-white/80">{place.category}</span>
-                            {place.distance && <span className="text-[10px] text-white/70">{place.distance}</span>}
-                        </div>
-                    </div>
                 </div>
-                <div className="p-3">
-                    {place.address && (
-                        <p className="text-xs text-secondary truncate mb-2">
-                            <MapPin className="w-3 h-3 inline mr-1" />{place.address}
-                        </p>
-                    )}
-                    <div className="flex items-center justify-between">
-                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r text-white", gradient)}>
-                            {place.category.split(' ')[0]} {place.categoryId.charAt(0).toUpperCase() + place.categoryId.slice(1)}
-                        </span>
-                        <span className="text-[10px] text-action font-medium">Tap for details →</span>
-                    </div>
-                </div>
-            </GlassCard>
+            </div>
         </motion.div>
     );
 }
@@ -919,83 +898,99 @@ function RealPlaceCard({ place, delay, isSaved, onSave, onClick }: { place: Disp
 // PLACE DETAIL MODAL
 // ══════════════════════════════════════════════════
 function PlaceDetailModal({ place, onClose, isSaved, onSave }: { place: DisplayPlace; onClose: () => void; isSaved: boolean; onSave: () => void }) {
-    const openGoogleMaps = () => {
-        window.open(`https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lon}`, '_blank');
-    };
-    const openGoogleSearch = () => {
-        window.open(`https://www.google.com/search?q=${encodeURIComponent(place.name + ' ' + place.city)}`, '_blank');
-    };
+    const openGoogleMaps = () => window.open(`https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lon}`, '_blank');
+    const openGoogleSearch = () => window.open(`https://www.google.com/search?q=${encodeURIComponent(place.name + ' ' + place.city)}`, '_blank');
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            className="fixed inset-0 bg-stone-900/60 backdrop-blur-md z-50 flex items-end justify-center p-4 pb-0"
             onClick={onClose}>
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full sm:max-w-md bg-surface border border-slate-700 rounded-t-3xl sm:rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-                <div className="relative h-52">
+                className="w-full max-w-2xl bg-white dark:bg-stone-950 rounded-t-[48px] overflow-hidden shadow-2xl relative">
+                
+                <div className="relative aspect-[16/9] sm:aspect-[21/9]">
                     <img src={place.image} alt={place.name} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    <button onClick={onClose} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                        <X className="w-5 h-5 text-white" />
-                    </button>
-                    <button onClick={onSave} className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                        <Bookmark className={cn("w-5 h-5", isSaved ? "text-amber-400 fill-amber-400" : "text-white")} />
-                    </button>
-                    <div className="absolute bottom-4 left-4 right-4">
-                        <div className="flex items-center gap-2 mb-1">
-                            {place.source === 'foursquare' && <span className="px-2 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded-full">✓ VERIFIED</span>}
-                            {place.price && <span className="px-2 py-0.5 bg-emerald-500 text-white text-[10px] font-bold rounded-full">{place.price}</span>}
+                    <div className="absolute inset-0 bg-gradient-to-t from-stone-900/80 via-transparent to-transparent" />
+                    
+                    <div className="absolute top-6 left-6 right-6 flex justify-between">
+                        <button onClick={onClose} className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white">
+                            <X className="w-5 h-5" />
+                        </button>
+                        <button onClick={onSave} className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white">
+                            <Bookmark className={cn("w-5 h-5", isSaved && "fill-current")} />
+                        </button>
+                    </div>
+
+                    <div className="absolute bottom-8 left-8 right-8">
+                        <div className="flex items-center gap-3 mb-3">
+                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{place.categoryId}</p>
+                            {place.source === 'foursquare' && (
+                                <span className="px-3 py-1 bg-blue-500 rounded-full text-[9px] font-black text-white uppercase tracking-widest shadow-lg shadow-blue-500/20">Verified Identity</span>
+                            )}
                         </div>
-                        <h2 className="text-xl font-bold text-white drop-shadow-lg">{place.name}</h2>
-                        <p className="text-sm text-white/80">{place.category}</p>
+                        <h2 className="text-3xl font-black text-white tracking-tight leading-none mb-2">{place.name}</h2>
+                        <p className="text-sm font-medium text-stone-300">{place.category}</p>
                     </div>
                 </div>
-                <div className="p-5 space-y-4">
-                    {place.rating && (
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 rounded-xl">
-                                <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                                <span className="text-lg font-bold text-amber-400">{place.rating.toFixed(1)}</span>
+
+                <div className="p-8 space-y-8 max-h-[60vh] overflow-y-auto no-scrollbar">
+                    <div className="flex flex-wrap gap-8">
+                        {place.rating && (
+                            <div className="flex flex-col gap-1">
+                                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Aggregate Score</p>
+                                <div className="flex items-center gap-2">
+                                    <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                                    <span className="text-2xl font-black text-stone-900">{place.rating.toFixed(1)}</span>
+                                </div>
                             </div>
-                            <span className="text-xs text-secondary">out of 5.0</span>
+                        )}
+                        <div className="flex flex-col gap-1">
+                            <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Monetary Scale</p>
+                            <span className="text-xl font-black text-stone-900">{place.price || 'N/A'}</span>
                         </div>
-                    )}
-                    {place.address && (
-                        <div className="flex items-start gap-3">
-                            <MapPin className="w-5 h-5 text-action flex-shrink-0 mt-0.5" />
+                    </div>
+
+                    <div className="space-y-4">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Physical Address</p>
+                        <div className="flex items-start gap-4 p-5 bg-stone-50 rounded-[24px]">
+                            <MapPin className="w-5 h-5 text-primary mt-1" />
                             <div>
-                                <p className="text-sm font-medium text-white">{place.address}</p>
-                                {place.city && <p className="text-xs text-secondary">{place.city}</p>}
+                                <p className="text-base font-bold text-stone-900">{place.address}</p>
+                                <p className="text-xs font-black text-stone-400 uppercase tracking-widest mt-1">{place.city}</p>
                             </div>
                         </div>
+                    </div>
+
+                    {(place.phone || place.website) && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {place.phone && (
+                                <a href={`tel:${place.phone}`} className="flex items-center gap-4 p-5 bg-indigo-50 rounded-[24px] border border-indigo-100/50 hover:bg-indigo-100 transition-all">
+                                    <Phone className="w-5 h-5 text-indigo-500" />
+                                    <span className="text-sm font-black text-indigo-900">Voice Link</span>
+                                </a>
+                            )}
+                            {place.website && (
+                                <a href={place.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-5 bg-emerald-50 rounded-[24px] border border-emerald-100/50 hover:bg-emerald-100 transition-all overflow-hidden">
+                                    <ExternalLink className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                                    <span className="text-sm font-black text-emerald-900 truncate">Digital Portal</span>
+                                </a>
+                            )}
+                        </div>
                     )}
-                    {place.phone && (
-                        <a href={`tel:${place.phone}`} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
-                            <Phone className="w-5 h-5 text-emerald-400" />
-                            <span className="text-sm font-medium text-white">{place.phone}</span>
-                        </a>
-                    )}
-                    {place.website && (
-                        <a href={place.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
-                            <ExternalLink className="w-5 h-5 text-blue-400" />
-                            <span className="text-sm font-medium text-white truncate">{place.website.replace(/^https?:\/\//, '')}</span>
-                        </a>
-                    )}
-                    <div className="grid grid-cols-2 gap-3 pt-2">
+
+                    <div className="flex gap-4 pt-4 pb-12">
                         <motion.button whileTap={{ scale: 0.95 }} onClick={openGoogleMaps}
-                            className="flex items-center justify-center gap-2 p-3 bg-action rounded-xl text-white font-bold text-sm">
-                            <Navigation className="w-4 h-4" /> Directions
+                            className="flex-1 py-5 bg-stone-900 rounded-[24px] text-white font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl">
+                            <Navigation className="w-4 h-4" />
+                            Route Intel
                         </motion.button>
                         <motion.button whileTap={{ scale: 0.95 }} onClick={openGoogleSearch}
-                            className="flex items-center justify-center gap-2 p-3 bg-white/10 rounded-xl text-white font-bold text-sm">
-                            <Search className="w-4 h-4" /> More Info
+                            className="flex-1 py-5 bg-stone-50 rounded-[24px] text-stone-900 font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 border border-stone-100">
+                            <Search className="w-4 h-4" />
+                            Extended Data
                         </motion.button>
                     </div>
-                    <p className="text-[10px] text-center text-secondary/50">
-                        Data from {place.source === 'foursquare' ? 'Foursquare' : 'OpenStreetMap'} • Lat: {place.lat.toFixed(4)}, Lon: {place.lon.toFixed(4)}
-                    </p>
                 </div>
             </motion.div>
         </motion.div>
@@ -1008,71 +1003,89 @@ function PlaceDetailModal({ place, onClose, isSaved, onSave }: { place: DisplayP
 function VibeDetailModal({ place, onClose, isSaved, onSave }: { place: VibePlace; onClose: () => void; isSaved: boolean; onSave: () => void }) {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            className="fixed inset-0 bg-stone-900/60 backdrop-blur-md z-50 flex items-end justify-center p-4 pb-0"
             onClick={onClose}>
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full sm:max-w-md bg-surface border border-slate-700 rounded-t-3xl sm:rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-                <div className="relative h-56">
+                className="w-full max-w-2xl bg-white dark:bg-stone-950 rounded-t-[48px] overflow-hidden shadow-2xl relative">
+                
+                <div className="relative aspect-[16/9] sm:aspect-[21/9]">
                     <img src={place.image} alt={place.name} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-stone-900/40 to-transparent" />
                     
-                    <button onClick={onClose} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                        <X className="w-5 h-5 text-white" />
-                    </button>
-                    <button onClick={onSave} className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                        <Bookmark className={cn("w-5 h-5", isSaved ? "text-amber-400 fill-amber-400" : "text-white")} />
-                    </button>
+                    <div className="absolute top-6 left-6 right-6 flex justify-between">
+                        <button onClick={onClose} className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white">
+                            <X className="w-5 h-5" />
+                        </button>
+                        <button onClick={onSave} className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white">
+                            <Bookmark className={cn("w-5 h-5", isSaved && "fill-current")} />
+                        </button>
+                    </div>
 
-                    <div className="absolute bottom-4 left-4 right-4">
-                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                            {place.isHidden && <span className="px-2 py-0.5 bg-purple-500 text-white text-[10px] font-bold rounded-full">SECRET</span>}
-                            <span className={cn("px-2 py-0.5 text-[10px] font-bold rounded-full", place.openNow ? "bg-emerald-500 text-white" : "bg-red-500 text-white")}>
-                                {place.openNow ? 'Open Now' : 'Closed'}
-                            </span>
-                            <span className="px-2 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded-full backdrop-blur-md">{place.price}</span>
+                    <div className="absolute bottom-8 left-8 right-8">
+                        <div className="flex items-center gap-3 mb-3">
+                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{place.category}</p>
+                            {place.isHidden && (
+                                <span className="px-3 py-1 bg-purple-500 rounded-full text-[9px] font-black text-white uppercase tracking-widest shadow-lg shadow-purple-500/20">Secret Intel</span>
+                            )}
+                            <div className={cn("px-3 py-1 rounded-full text-[9px] font-black text-white uppercase tracking-widest", place.openNow ? "bg-emerald-500 shadow-emerald-500/20" : "bg-red-500 shadow-red-500/20 shadow-lg")}>
+                                {place.openNow ? 'Active Now' : 'Locked'}
+                            </div>
                         </div>
-                        <h2 className="text-2xl font-bold text-white drop-shadow-lg leading-tight mb-1">{place.name}</h2>
-                        <p className="text-sm text-white/80 capitalize">{place.category}</p>
+                        <h2 className="text-3xl font-black text-white tracking-tight leading-none mb-2">{place.name}</h2>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1.5">
+                                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                                <span className="text-sm font-black text-white">{place.rating.toFixed(1)}</span>
+                            </div>
+                            <span className="text-xs font-medium text-stone-300">{place.price} Scale</span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="p-5 space-y-5">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 rounded-xl">
-                                <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                                <span className="text-lg font-bold text-amber-400">{place.rating.toFixed(1)}</span>
+                <div className="p-8 space-y-8 max-h-[60vh] overflow-y-auto no-scrollbar">
+                    <div className="p-8 bg-stone-900 rounded-[32px] text-white">
+                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4">Why locals love it</p>
+                        <p className="text-lg font-medium text-stone-300 leading-relaxed italic">"{place.description}"</p>
+                    </div>
+
+                    <div className="space-y-4">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Semantic Metadata</p>
+                        <div className="flex flex-wrap gap-2">
+                            {place.tags.map((tag, i) => (
+                                <span key={i} className="px-5 py-2.5 bg-stone-50 border border-stone-100 rounded-2xl text-[10px] font-black text-stone-900 uppercase tracking-widest">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-stone-50 rounded-[32px]">
+                        <div className="flex items-center gap-3">
+                            <TrendingUp className="w-5 h-5 text-indigo-500" />
+                            <div>
+                                <p className="text-base font-black text-stone-900">{place.visitors}</p>
+                                <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Monthly Footfall</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-1 text-sm text-secondary font-medium px-3 py-1.5 bg-white/5 rounded-xl">
-                            <TrendingUp className="w-4 h-4 text-action" /> {place.visitors} visitors
+                        <div className="w-px h-8 bg-stone-200" />
+                        <div className="flex items-center gap-3">
+                            <Navigation className="w-5 h-5 text-primary" />
+                            <div>
+                                <p className="text-base font-black text-stone-900">{place.distance}</p>
+                                <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Radial Range</p>
+                            </div>
                         </div>
-                    </div>
-
-                    <div>
-                        <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-purple-400" /> Why locals love it
-                        </h4>
-                        <p className="text-sm text-secondary leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5">
-                            {place.description}
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                        {place.tags.map((tag, i) => (
-                            <span key={i} className="px-3 py-1.5 bg-surface/80 border border-slate-700 rounded-lg text-xs font-medium text-secondary">
-                                {tag}
-                            </span>
-                        ))}
                     </div>
 
                     <motion.button whileTap={{ scale: 0.95 }}
                         onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}`, '_blank')}
-                        className="w-full flex items-center justify-center gap-2 py-3 bg-action rounded-xl text-white font-bold text-sm shadow-lg shadow-action/20">
-                        <Navigation className="w-4 h-4" /> Get Directions ({place.distance})
+                        className="w-full py-5 bg-primary rounded-[24px] text-white font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-primary/20 mb-12">
+                        <Navigation className="w-4 h-4" />
+                        Acquire Directions
                     </motion.button>
+                    
+                    <div className="pb-12" />
                 </div>
             </motion.div>
         </motion.div>

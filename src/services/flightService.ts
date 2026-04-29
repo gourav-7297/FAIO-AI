@@ -1,6 +1,12 @@
-const RAPIDAPI_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
-const RAPIDAPI_HOST = 'sky-scrapper.p.rapidapi.com';
-const BASE_URL = `https://${RAPIDAPI_HOST}/api`;
+/**
+ * Flight Service — Frontend client for the faio-api Edge Function.
+ *
+ * NO API KEYS are stored or used in this file.
+ * All RapidAPI calls happen server-side.
+ */
+
+import { fetchEdgeFn } from '../lib/edgeFn';
+
 export interface Airport {
     skyId: string;
     entityId: string;
@@ -42,12 +48,6 @@ export interface FlightSearchResponse {
     status: string;
     sessionId?: string;
 }
-function getHeaders() {
-    return {
-        'x-rapidapi-key': RAPIDAPI_KEY || '',
-        'x-rapidapi-host': RAPIDAPI_HOST,
-    };
-}
 
 // ============================
 // SEARCH AIRPORTS (Auto-suggest)
@@ -56,22 +56,15 @@ function getHeaders() {
 export async function searchAirports(query: string): Promise<Airport[]> {
     if (query.length < 2) return [];
 
-    // Try real API first
-    if (RAPIDAPI_KEY) {
-        try {
-            const response = await fetch(
-                `${BASE_URL}/v1/flights/searchAirport?query=${encodeURIComponent(query)}&locale=en-US`,
-                { headers: getHeaders() }
-            );
-
-            if (!response.ok) throw new Error(`Airport search failed: ${response.status}`);
-
-            const data = await response.json();
-            const results = data?.data || [];
-            if (results.length > 0) return results;
-        } catch (error) {
-            console.error('Airport search error:', error);
-        }
+    try {
+        const results = await fetchEdgeFn<Airport[]>({
+            method: 'GET',
+            path: '/flights/airports',
+            query: { query },
+        });
+        if (results && results.length > 0) return results;
+    } catch (error) {
+        console.error('Airport search error:', error);
     }
 
     // Fallback: mock airports filtered by query
@@ -106,66 +99,23 @@ export async function searchFlights(
     destinationSkyId: string,
     originEntityId: string,
     destinationEntityId: string,
-    date: string,           // YYYY-MM-DD
-    returnDate?: string,    // YYYY-MM-DD for round trip
+    date: string,
+    returnDate?: string,
     adults: number = 1,
     cabinClass: string = 'economy',
     currency: string = 'INR'
 ): Promise<FlightSearchResponse> {
-    if (!RAPIDAPI_KEY) {
-        return { flights: getMockFlights(), status: 'mock' };
-    }
-
     try {
-        let url = `${BASE_URL}/v2/flights/searchFlightsComplete?originSkyId=${originSkyId}&destinationSkyId=${destinationSkyId}&originEntityId=${originEntityId}&destinationEntityId=${destinationEntityId}&date=${date}&adults=${adults}&cabinClass=${cabinClass}&currency=${currency}&market=en-US&countryCode=IN`;
-
-        if (returnDate) {
-            url += `&returnDate=${returnDate}`;
-        }
-
-        const response = await fetch(url, { headers: getHeaders() });
-
-        if (!response.ok) throw new Error(`Flight search failed: ${response.status}`);
-
-        const data = await response.json();
-
-        // Extract itineraries from the response
-        const itineraries = data?.data?.itineraries || [];
-        const flights: FlightResult[] = itineraries.map((itin: any) => ({
-            id: itin.id,
-            price: itin.price || { raw: 0, formatted: '₹0' },
-            legs: (itin.legs || []).map((leg: any) => ({
-                id: leg.id,
-                origin: {
-                    name: leg.origin?.name || '',
-                    displayCode: leg.origin?.displayCode || '',
-                    city: leg.origin?.city || '',
-                },
-                destination: {
-                    name: leg.destination?.name || '',
-                    displayCode: leg.destination?.displayCode || '',
-                    city: leg.destination?.city || '',
-                },
-                departure: leg.departure || '',
-                arrival: leg.arrival || '',
-                durationInMinutes: leg.durationInMinutes || 0,
-                stopCount: leg.stopCount || 0,
-                carriers: {
-                    marketing: (leg.carriers?.marketing || []).map((c: any) => ({
-                        name: c.name || '',
-                        logoUrl: c.logoUrl || '',
-                    })),
-                },
-            })),
-            score: itin.score || 0,
-            isSelfTransfer: itin.isSelfTransfer || false,
-        }));
-
-        return {
-            flights,
-            status: data?.data?.context?.status || 'complete',
-            sessionId: data?.data?.context?.sessionId,
-        };
+        return await fetchEdgeFn<FlightSearchResponse>({
+            method: 'POST',
+            path: '/flights/search',
+            body: {
+                originSkyId, destinationSkyId,
+                originEntityId, destinationEntityId,
+                date, returnDate,
+                adults, cabinClass, currency,
+            },
+        });
     } catch (error) {
         console.error('Flight search error:', error);
         return { flights: getMockFlights(), status: 'error' };
@@ -201,7 +151,8 @@ export function formatDate(isoDate: string): string {
 }
 
 export function isFlightConfigured(): boolean {
-    return !!RAPIDAPI_KEY;
+    // Always available via the Edge Function
+    return true;
 }
 
 // ============================
@@ -211,52 +162,19 @@ export function isFlightConfigured(): boolean {
 function getMockFlights(): FlightResult[] {
     return [
         {
-            id: 'mock-1',
-            price: { raw: 4599, formatted: '₹4,599' },
-            legs: [{
-                id: 'leg-1',
-                origin: { name: 'Indira Gandhi Intl', displayCode: 'DEL', city: 'New Delhi' },
-                destination: { name: 'Chhatrapati Shivaji Intl', displayCode: 'BOM', city: 'Mumbai' },
-                departure: new Date(Date.now() + 86400000).toISOString(),
-                arrival: new Date(Date.now() + 86400000 + 7200000).toISOString(),
-                durationInMinutes: 130,
-                stopCount: 0,
-                carriers: { marketing: [{ name: 'IndiGo', logoUrl: '' }] },
-            }],
-            score: 9.2,
-            isSelfTransfer: false,
+            id: 'mock-1', price: { raw: 4599, formatted: '₹4,599' },
+            legs: [{ id: 'leg-1', origin: { name: 'Indira Gandhi Intl', displayCode: 'DEL', city: 'New Delhi' }, destination: { name: 'Chhatrapati Shivaji Intl', displayCode: 'BOM', city: 'Mumbai' }, departure: new Date(Date.now() + 86400000).toISOString(), arrival: new Date(Date.now() + 86400000 + 7200000).toISOString(), durationInMinutes: 130, stopCount: 0, carriers: { marketing: [{ name: 'IndiGo', logoUrl: '' }] } }],
+            score: 9.2, isSelfTransfer: false,
         },
         {
-            id: 'mock-2',
-            price: { raw: 3899, formatted: '₹3,899' },
-            legs: [{
-                id: 'leg-2',
-                origin: { name: 'Indira Gandhi Intl', displayCode: 'DEL', city: 'New Delhi' },
-                destination: { name: 'Chhatrapati Shivaji Intl', displayCode: 'BOM', city: 'Mumbai' },
-                departure: new Date(Date.now() + 86400000 + 14400000).toISOString(),
-                arrival: new Date(Date.now() + 86400000 + 21600000).toISOString(),
-                durationInMinutes: 135,
-                stopCount: 0,
-                carriers: { marketing: [{ name: 'SpiceJet', logoUrl: '' }] },
-            }],
-            score: 8.5,
-            isSelfTransfer: false,
+            id: 'mock-2', price: { raw: 3899, formatted: '₹3,899' },
+            legs: [{ id: 'leg-2', origin: { name: 'Indira Gandhi Intl', displayCode: 'DEL', city: 'New Delhi' }, destination: { name: 'Chhatrapati Shivaji Intl', displayCode: 'BOM', city: 'Mumbai' }, departure: new Date(Date.now() + 86400000 + 14400000).toISOString(), arrival: new Date(Date.now() + 86400000 + 21600000).toISOString(), durationInMinutes: 135, stopCount: 0, carriers: { marketing: [{ name: 'SpiceJet', logoUrl: '' }] } }],
+            score: 8.5, isSelfTransfer: false,
         },
         {
-            id: 'mock-3',
-            price: { raw: 6299, formatted: '₹6,299' },
-            legs: [{
-                id: 'leg-3',
-                origin: { name: 'Indira Gandhi Intl', displayCode: 'DEL', city: 'New Delhi' },
-                destination: { name: 'Chhatrapati Shivaji Intl', displayCode: 'BOM', city: 'Mumbai' },
-                departure: new Date(Date.now() + 86400000 + 28800000).toISOString(),
-                arrival: new Date(Date.now() + 86400000 + 36000000).toISOString(),
-                durationInMinutes: 125,
-                stopCount: 0,
-                carriers: { marketing: [{ name: 'Air India', logoUrl: '' }] },
-            }],
-            score: 9.5,
-            isSelfTransfer: false,
+            id: 'mock-3', price: { raw: 6299, formatted: '₹6,299' },
+            legs: [{ id: 'leg-3', origin: { name: 'Indira Gandhi Intl', displayCode: 'DEL', city: 'New Delhi' }, destination: { name: 'Chhatrapati Shivaji Intl', displayCode: 'BOM', city: 'Mumbai' }, departure: new Date(Date.now() + 86400000 + 28800000).toISOString(), arrival: new Date(Date.now() + 86400000 + 36000000).toISOString(), durationInMinutes: 125, stopCount: 0, carriers: { marketing: [{ name: 'Air India', logoUrl: '' }] } }],
+            score: 9.5, isSelfTransfer: false,
         },
     ];
 }
