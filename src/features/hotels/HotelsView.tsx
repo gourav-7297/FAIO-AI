@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Building2, Star, MapPin, Wifi, Coffee, Car,
@@ -109,19 +109,24 @@ export function HotelsView() {
     };
 
     // Real hotel city search (Booking.com)
-    const handleCitySearch = async () => {
-        if (!citySearch.trim()) return;
+    const handleCitySearch = async (overrideCity?: string, overrideCheckIn?: string, overrideCheckOut?: string, overrideAdults?: number) => {
+        const activeCity = overrideCity || citySearch;
+        const activeCheckIn = overrideCheckIn || checkIn;
+        const activeCheckOut = overrideCheckOut || checkOut;
+        const activeAdults = overrideAdults || adults;
+
+        if (!activeCity.trim()) return;
         setIsSearchingCity(true);
         setHasSearchedCity(true);
         try {
-            console.log('HotelsView: Starting search for:', citySearch.trim());
+            console.log('HotelsView: Starting search for:', activeCity.trim());
 
             // Step 1: Search for destination ID
-            const locations = await searchDestinations(citySearch.trim());
+            const locations = await searchDestinations(activeCity.trim());
             console.log('HotelsView: Locations result:', locations);
 
             if (!locations || locations.length === 0) {
-                showToast(`City "${citySearch}" not found or API error`, 'info');
+                showToast(`City "${activeCity}" not found or API error`, 'info');
                 setIsSearchingCity(false);
                 return;
             }
@@ -136,9 +141,9 @@ export function HotelsView() {
             const results = await searchBookingHotels({
                 dest_id,
                 dest_type,
-                checkin_date: checkIn,
-                checkout_date: checkOut,
-                adults_number: adults,
+                checkin_date: activeCheckIn,
+                checkout_date: activeCheckOut,
+                adults_number: activeAdults,
                 currency: 'INR'
             });
 
@@ -146,9 +151,9 @@ export function HotelsView() {
 
             setRealHotels(results);
             if (results && results.length > 0) {
-                showToast(`Found ${results.length} live hotels in ${citySearch}!`, 'success');
+                showToast(`Found ${results.length} live hotels in ${activeCity}!`, 'success');
             } else {
-                showToast(`No availability found in ${citySearch} for these dates`, 'info');
+                showToast(`No availability found in ${activeCity} for these dates`, 'info');
             }
         } catch (error) {
             console.error('HotelsView: Booking search error:', error);
@@ -156,12 +161,33 @@ export function HotelsView() {
 
             // Fallback to Overpass if Booking.com fails
             console.log('HotelsView: Falling back to Overpass API...');
-            const fallbackResults = await searchRealHotels(citySearch.trim());
+            const fallbackResults = await searchRealHotels(activeCity.trim());
             setRealHotels(fallbackResults);
         } finally {
             setIsSearchingCity(false);
         }
     };
+
+    useEffect(() => {
+        const pending = localStorage.getItem('faio_pending_hotel_search');
+        if (pending) {
+            try {
+                const params = JSON.parse(pending);
+                if (params.city) setCitySearch(params.city);
+                if (params.checkIn) setCheckIn(params.checkIn);
+                if (params.checkOut) setCheckOut(params.checkOut);
+                if (params.guests) setAdults(params.guests);
+                
+                localStorage.removeItem('faio_pending_hotel_search');
+                
+                if (params.city) {
+                    handleCitySearch(params.city, params.checkIn, params.checkOut, params.guests);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }, []);
 
     // Map markers from real hotels
     const hotelMarkers: MapMarker[] = realHotels.map(h => ({
@@ -258,7 +284,7 @@ export function HotelsView() {
 
                     <motion.button
                         whileTap={{ scale: 0.98 }}
-                        onClick={handleCitySearch}
+                        onClick={() => handleCitySearch()}
                         disabled={isSearchingCity}
                         className="w-full py-4 rounded-2xl bg-stone-900 text-white text-[11px] font-black uppercase tracking-[0.2em] disabled:opacity-50 flex items-center justify-center gap-3 shadow-premium transition-all hover:bg-stone-800"
                     >

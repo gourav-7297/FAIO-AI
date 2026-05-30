@@ -3,8 +3,9 @@ import { motion } from 'framer-motion';
 import {
     Calendar, Sparkles, ArrowRight,
     CloudSun, Navigation, TrendingUp,
-    Leaf, ChevronRight, Thermometer, Droplets, Send, MessageCircle, Zap, Search, X,
-    Clock, MapPin, Plane, Star, Users, Globe, Shield, Backpack, FileText, Car, BookOpen
+    Leaf, ChevronRight, Thermometer, Droplets, MessageCircle, Zap, Search, X,
+    Clock, MapPin, Plane, Star, Users, Globe, Shield, Backpack, FileText, Car, BookOpen,
+    Train, Bus, Building2
 } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useAIAgents } from '../../context/AIAgentContext';
@@ -37,10 +38,26 @@ function getAITip(hour: number, isRaining: boolean, tripData: any): string {
 
 export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
     const [greeting, setGreeting] = useState('Good Morning');
-    const [searchQuery, setSearchQuery] = useState('');
     const [isEditingLocation, setIsEditingLocation] = useState(false);
     const [locationInput, setLocationInput] = useState('');
     const { tripData, sendChatMessage, isAITyping, savedTrips } = useAIAgents();
+    
+    // Switcher and Search Console State
+    const [bookingTab, setBookingTab] = useState<'flights' | 'hotels' | 'trains' | 'buses' | 'cabs' | 'planner'>('hotels');
+    const [fromCity, setFromCity] = useState('Delhi (DEL)');
+    const [toCity, setToCity] = useState('Mumbai (BOM)');
+    const [destinationCity, setDestinationCity] = useState('Goa, India');
+    const [departureDate, setDepartureDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]); // Tomorrow
+    const [returnDate, setReturnDate] = useState(new Date(Date.now() + 86400000 * 4).toISOString().split('T')[0]); // 3 days later
+    const [passengersCount, setPassengersCount] = useState(1);
+    const [flightClass, setFlightClass] = useState('Economy');
+    const [hotelRooms, setHotelRooms] = useState(1);
+    const [hotelGuests, setHotelGuests] = useState(2);
+    const [trainClass, setTrainClass] = useState('All Classes');
+    const [cabTime, setCabTime] = useState('10:00');
+    const [itineraryDays, setItineraryDays] = useState(5);
+    const [tripStyle, setTripStyle] = useState('balanced');
+
     const { isRaining, isHighTraffic, weather, forecast, currentCity, setCity, weatherAlert } = useEnvironment();
 
     const [currentHour, setCurrentHour] = useState(new Date().getHours());
@@ -127,74 +144,269 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
                     </div>
                 </motion.div>
 
-                {/* AI Search Card */}
+                {/* MakeMyTrip-Style Multi-Vertical Booking Console */}
                 <motion.div variants={item}>
-                    <div className="p-1.5 bg-white rounded-[32px] border border-stone-100 shadow-premium flex items-center gap-4 group transition-all hover:border-stone-200">
-                        <div className="w-14 h-14 rounded-2xl bg-stone-50 flex items-center justify-center border border-stone-100 group-hover:bg-white transition-colors">
-                            <Sparkles className="w-6 h-6 text-primary animate-pulse" />
-                        </div>
-                        <div className="flex-1">
-                            <input
-                                type="text"
-                                placeholder="Where to next?"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={async (e) => {
-                                    if (e.key === 'Enter' && searchQuery.trim()) {
-                                        await sendChatMessage(searchQuery);
-                                        setSearchQuery('');
-                                        onOpenChat?.();
-                                    }
-                                }}
-                                className="w-full bg-transparent border-none outline-none text-stone-900 placeholder:text-stone-400 font-black text-sm uppercase tracking-widest"
-                            />
-                            <p className="text-[9px] font-black text-stone-300 uppercase tracking-widest mt-0.5">Quantum Search Protocol</p>
-                        </div>
-                        <button
-                            onClick={async () => {
-                                if (searchQuery.trim()) {
-                                    await sendChatMessage(searchQuery);
-                                    setSearchQuery('');
-                                    onOpenChat?.();
-                                } else {
-                                    onOpenChat?.();
-                                }
-                            }}
-                            className="w-12 h-12 bg-stone-900 rounded-[20px] flex items-center justify-center transition-all hover:bg-stone-800 active:scale-95 shadow-lg mr-1"
-                        >
-                            <Send className="w-5 h-5 text-white" />
-                        </button>
-                    </div>
-                </motion.div>
+                    <div className="bg-white rounded-[40px] border border-stone-100 shadow-premium p-6 relative overflow-hidden">
+                        {/* Glow element */}
+                        <div className={`absolute top-0 right-0 w-48 h-48 rounded-full -mr-16 -mt-16 blur-3xl opacity-20 transition-all duration-500 ${
+                            bookingTab === 'flights' ? 'bg-blue-500' :
+                            bookingTab === 'hotels' ? 'bg-rose-500' :
+                            bookingTab === 'trains' ? 'bg-amber-500' :
+                            bookingTab === 'buses' ? 'bg-emerald-500' :
+                            bookingTab === 'cabs' ? 'bg-purple-500' : 'bg-primary'
+                        }`} />
 
-                {/* Book Your Travel */}
-                <motion.div variants={item}>
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 flex items-center gap-2">
-                            <Zap className="w-3 h-3" /> Booking Hub
-                        </h2>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        {[
-                            { label: 'Flights', color: 'from-sky-50 to-blue-50/20', iconColor: 'text-blue-500', emoji: '✈️', tab: 'flights' as TabType, desc: 'AERIAL VECTORS' },
-                            { label: 'Hotels', color: 'from-rose-50 to-pink-50/20', iconColor: 'text-rose-500', emoji: '🏨', tab: 'hotels' as TabType, desc: 'STAY PROTOCOLS' },
-                            { label: 'Trains', color: 'from-orange-50 to-amber-50/20', iconColor: 'text-orange-500', emoji: '🚆', tab: 'trains' as TabType, desc: 'RAIL NETWORKS' },
-                            { label: 'Buses', color: 'from-emerald-50 to-teal-50/20', iconColor: 'text-teal-500', emoji: '🚌', tab: 'buses' as TabType, desc: 'TRANSIT LOOPS' },
-                        ].map((action, i) => (
-                            <motion.div key={i} whileTap={{ scale: 0.98 }}
-                                className="cursor-pointer" onClick={() => onNavigate?.(action.tab)}>
-                                <div className="p-6 rounded-[32px] bg-white border border-stone-100 shadow-premium flex flex-col gap-4 relative overflow-hidden group hover:border-stone-200 transition-all">
-                                    <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${action.color} blur-2xl group-hover:scale-125 transition-transform`} />
-                                    <div className={`w-14 h-14 rounded-2xl bg-white border border-stone-50 flex items-center justify-center text-3xl shadow-soft z-10`}>
-                                        {action.emoji}
+                        {/* Category switcher */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-4 mb-5 border-b border-stone-100">
+                            {[
+                                { id: 'hotels' as const, label: 'Stays', icon: Building2, emoji: '🏨' },
+                                { id: 'flights' as const, label: 'Flights', icon: Plane, emoji: '✈️' },
+                                { id: 'trains' as const, label: 'Trains', icon: Train, emoji: '🚆' },
+                                { id: 'buses' as const, label: 'Buses', icon: Bus, emoji: '🚌' },
+                                { id: 'cabs' as const, label: 'Cabs', icon: Car, emoji: '🚖' },
+                                { id: 'planner' as const, label: 'AI Planner', icon: Sparkles, emoji: '🗺️' },
+                            ].map((cat) => {
+                                const Icon = cat.icon;
+                                const isActive = bookingTab === cat.id;
+                                return (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => setBookingTab(cat.id)}
+                                        className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
+                                            isActive
+                                                ? 'bg-stone-900 text-white border-stone-900 shadow-sm'
+                                                : 'bg-white text-stone-400 border-stone-100 hover:border-stone-200 hover:text-stone-700'
+                                        }`}
+                                    >
+                                        <Icon className="w-3.5 h-3.5" />
+                                        <span>{cat.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Dynamic fields */}
+                        {bookingTab === 'hotels' && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-rose-500" /> Destination City</p>
+                                        <input type="text" value={destinationCity} onChange={(e) => setDestinationCity(e.target.value)} placeholder="Where are you staying?" className="w-full bg-transparent border-none outline-none font-black text-sm text-stone-900 placeholder:text-stone-300" />
                                     </div>
-                                    <div className="z-10">
-                                        <span className="block text-sm font-black text-stone-900 uppercase tracking-wider">{action.label}</span>
-                                        <span className="block text-[8px] font-black text-stone-400 uppercase tracking-widest mt-1.5">{action.desc}</span>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl flex gap-2">
+                                        <div className="flex-1">
+                                            <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Calendar className="w-3 h-3 text-stone-400" /> Check In</p>
+                                            <input type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} className="w-full bg-transparent border-none outline-none font-black text-[11px] text-stone-900" />
+                                        </div>
+                                        <div className="w-px bg-stone-200 self-stretch my-1" />
+                                        <div className="flex-1">
+                                            <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Calendar className="w-3 h-3 text-stone-400" /> Check Out</p>
+                                            <input type="date" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} className="w-full bg-transparent border-none outline-none font-black text-[11px] text-stone-900" />
+                                        </div>
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl flex gap-2">
+                                        <div className="flex-1">
+                                            <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Users className="w-3 h-3 text-stone-400" /> Guests</p>
+                                            <select value={hotelGuests} onChange={(e) => setHotelGuests(Number(e.target.value))} className="w-full bg-transparent border-none outline-none font-black text-xs text-stone-900 appearance-none">
+                                                {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} Guest{n > 1 ? 's' : ''}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="w-px bg-stone-200 self-stretch my-1" />
+                                        <div className="flex-1">
+                                            <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Building2 className="w-3 h-3 text-stone-400" /> Rooms</p>
+                                            <select value={hotelRooms} onChange={(e) => setHotelRooms(Number(e.target.value))} className="w-full bg-transparent border-none outline-none font-black text-xs text-stone-900 appearance-none">
+                                                {[1, 2, 3, 4].map(n => <option key={n} value={n}>{n} Room{n > 1 ? 's' : ''}</option>)}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-                            </motion.div>
-                        ))}
+                                <motion.button whileTap={{ scale: 0.98 }} onClick={() => {
+                                    localStorage.setItem('faio_pending_hotel_search', JSON.stringify({ city: destinationCity, checkIn: departureDate, checkOut: returnDate, guests: hotelGuests, rooms: hotelRooms }));
+                                    onNavigate?.('hotels');
+                                }} className="w-full py-4 bg-stone-900 hover:bg-stone-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all">
+                                    <Search className="w-4 h-4 text-rose-400" /> Acquire Premium Stays
+                                </motion.button>
+                            </div>
+                        )}
+
+                        {bookingTab === 'flights' && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Plane className="w-3 h-3 text-blue-500 rotate-45" /> Leaving From</p>
+                                        <input type="text" value={fromCity} onChange={(e) => setFromCity(e.target.value)} placeholder="From city..." className="w-full bg-transparent border-none outline-none font-black text-sm text-stone-900 placeholder:text-stone-300" />
+                                    </div>
+                                    <div className="flex items-center justify-center -my-2 md:my-0 md:-mx-2 z-10">
+                                        <button onClick={() => { const tmp = fromCity; setFromCity(toCity); setToCity(tmp); }} className="w-9 h-9 rounded-xl bg-white border border-stone-100 flex items-center justify-center text-stone-400 hover:text-stone-900 shadow-sm transition-transform active:scale-95">
+                                            <ArrowRight className="w-4 h-4 rotate-90 md:rotate-0" />
+                                        </button>
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Plane className="w-3 h-3 text-blue-500 -rotate-45" /> Going To</p>
+                                        <input type="text" value={toCity} onChange={(e) => setToCity(e.target.value)} placeholder="To city..." className="w-full bg-transparent border-none outline-none font-black text-sm text-stone-900 placeholder:text-stone-300" />
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Calendar className="w-3 h-3 text-stone-400" /> Departure Date</p>
+                                        <input type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} className="w-full bg-transparent border-none outline-none font-black text-[11px] text-stone-900" />
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl flex gap-2">
+                                        <div className="flex-1">
+                                            <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Users className="w-3 h-3 text-stone-400" /> Passengers</p>
+                                            <select value={passengersCount} onChange={(e) => setPassengersCount(Number(e.target.value))} className="w-full bg-transparent border-none outline-none font-black text-xs text-stone-900 appearance-none">
+                                                {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} traveler{n > 1 ? 's' : ''}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="w-px bg-stone-200 self-stretch my-1" />
+                                        <div className="flex-1">
+                                            <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Star className="w-3 h-3 text-stone-400" /> Cabin Class</p>
+                                            <select value={flightClass} onChange={(e) => setFlightClass(e.target.value)} className="w-full bg-transparent border-none outline-none font-black text-xs text-stone-900 appearance-none">
+                                                {['Economy', 'Premium Eco', 'Business', 'First'].map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <motion.button whileTap={{ scale: 0.98 }} onClick={() => {
+                                    localStorage.setItem('faio_pending_flight_search', JSON.stringify({ from: fromCity, to: toCity, date: departureDate, passengers: passengersCount, class: flightClass }));
+                                    onNavigate?.('flights');
+                                }} className="w-full py-4 bg-stone-900 hover:bg-stone-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all">
+                                    <Search className="w-4 h-4 text-blue-400" /> Commence Flight Search
+                                </motion.button>
+                            </div>
+                        )}
+
+                        {bookingTab === 'trains' && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-amber-500" /> From Station</p>
+                                        <input type="text" value={fromCity} onChange={(e) => setFromCity(e.target.value)} placeholder="Leaving station..." className="w-full bg-transparent border-none outline-none font-black text-sm text-stone-900 placeholder:text-stone-300" />
+                                    </div>
+                                    <div className="flex items-center justify-center -my-2 md:my-0 md:-mx-2 z-10">
+                                        <button onClick={() => { const tmp = fromCity; setFromCity(toCity); setToCity(tmp); }} className="w-9 h-9 rounded-xl bg-white border border-stone-100 flex items-center justify-center text-stone-400 hover:text-stone-900 shadow-sm transition-transform active:scale-95">
+                                            <ArrowRight className="w-4 h-4 rotate-90 md:rotate-0" />
+                                        </button>
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-amber-500" /> To Station</p>
+                                        <input type="text" value={toCity} onChange={(e) => setToCity(e.target.value)} placeholder="Arriving station..." className="w-full bg-transparent border-none outline-none font-black text-sm text-stone-900 placeholder:text-stone-300" />
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Calendar className="w-3 h-3 text-stone-400" /> Travel Date</p>
+                                        <input type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} className="w-full bg-transparent border-none outline-none font-black text-[11px] text-stone-900" />
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Star className="w-3 h-3 text-stone-400" /> Journey Class</p>
+                                        <select value={trainClass} onChange={(e) => setTrainClass(e.target.value)} className="w-full bg-transparent border-none outline-none font-black text-xs text-stone-900 appearance-none">
+                                            {['All Classes', '1AC Executive', '2AC Tier', '3AC Sleeper', 'Sleeper Class', 'Second Sitting'].map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                                <motion.button whileTap={{ scale: 0.98 }} onClick={() => {
+                                    localStorage.setItem('faio_pending_train_search', JSON.stringify({ from: fromCity, to: toCity, date: departureDate, class: trainClass }));
+                                    onNavigate?.('trains');
+                                }} className="w-full py-4 bg-stone-900 hover:bg-stone-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all">
+                                    <Search className="w-4 h-4 text-amber-400" /> Locate Express Trains
+                                </motion.button>
+                            </div>
+                        )}
+
+                        {bookingTab === 'buses' && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-emerald-500" /> Leaving From</p>
+                                        <input type="text" value={fromCity} onChange={(e) => setFromCity(e.target.value)} placeholder="From city..." className="w-full bg-transparent border-none outline-none font-black text-sm text-stone-900 placeholder:text-stone-300" />
+                                    </div>
+                                    <div className="flex items-center justify-center -my-2 md:my-0 md:-mx-2 z-10">
+                                        <button onClick={() => { const tmp = fromCity; setFromCity(toCity); setToCity(tmp); }} className="w-9 h-9 rounded-xl bg-white border border-stone-100 flex items-center justify-center text-stone-400 hover:text-stone-900 shadow-sm transition-transform active:scale-95">
+                                            <ArrowRight className="w-4 h-4 rotate-90 md:rotate-0" />
+                                        </button>
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-emerald-500" /> Going To</p>
+                                        <input type="text" value={toCity} onChange={(e) => setToCity(e.target.value)} placeholder="To city..." className="w-full bg-transparent border-none outline-none font-black text-sm text-stone-900 placeholder:text-stone-300" />
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Calendar className="w-3 h-3 text-stone-400" /> Transit Date</p>
+                                        <input type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} className="w-full bg-transparent border-none outline-none font-black text-[11px] text-stone-900" />
+                                    </div>
+                                </div>
+                                <motion.button whileTap={{ scale: 0.98 }} onClick={() => {
+                                    localStorage.setItem('faio_pending_bus_search', JSON.stringify({ from: fromCity, to: toCity, date: departureDate }));
+                                    onNavigate?.('buses');
+                                }} className="w-full py-4 bg-stone-900 hover:bg-stone-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all">
+                                    <Search className="w-4 h-4 text-emerald-400" /> Locate Fleet Transit
+                                </motion.button>
+                            </div>
+                        )}
+
+                        {bookingTab === 'cabs' && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-purple-500" /> Pick Up Location</p>
+                                        <input type="text" value={fromCity} onChange={(e) => setFromCity(e.target.value)} placeholder="Where pickup?" className="w-full bg-transparent border-none outline-none font-black text-sm text-stone-900 placeholder:text-stone-300" />
+                                    </div>
+                                    <div className="flex items-center justify-center -my-2 md:my-0 md:-mx-2 z-10">
+                                        <button onClick={() => { const tmp = fromCity; setFromCity(toCity); setToCity(tmp); }} className="w-9 h-9 rounded-xl bg-white border border-stone-100 flex items-center justify-center text-stone-400 hover:text-stone-900 shadow-sm transition-transform active:scale-95">
+                                            <ArrowRight className="w-4 h-4 rotate-90 md:rotate-0" />
+                                        </button>
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-purple-500" /> Drop Off Location</p>
+                                        <input type="text" value={toCity} onChange={(e) => setToCity(e.target.value)} placeholder="Where dropoff?" className="w-full bg-transparent border-none outline-none font-black text-sm text-stone-900 placeholder:text-stone-300" />
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl flex gap-2">
+                                        <div className="flex-1">
+                                            <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Calendar className="w-3 h-3 text-stone-400" /> Pick Date</p>
+                                            <input type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} className="w-full bg-transparent border-none outline-none font-black text-[11px] text-stone-900" />
+                                        </div>
+                                        <div className="w-px bg-stone-200 self-stretch my-1" />
+                                        <div className="flex-1">
+                                            <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Clock className="w-3 h-3 text-stone-400" /> Pick Time</p>
+                                            <input type="time" value={cabTime} onChange={(e) => setCabTime(e.target.value)} className="w-full bg-transparent border-none outline-none font-black text-xs text-stone-900" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <motion.button whileTap={{ scale: 0.98 }} onClick={() => {
+                                    localStorage.setItem('faio_pending_cab_search', JSON.stringify({ from: fromCity, to: toCity, date: departureDate, time: cabTime }));
+                                    onNavigate?.('cabs');
+                                }} className="w-full py-4 bg-stone-900 hover:bg-stone-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all">
+                                    <Car className="w-4 h-4 text-purple-400" /> Book Ground Operations
+                                </motion.button>
+                            </div>
+                        )}
+
+                        {bookingTab === 'planner' && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-primary" /> Target Destination</p>
+                                        <input type="text" value={destinationCity} onChange={(e) => setDestinationCity(e.target.value)} placeholder="Kyoto, Japan" className="w-full bg-transparent border-none outline-none font-black text-sm text-stone-900 placeholder:text-stone-300" />
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Calendar className="w-3 h-3 text-stone-400" /> Duration (Days)</p>
+                                        <select value={itineraryDays} onChange={(e) => setItineraryDays(Number(e.target.value))} className="w-full bg-transparent border-none outline-none font-black text-xs text-stone-900 appearance-none">
+                                            {[3, 5, 7, 10, 14].map(d => <option key={d} value={d}>{d} Day{d > 1 ? 's' : ''}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="p-4 bg-stone-50 border border-stone-100 rounded-2xl">
+                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Star className="w-3 h-3 text-stone-400" /> Travel Style</p>
+                                        <select value={tripStyle} onChange={(e) => setTripStyle(e.target.value)} className="w-full bg-transparent border-none outline-none font-black text-xs text-stone-900 appearance-none">
+                                            {['balanced', 'luxury', 'budget', 'eco-friendly'].map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                                <motion.button whileTap={{ scale: 0.98 }} onClick={async () => {
+                                    const prompt = `Plan a ${itineraryDays} days ${tripStyle} trip to ${destinationCity}`;
+                                    await sendChatMessage(prompt);
+                                    onNavigate?.('planner');
+                                    onOpenChat?.();
+                                }} className="w-full py-4 bg-stone-900 hover:bg-stone-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all">
+                                    <Sparkles className="w-4 h-4 text-amber-400" /> Generate Neural Itinerary
+                                </motion.button>
+                            </div>
+                        )}
                     </div>
                 </motion.div>
 
@@ -572,47 +784,64 @@ export function HomeView({ onNavigate, onOpenChat }: HomeViewProps) {
 
                 {/* Trending Destinations */}
                 <motion.div variants={item}>
-                    <div className="flex justify-between items-center mb-3">
-                        <h2 className="font-bold text-stone-800">Trending Now</h2>
-                        <button className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
-                            See all <ArrowRight className="w-3 h-3" />
+                    <div className="flex justify-between items-center mb-5">
+                        <div>
+                            <h2 className="font-heading text-lg font-black text-stone-900 tracking-tight flex items-center gap-2">
+                                <Globe className="w-4 h-4 text-primary animate-pulse" /> Trending curation
+                            </h2>
+                            <p className="text-stone-400 text-[10px] font-black uppercase tracking-widest mt-1">Acquired by global analytics</p>
+                        </div>
+                        <button onClick={() => onNavigate?.('explore')} className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5 hover:underline">
+                            See all <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                     </div>
 
-                    <div className="flex gap-6 overflow-x-auto pb-4 -mx-5 px-5 no-scrollbar snap-x">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
-                            { name: 'Kyoto', country: 'Japan', image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=400&auto=format&fit=crop', rating: '4.9', tag: 'Culture' },
-                            { name: 'Santorini', country: 'Greece', image: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=400&auto=format&fit=crop', rating: '4.8', tag: 'Romance' },
-                            { name: 'Bali', country: 'Indonesia', image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=400&auto=format&fit=crop', rating: '4.7', tag: 'Wellness' },
-                            { name: 'Reykjavik', country: 'Iceland', image: 'https://images.unsplash.com/photo-1476610182048-b716b8518aae?q=80&w=400&auto=format&fit=crop', rating: '4.8', tag: 'Adventure' },
+                            { name: 'Kyoto', country: 'Japan', image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=400&auto=format&fit=crop', rating: '4.9', reviews: '1,234 reviews', tag: 'Culture', price: '$120' },
+                            { name: 'Santorini', country: 'Greece', image: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=400&auto=format&fit=crop', rating: '4.8', reviews: '984 reviews', tag: 'Romance', price: '$180' },
+                            { name: 'Bali', country: 'Indonesia', image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=400&auto=format&fit=crop', rating: '4.7', reviews: '2,430 reviews', tag: 'Wellness', price: '$85' },
+                            { name: 'Reykjavik', country: 'Iceland', image: 'https://images.unsplash.com/photo-1476610182048-b716b8518aae?q=80&w=400&auto=format&fit=crop', rating: '4.8', reviews: '742 reviews', tag: 'Adventure', price: '$210' },
                         ].map((place, i) => (
                             <motion.div
                                 key={i}
-                                className="min-w-[240px] h-[320px] rounded-[40px] relative overflow-hidden snap-center group cursor-pointer shadow-premium border border-stone-100"
-                                whileHover={{ scale: 1.02 }}
-                                onClick={() => onNavigate?.('planner')}
+                                className="group cursor-pointer flex flex-col"
+                                whileHover={{ scale: 1.015, y: -2 }}
+                                onClick={() => {
+                                    localStorage.setItem('faio_pending_hotel_search', JSON.stringify({ city: place.name }));
+                                    onNavigate?.('hotels');
+                                }}
                             >
-                                <img src={place.image} alt={place.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-transparent to-transparent" />
+                                {/* Image Container */}
+                                <div className="h-52 rounded-[28px] relative overflow-hidden shadow-card group-hover:shadow-card-hover transition-all duration-300">
+                                    <img src={place.image} alt={place.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                    
+                                    {/* AI Tag */}
+                                    <div className="absolute top-4 left-4">
+                                        <span className="px-3 py-1 bg-white/95 backdrop-blur-md text-[9px] font-black text-stone-900 uppercase tracking-widest rounded-xl shadow-soft flex items-center gap-1">
+                                            <Sparkles className="w-2.5 h-2.5 text-primary" /> {place.tag}
+                                        </span>
+                                    </div>
 
-                                {/* Tags */}
-                                <div className="absolute top-6 left-6 flex gap-2">
-                                    <div className="px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-2xl flex items-center gap-1.5 shadow-soft">
-                                        <Sparkles className="w-3 h-3 text-primary" />
-                                        <span className="text-[9px] text-stone-900 font-black uppercase tracking-wider">AI RECOMMEND</span>
+                                    {/* Score Tag */}
+                                    <div className="absolute top-4 right-4">
+                                        <span className="px-2.5 py-1 bg-stone-950 text-[10px] font-black text-white rounded-xl shadow-md flex items-center gap-1 border border-stone-800">
+                                            ⭐ {place.rating}
+                                        </span>
                                     </div>
                                 </div>
 
-                                <div className="absolute bottom-6 left-6 right-6">
-                                    <div className="flex items-end justify-between">
-                                        <div>
-                                            <h3 className="text-2xl font-black text-white leading-tight">{place.name}</h3>
-                                            <p className="text-white/80 font-black text-[10px] uppercase tracking-widest mt-1">{place.country}</p>
-                                        </div>
-                                        <div className="px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-xl border border-white/30 text-white font-black text-xs">
-                                            {place.rating}
-                                        </div>
+                                {/* Text Details */}
+                                <div className="pt-3 px-1 flex flex-col gap-1">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="font-heading text-base font-black text-stone-900 tracking-tight leading-tight">{place.name}, {place.country}</h3>
+                                        <span className="text-xs font-black text-stone-900">{place.price}</span>
                                     </div>
+                                    <div className="flex items-center justify-between text-[11px] font-medium text-stone-400">
+                                        <span>Curated Stay Plan</span>
+                                        <span>per night</span>
+                                    </div>
+                                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wider mt-0.5">★ {place.reviews}</p>
                                 </div>
                             </motion.div>
                         ))}

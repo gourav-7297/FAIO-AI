@@ -257,9 +257,9 @@ export function ExploreView() {
     const [selectedVibe, setSelectedVibe] = useState<VibePlace | null>(null);
 
     // Nearby (shared)
-    const [nearbyPlaces, _setNearbyPlaces] = useState<DisplayPlace[]>([]);
-    const [_isLoadingNearby, _setIsLoadingNearby] = useState(false);
-    const [_showNearbyMap, _setShowNearbyMap] = useState(false);
+    const [nearbyPlaces, setNearbyPlaces] = useState<DisplayPlace[]>([]);
+    const [isLoadingNearby, setIsLoadingNearby] = useState(false);
+    const [showNearbyMap, setShowNearbyMap] = useState(false);
 
     useEffect(() => {
         async function load() {
@@ -355,6 +355,7 @@ export function ExploreView() {
             const merged = [...results, ...overpassDisplay.filter(p => !fsqNames.has(p.name.toLowerCase()))];
             
             setPlaces(merged);
+            setNearbyPlaces(merged);
             setHasSearched(true);
             setSearchCity('Current Location');
             setActiveTab('places');
@@ -386,7 +387,7 @@ export function ExploreView() {
         return true;
     });
 
-    const _nearbyMarkers: MapMarker[] = nearbyPlaces.map(p => ({
+    const nearbyMarkers: MapMarker[] = nearbyPlaces.map(p => ({
         id: p.id, lat: p.lat, lon: p.lon, label: p.name,
         emoji: p.category.split(' ')[0] || '📍', popup: `${p.name} • ${p.category}`,
     }));
@@ -605,6 +606,16 @@ export function ExploreView() {
                             ))}
                         </div>
 
+                        {/* Proximity / Nearby Section */}
+                        <NearbySection
+                            nearbyPlaces={nearbyPlaces}
+                            isLoadingNearby={isLoadingNearby}
+                            showNearbyMap={showNearbyMap}
+                            setShowNearbyMap={setShowNearbyMap}
+                            discoverNearby={discoverNearby}
+                            nearbyMarkers={nearbyMarkers}
+                        />
+
                         {/* Real Places Grid */}
                         <div className="space-y-6">
                             <div className="flex items-center justify-between">
@@ -677,7 +688,7 @@ export function ExploreView() {
 // ══════════════════════════════════════════════════
 // SHARED: NEARBY SECTION (Map & Quick List)
 // ══════════════════════════════════════════════════
-function _NearbySection({ nearbyPlaces, isLoadingNearby, showNearbyMap, setShowNearbyMap, discoverNearby, nearbyMarkers }: {
+function NearbySection({ nearbyPlaces, isLoadingNearby, showNearbyMap, setShowNearbyMap, discoverNearby, nearbyMarkers }: {
     nearbyPlaces: DisplayPlace[]; isLoadingNearby: boolean; showNearbyMap: boolean;
     setShowNearbyMap: (v: boolean) => void; discoverNearby: () => void; nearbyMarkers: MapMarker[];
 }) {

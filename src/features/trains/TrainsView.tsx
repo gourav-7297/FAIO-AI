@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Train, Search, Calendar, MapPin,
@@ -28,6 +28,33 @@ export default function TrainsView() {
     const [showPartners, setShowPartners] = useState(false);
     const toRef = useRef<HTMLInputElement>(null);
     const { showToast } = useToast();
+
+    useEffect(() => {
+        const pending = localStorage.getItem('faio_pending_train_search');
+        if (pending) {
+            try {
+                const params = JSON.parse(pending);
+                if (params.from) {
+                    setFromQuery(params.from);
+                    const stations = searchStations(params.from);
+                    if (stations.length > 0) setFromStation(stations[0]);
+                }
+                if (params.to) {
+                    setToQuery(params.to);
+                    const stations = searchStations(params.to);
+                    if (stations.length > 0) setToStation(stations[0]);
+                }
+                if (params.date) setDate(params.date);
+                localStorage.removeItem('faio_pending_train_search');
+                
+                if (params.from && params.to) {
+                    setShowPartners(true);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }, []);
 
     const handleFromChange = useCallback((value: string) => {
         setFromQuery(value);
@@ -206,37 +233,97 @@ export default function TrainsView() {
 
                         {TRAIN_PARTNERS.map(partner => (
                             <motion.div key={partner.name} variants={item}>
-                                <GlassCard className="p-6 hover:bg-white transition-all border border-stone-100 shadow-soft group">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="flex items-center gap-4">
+                                <GlassCard className="p-6 hover:bg-white transition-all border border-stone-100 shadow-premium group mb-6">
+                                    {/* Partner Header */}
+                                    <div className="flex items-center justify-between mb-5 pb-4 border-b border-stone-100">
+                                        <div className="flex items-center gap-3">
                                             <div
-                                                className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner"
+                                                className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl shadow-inner"
                                                 style={{ backgroundColor: partner.color + '10' }}
                                             >
                                                 {partner.logo}
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <h3 className="text-stone-900 font-black tracking-tight">{partner.name}</h3>
+                                                    <h3 className="text-stone-900 font-heading font-black tracking-tight">{partner.name} Listings</h3>
                                                     {partner.isOfficial && (
                                                         <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] rounded-full font-black uppercase tracking-tighter flex items-center gap-1">
                                                             <Shield className="w-2.5 h-2.5" /> Official
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className="text-stone-400 text-[11px] font-medium leading-relaxed">{partner.description}</p>
+                                                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-widest leading-relaxed">{partner.description}</p>
                                             </div>
                                         </div>
+                                        <button
+                                            onClick={() => openPartnerBooking(partner, fromStation.code, toStation.code, date)}
+                                            className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-white flex items-center gap-1.5 transition-all shadow-md group-hover:scale-105 active:scale-95"
+                                            style={{ backgroundColor: partner.color }}
+                                        >
+                                            {partner.isOfficial ? 'Book on IRCTC' : 'Compare Live'} <ExternalLink className="w-3 h-3" />
+                                        </button>
                                     </div>
 
-                                    <button
-                                        onClick={() => openPartnerBooking(partner, fromStation.code, toStation.code, date)}
-                                        className="w-full mt-2 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all text-white shadow-lg group-hover:scale-[1.02]"
-                                        style={{ backgroundColor: partner.color }}
-                                    >
-                                        {partner.isOfficial ? 'Book on IRCTC' : `Check on ${partner.name}`}
-                                        <ExternalLink className="w-3.5 h-3.5" />
-                                    </button>
+                                    {/* Schedules List (AbhiBus / MMT Style) */}
+                                    <div className="space-y-4">
+                                        {[
+                                            { train: 'NZM BOM RAJDHANI', number: '12952', departure: '04:55 PM', duration: '15h 40m', arrival: '08:35 AM', classes: [{ name: '1AC', price: '₹4,255', av: 'AVBL-0012' }, { name: '2AC', price: '₹2,865', av: 'AVBL-0040' }, { name: '3AC', price: '₹2,105', av: 'RAC-04' }] },
+                                            { train: 'AK TEJAS RAJDHANI', number: '12954', departure: '05:15 PM', duration: '17h 10m', arrival: '10:25 AM', classes: [{ name: '1AC', price: '₹4,120', av: 'AVBL-0004' }, { name: '2AC', price: '₹2,720', av: 'WL-02' }, { name: '3AC', price: '₹2,020', av: 'AVBL-0015' }] },
+                                        ].map((schedule, sIdx) => (
+                                            <div key={sIdx} className="p-4 bg-stone-50 border border-stone-100 rounded-3xl flex flex-col gap-4 hover:border-stone-200 transition-colors">
+                                                {/* Top Operator details */}
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <h4 className="font-heading text-sm font-black text-stone-900 tracking-tight">
+                                                            {schedule.train} <span className="text-stone-400 text-xs font-bold font-sans">({schedule.number})</span>
+                                                        </h4>
+                                                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mt-1">Superfast Express · Daily Run</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Transit Timeline Indicator */}
+                                                <div className="flex items-center gap-5 py-2 px-1">
+                                                    <div className="text-center flex-shrink-0">
+                                                        <p className="text-sm font-black text-stone-900">{schedule.departure}</p>
+                                                        <p className="text-[9px] font-black text-stone-400 uppercase mt-0.5">{fromStation.code}</p>
+                                                    </div>
+
+                                                    <div className="flex-1 relative py-1.5">
+                                                        <div className="absolute top-1/2 left-0 right-0 h-[2px] border-t-2 border-dashed border-stone-200 -translate-y-1/2" />
+                                                        <div className="absolute top-1/2 left-0 w-2 h-2 -translate-y-1/2 bg-cobalt rounded-full shadow-sm" />
+                                                        <div className="absolute top-1/2 right-0 w-2 h-2 -translate-y-1/2 bg-emerald-500 rounded-full shadow-sm" />
+                                                        <div className="text-center relative">
+                                                            <span className="text-[9px] font-black uppercase tracking-widest text-stone-500 bg-white border border-stone-100 shadow-sm px-2.5 py-0.5 rounded-full">
+                                                                ⏱️ {schedule.duration}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="text-center flex-shrink-0">
+                                                        <p className="text-sm font-black text-stone-900">{schedule.arrival}</p>
+                                                        <p className="text-[9px] font-black text-stone-400 uppercase mt-0.5">{toStation.code}</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Seat Class selection pills */}
+                                                <div className="grid grid-cols-3 gap-2 mt-1">
+                                                    {schedule.classes.map((cls, cIdx) => (
+                                                        <button
+                                                            key={cIdx}
+                                                            onClick={() => openPartnerBooking(partner, fromStation.code, toStation.code, date)}
+                                                            className="p-2.5 bg-white border border-stone-150 rounded-2xl flex flex-col items-center hover:border-stone-900 transition-all shadow-sm active:scale-95 group/pill"
+                                                        >
+                                                            <span className="text-[9px] font-black text-stone-400 group-hover/pill:text-stone-900 transition-colors">{cls.name}</span>
+                                                            <span className="text-xs font-black text-stone-900 mt-1 leading-none">{cls.price}</span>
+                                                            <span className={`text-[8px] font-black uppercase tracking-tighter mt-1 leading-none ${
+                                                                cls.av.startsWith('AVBL') ? 'text-emerald-600' : cls.av.startsWith('WL') ? 'text-rose-500' : 'text-amber-500'
+                                                            }`}>{cls.av}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </GlassCard>
                             </motion.div>
                         ))}

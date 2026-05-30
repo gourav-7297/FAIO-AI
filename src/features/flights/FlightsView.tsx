@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Plane, Search, Calendar, Users, Loader2, ArrowUpDown,
@@ -41,6 +41,41 @@ export function FlightsView() {
     const [isSearching, setIsSearching] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const [sortBy, setSortBy] = useState<SortBy>('price');
+
+    useEffect(() => {
+        const pending = localStorage.getItem('faio_pending_flight_search');
+        if (pending) {
+            try {
+                const params = JSON.parse(pending);
+                if (params.from) setOriginQuery(params.from);
+                if (params.to) setDestQuery(params.to);
+                if (params.date) setDepartDate(params.date);
+                if (params.passengers) setPassengers(params.passengers);
+                
+                Promise.all([
+                    searchAirports(params.from),
+                    searchAirports(params.to)
+                ]).then(([origins, dests]) => {
+                    const fromAir = origins.find(a => a.skyId === params.from || a.presentation.title.toLowerCase().includes(params.from.toLowerCase())) || origins[0];
+                    const toAir = dests.find(a => a.skyId === params.to || a.presentation.title.toLowerCase().includes(params.to.toLowerCase())) || dests[0];
+                    
+                    if (fromAir && toAir) {
+                        setOriginAirport(fromAir);
+                        setOriginQuery(fromAir.presentation.suggestionTitle || fromAir.presentation.title);
+                        setDestAirport(toAir);
+                        setDestQuery(toAir.presentation.suggestionTitle || toAir.presentation.title);
+                        
+                        // Execute search immediately!
+                        handleSearch(fromAir, toAir);
+                    }
+                });
+                
+                localStorage.removeItem('faio_pending_flight_search');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }, []);
 
     // Debounce refs
     const originTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -102,9 +137,9 @@ export function FlightsView() {
     };
 
     // Search
-    const handleSearch = async () => {
-        let finalOrigin = originAirport;
-        let finalDest = destAirport;
+    const handleSearch = async (overrideOrigin?: Airport | null, overrideDest?: Airport | null) => {
+        let finalOrigin = overrideOrigin !== undefined ? overrideOrigin : originAirport;
+        let finalDest = overrideDest !== undefined ? overrideDest : destAirport;
 
         setIsSearching(true);
 
@@ -333,7 +368,7 @@ export function FlightsView() {
                 {/* Search button */}
                 <motion.button
                     whileTap={{ scale: 0.98 }}
-                    onClick={handleSearch}
+                    onClick={() => handleSearch()}
                     disabled={isSearching}
                     className="w-full py-5 rounded-[2rem] bg-stone-900 hover:bg-stone-800 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-stone-900/10 flex items-center justify-center gap-3 disabled:opacity-50 transition-all"
                 >
@@ -524,13 +559,28 @@ function FlightCard({ flight, isCheapest }: { flight: FlightResult; isCheapest: 
                     </div>
 
                     <div className="flex-1 relative py-2">
-                        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-stone-100" />
-                        <div className="absolute top-1/2 left-0 w-2.5 h-2.5 -translate-y-1/2 bg-stone-900 rounded-full shadow-sm" />
-                        <div className="absolute top-1/2 right-0 w-2.5 h-2.5 -translate-y-1/2 bg-emerald-500 rounded-full shadow-sm" />
+                        <div className="absolute top-1/2 left-0 right-0 h-[3px] bg-gradient-to-r from-stone-200 via-cobalt to-emerald-500 rounded-full" />
+                        <div className="absolute top-1/2 left-0 w-3.5 h-3.5 -translate-y-1/2 bg-stone-900 rounded-full shadow-md border-2 border-white" />
+                        
+                        {/* Connection layover dots */}
+                        {leg.stopCount > 0 && (
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-4">
+                                {Array.from({ length: leg.stopCount }).map((_, idx) => (
+                                    <div key={idx} className="w-2.5 h-2.5 bg-amber-500 rounded-full shadow-sm border-2 border-white" title="Connection Node" />
+                                ))}
+                            </div>
+                        )}
+                        
+                        <div className="absolute top-1/2 right-0 w-3.5 h-3.5 -translate-y-1/2 bg-emerald-500 rounded-full shadow-md border-2 border-white" />
                         <div className="text-center relative">
-                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full border border-stone-100 inline-block">
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-900 bg-white shadow-soft px-3 py-1 rounded-full border border-stone-100 inline-block">
                                 {formatDuration(leg.durationInMinutes)}
                             </p>
+                            {leg.stopCount > 0 && (
+                                <p className="text-[8px] font-black uppercase tracking-widest text-amber-600 mt-1">
+                                    ⚠️ {leg.stopCount} {leg.stopCount === 1 ? 'stop' : 'stops'}
+                                </p>
+                            )}
                         </div>
                     </div>
 

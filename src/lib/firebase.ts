@@ -4,15 +4,15 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// Your web app's Firebase configuration
+// Web app's Firebase configuration - securely loaded via env vars with defaults
 const firebaseConfig = {
-    apiKey: "AIzaSyDkU0TIEMrNccSYe3q2p2GjOKU7KX8cxrs",
-    authDomain: "faio-ai.firebaseapp.com",
-    projectId: "faio-ai",
-    storageBucket: "faio-ai.firebasestorage.app",
-    messagingSenderId: "966686074574",
-    appId: "1:966686074574:web:d359de04b8b2908d32129f",
-    measurementId: "G-KPMLQT9NDY"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDkU0TIEMrNccSYe3q2p2GjOKU7KX8cxrs",
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "faio-ai.firebaseapp.com",
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "faio-ai",
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "faio-ai.firebasestorage.app",
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "966686074574",
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:966686074574:web:d359de04b8b2908d32129f",
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-KPMLQT9NDY"
 };
 
 // Initialize Firebase

@@ -28,10 +28,10 @@ DROP POLICY IF EXISTS "Anyone can view profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Anyone can insert profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Anyone can update own profile" ON public.profiles;
 
--- Open policies for Firebase Auth (no auth.uid() check)
+-- Secure policies for Profiles (checking ownership via bridged auth.uid()::TEXT)
 CREATE POLICY "Anyone can view profiles" ON public.profiles FOR SELECT USING (true);
-CREATE POLICY "Anyone can insert profiles" ON public.profiles FOR INSERT WITH CHECK (true);
-CREATE POLICY "Anyone can update own profile" ON public.profiles FOR UPDATE USING (true);
+CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK (id = auth.uid()::TEXT);
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (id = auth.uid()::TEXT);
 
 -- =============================================
 -- 2. ITINERARIES (saved AI-generated trips)

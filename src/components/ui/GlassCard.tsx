@@ -14,7 +14,7 @@ export function GlassCard({
     children,
     className,
     gradient = 'none',
-    _glow = false,
+    glow = false,
     hover = true,
     onClick
 }: GlassCardProps) {
@@ -36,8 +36,7 @@ export function GlassCard({
             className={cn(
                 "relative overflow-hidden rounded-2xl",
                 gradients[gradient],
-                "border border-stone-200/60",
-                "shadow-card",
+                glow ? "border-primary/20 shadow-lg shadow-primary/5" : "border-stone-200/60 shadow-card",
                 hover && "transition-all duration-200 cursor-pointer hover:shadow-card-hover",
                 className
             )}

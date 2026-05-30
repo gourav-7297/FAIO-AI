@@ -7,39 +7,39 @@ export default {
     theme: {
         extend: {
             colors: {
-                background: '#FAFAF8',
-                surface: '#FFFFFF',
+                background: 'hsl(var(--background))',
+                surface: 'hsl(var(--card))',
                 primary: {
-                    DEFAULT: '#C2785C',   // Warm terracotta
-                    light: '#D49A82',     // Lighter terracotta
-                    dark: '#A8624A',      // Darker terracotta
+                    DEFAULT: 'hsl(var(--primary))',   // Vibrant Coral Pink (Airbnb style)
+                    light: '#FF6B8B',
+                    dark: '#E01E43',
                     foreground: '#FFFFFF'
                 },
                 secondary: {
-                    DEFAULT: '#9C958D',   // Warm muted gray for secondary text
-                    light: '#F5F2EE',     // Warm off-white for backgrounds
-                    foreground: '#3D3632' // Warm charcoal text
+                    DEFAULT: 'hsl(var(--muted))',   // Soft slate/grey
+                    light: '#F8FAFC',
+                    foreground: 'hsl(var(--foreground))' // Deep charcoal text
                 },
                 action: {
-                    DEFAULT: '#3D3632',   // Warm charcoal for primary actions
-                    hover: '#524B46',
+                    DEFAULT: 'hsl(var(--action))',
+                    hover: '#1E293B',
                 },
-                accent: '#C2785C',        // Same as primary
-                sage: '#8BAA8D',          // Muted green
-                sand: '#E0D5C5',          // Sand/beige
-                warmgray: '#A09890',      // Warm muted gray
-                // Agent colors (muted warm tones)
+                accent: 'hsl(var(--primary))',
+                cobalt: '#008CFF',        // Electric Cobalt Blue (MMT style)
+                sage: '#10B981',          // Emerald Green (Agoda style)
+                sand: '#F59E0B',          // Rating Amber Gold
+                // Agent colors (high-contrast premium tones)
                 agent: {
-                    itinerary: '#6B8FAD',   // Muted steel blue
-                    liveUpdate: '#C4944A',  // Muted gold
-                    localSecrets: '#8B7BAD', // Muted purple
-                    budget: '#7BA47E',      // Muted sage
-                    safety: '#C47070',      // Muted rose
-                    sustainability: '#6BA3A3', // Muted teal
+                    itinerary: '#3B82F6',   
+                    liveUpdate: '#F59E0B',  
+                    localSecrets: '#8B5CF6', 
+                    budget: '#10B981',      
+                    safety: '#EF4444',      
+                    sustainability: '#06B6D4', 
                 }
             },
             fontFamily: {
-                sans: ['"Inter"', 'sans-serif'],
+                sans: ['"Plus Jakarta Sans"', 'sans-serif'],
                 heading: ['"Outfit"', 'sans-serif'],
             },
             animation: {

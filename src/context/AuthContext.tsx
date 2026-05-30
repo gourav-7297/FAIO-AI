@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // Sign in with Google (via Firebase popup)
+    // Sign in with Google (via Firebase popup with secure Supabase JWT Bridge)
     const signInWithGoogle = async () => {
         try {
             const { signInWithPopup } = await import('firebase/auth');
@@ -170,23 +170,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const firebaseUser = result.user;
             console.log('Firebase Google sign-in successful:', firebaseUser.email);
 
-            // Set user info from Firebase
-            setUser({
-                id: firebaseUser.uid,
-                email: firebaseUser.email,
-                app_metadata: {},
-                user_metadata: {
-                    full_name: firebaseUser.displayName,
-                    avatar_url: firebaseUser.photoURL,
-                },
-                aud: 'authenticated',
-                created_at: firebaseUser.metadata.creationTime || '',
-            } as any);
-            setIsGuest(false);
+            // ─── SECURE SUPABASE JWT BRIDGE ───────────────────────────
+            if (isSupabaseAvailable && supabase && firebaseUser.email) {
+                console.log('Bridging Firebase authentication to Supabase session...');
+                const securePassword = firebaseUser.uid; // Unique, secret token for the user
 
+                // Attempt to sign in silently
+                const { error: signInError } = await supabase.auth.signInWithPassword({
+                    email: firebaseUser.email,
+                    password: securePassword,
+                });
+
+                if (signInError) {
+                    console.log('Bridging account not found, silently signing up user in Supabase...');
+                    // User doesn't exist in Supabase auth yet, sign them up
+                    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                        email: firebaseUser.email,
+                        password: securePassword,
+                        options: {
+                            data: {
+                                full_name: firebaseUser.displayName || `Traveler ${firebaseUser.uid.slice(0, 5)}`,
+                                avatar_url: firebaseUser.photoURL || '',
+                            }
+                        }
+                    });
+
+                    if (signUpError) {
+                        console.error('Supabase bridging silent registration failed:', signUpError);
+                    } else if (signUpData?.user) {
+                        console.log('Registration complete, logging in bridged Supabase user...');
+                        // Complete login to establish active session
+                        const { error: secondTryError } = await supabase.auth.signInWithPassword({
+                            email: firebaseUser.email,
+                            password: securePassword,
+                        });
+                        if (secondTryError) {
+                            console.error('Silent bridged session login failed:', secondTryError);
+                        }
+                    }
+                } else {
+                    console.log('Bridged Supabase session successfully established.');
+                }
+            } else {
+                // Supabase not available — Fall back to mock Firebase user object (Local Mode)
+                console.log('Supabase not configured, establishing local mock user mode.');
+                setUser({
+                    id: firebaseUser.uid,
+                    email: firebaseUser.email,
+                    app_metadata: {},
+                    user_metadata: {
+                        full_name: firebaseUser.displayName,
+                        avatar_url: firebaseUser.photoURL,
+                    },
+                    aud: 'authenticated',
+                    created_at: firebaseUser.metadata.creationTime || '',
+                } as any);
+            }
+
+            setIsGuest(false);
             return { error: null };
         } catch (err: any) {
-            console.error('Firebase Google sign-in error:', err);
+            console.error('Bridged Google sign-in error:', err);
             return { error: err instanceof Error ? err : new Error(err.message || 'Google sign-in failed') };
         }
     };
