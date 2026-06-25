@@ -1,4 +1,4 @@
-import { supabase, isSupabaseAvailable } from '../lib/supabase';
+import { supabaseUntyped as supabase, isSupabaseAvailable } from '../lib/supabase';
 
 // ============================
 // TYPES
