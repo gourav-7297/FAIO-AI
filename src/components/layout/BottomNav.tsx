@@ -20,7 +20,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
     ];
 
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50">
             <div className="bg-white/92 backdrop-blur-xl border border-stone-200/60 shadow-nav rounded-2xl px-2 py-2">
                 <div className="flex justify-between items-center h-14 relative">
                     {tabs.map((tab) => {

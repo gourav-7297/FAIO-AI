@@ -18,7 +18,7 @@ IMPORTANT: Respond ONLY with valid JSON. No markdown. No explanations. No commen
 Input:
 - Destination: {destination}
 - Dates: {startDate} to {endDate}
-- Budget: $\{budget\} USD
+- Budget: BUDGET_VALUE USD
 - Travel Style: {travelStyles}
 - Travelers: {travelers}
 
@@ -120,7 +120,7 @@ ai.post('/generate-trip', async (c) => {
     .replace('{destination}', destination)
     .replace('{startDate}', startDate)
     .replace('{endDate}', endDate)
-    .replace('{budget}', budget.toString())
+    .replace('BUDGET_VALUE', `$${budget}`)
     .replace('{travelStyles}', (travelStyles || []).join(', '))
     .replace('{travelers}', (travelers || 1).toString());
 
@@ -150,6 +150,8 @@ ai.post('/generate-trip', async (c) => {
 // ━━━ POST /ai/chat ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ai.post('/chat', async (c) => {
+  // Chat is accessible to guests too, but log if authenticated
+  const user = await getUser(c.req.raw);
   const { messages, userMessage } = await c.req.json();
 
   if (!userMessage) {

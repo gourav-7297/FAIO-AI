@@ -1,4 +1,4 @@
-import { supabaseUntyped as supabase, isSupabaseAvailable } from '../lib/supabase';
+import { supabase, isSupabaseAvailable } from '../lib/supabase';
 
 // ============================
 // TYPES
@@ -149,7 +149,7 @@ export const communityService = {
                     user_name: data.userName || 'Traveler',
                     user_avatar: data.userAvatar || '',
                     likes: 0, comments: 0, saves: 0,
-                } as any)
+                })
                 .select()
                 .single();
 
@@ -187,13 +187,13 @@ export const communityService = {
                     .select('story_id')
                     .eq('user_id', currentUserId);
                 if (likes) {
-                    userLikes = new Set(likes.map((l: any) => l.story_id));
+                    userLikes = new Set(likes.map(l => l.story_id));
                 }
             }
 
-            const stories: TravelStory[] = data.map((row: any) => ({
+            const stories: TravelStory[] = data.map(row => ({
                 id: row.id,
-                user_id: row.user_id,
+                user_id: row.user_id || undefined,
                 user: {
                     name: row.user_name || 'Traveler',
                     avatar: row.user_avatar || `https://i.pravatar.cc/150?u=${row.user_id}`,
@@ -235,7 +235,7 @@ export const communityService = {
     },
 
     // ============================
-    // LIKES
+    // LIKES (Atomic via RPC with safe JS fallback)
     // ============================
 
     async toggleLike(storyId: string, userId: string): Promise<{ liked: boolean; error: Error | null }> {
@@ -243,27 +243,39 @@ export const communityService = {
             return { liked: false, error: null };
         }
         try {
-            // Check if already liked
+            // 1. Try atomic database RPC
+            const { data, error: rpcError } = await supabase.rpc('toggle_story_like', {
+                p_story_id: storyId,
+                p_user_id: userId
+            });
+
+            if (!rpcError) {
+                return { liked: !!data, error: null };
+            }
+
+            // 2. Fallback if the RPC database function doesn't exist yet
+            console.warn('RPC toggle_story_like failed, falling back to read-then-write:', rpcError.message);
+
             const { data: existing } = await supabase
                 .from('story_likes')
                 .select('id')
                 .eq('story_id', storyId)
                 .eq('user_id', userId)
-                .single();
+                .maybeSingle();
 
             if (existing) {
                 // Unlike
                 await supabase.from('story_likes').delete().eq('id', existing.id);
                 // Decrement count
-                const { data: story } = await supabase.from('travel_stories').select('likes').eq('id', storyId).single();
-                await supabase.from('travel_stories').update({ likes: Math.max(0, (story?.likes || 1) - 1) } as any).eq('id', storyId);
+                const { data: story } = await supabase.from('travel_stories').select('likes').eq('id', storyId).maybeSingle();
+                await supabase.from('travel_stories').update({ likes: Math.max(0, (story?.likes || 1) - 1) }).eq('id', storyId);
                 return { liked: false, error: null };
             } else {
                 // Like
-                await supabase.from('story_likes').insert({ story_id: storyId, user_id: userId } as any);
+                await supabase.from('story_likes').insert({ story_id: storyId, user_id: userId });
                 // Increment count
-                const { data: story } = await supabase.from('travel_stories').select('likes').eq('id', storyId).single();
-                await supabase.from('travel_stories').update({ likes: (story?.likes || 0) + 1 } as any).eq('id', storyId);
+                const { data: story } = await supabase.from('travel_stories').select('likes').eq('id', storyId).maybeSingle();
+                await supabase.from('travel_stories').update({ likes: (story?.likes || 0) + 1 }).eq('id', storyId);
                 return { liked: true, error: null };
             }
         } catch (error) {
@@ -288,7 +300,7 @@ export const communityService = {
 
             if (error) throw error;
 
-            const comments: StoryComment[] = (data || []).map((row: any) => ({
+            const comments: StoryComment[] = (data || []).map(row => ({
                 id: row.id,
                 user_id: row.user_id,
                 story_id: row.story_id,
@@ -309,13 +321,36 @@ export const communityService = {
     async addComment(storyId: string, userId: string, content: string, userName?: string, userAvatar?: string): Promise<{ error: Error | null }> {
         if (!isSupabaseAvailable || !supabase) return { error: new Error('Sign in to comment') };
         try {
+            // 1. Try atomic database RPC
+            const { error: rpcError } = await supabase.rpc('add_story_comment', {
+                p_story_id: storyId,
+                p_user_id: userId,
+                p_content: content,
+                p_user_name: userName || 'Traveler',
+                p_user_avatar: userAvatar || ''
+            });
+
+            if (!rpcError) {
+                return { error: null };
+            }
+
+            // 2. Fallback
+            console.warn('RPC add_story_comment failed, falling back to read-then-write:', rpcError.message);
+
             const { error } = await supabase
                 .from('story_comments')
-                .insert({ story_id: storyId, user_id: userId, content, user_name: userName || 'Traveler', user_avatar: userAvatar || '' } as any);
+                .insert({
+                    story_id: storyId,
+                    user_id: userId,
+                    content,
+                    user_name: userName || 'Traveler',
+                    user_avatar: userAvatar || ''
+                });
             if (error) throw error;
+
             // Update comment count
-            const { data: story } = await supabase.from('travel_stories').select('comments').eq('id', storyId).single();
-            await supabase.from('travel_stories').update({ comments: (story?.comments || 0) + 1 } as any).eq('id', storyId);
+            const { data: story } = await supabase.from('travel_stories').select('comments').eq('id', storyId).maybeSingle();
+            await supabase.from('travel_stories').update({ comments: (story?.comments || 0) + 1 }).eq('id', storyId);
             return { error: null };
         } catch (error) {
             return { error: error as Error };
@@ -325,10 +360,29 @@ export const communityService = {
     async deleteComment(commentId: string, userId: string, storyId: string): Promise<{ error: Error | null }> {
         if (!isSupabaseAvailable || !supabase) return { error: new Error('Not available') };
         try {
-            const { error } = await supabase.from('story_comments').delete().eq('id', commentId).eq('user_id', userId);
+            // 1. Try atomic database RPC
+            const { error: rpcError } = await supabase.rpc('delete_story_comment', {
+                p_comment_id: commentId,
+                p_user_id: userId,
+                p_story_id: storyId
+            });
+
+            if (!rpcError) {
+                return { error: null };
+            }
+
+            // 2. Fallback
+            console.warn('RPC delete_story_comment failed, falling back to read-then-write:', rpcError.message);
+
+            const { error } = await supabase
+                .from('story_comments')
+                .delete()
+                .eq('id', commentId)
+                .eq('user_id', userId);
             if (error) throw error;
-            const { data: story } = await supabase.from('travel_stories').select('comments').eq('id', storyId).single();
-            await supabase.from('travel_stories').update({ comments: Math.max(0, (story?.comments || 1) - 1) } as any).eq('id', storyId);
+
+            const { data: story } = await supabase.from('travel_stories').select('comments').eq('id', storyId).maybeSingle();
+            await supabase.from('travel_stories').update({ comments: Math.max(0, (story?.comments || 1) - 1) }).eq('id', storyId);
             return { error: null };
         } catch (error) {
             return { error: error as Error };
@@ -364,30 +418,36 @@ export const communityService = {
                     .select('trip_id, status')
                     .eq('user_id', currentUserId);
                 if (requests) {
-                    requests.forEach((r: any) => joinStatuses.set(r.trip_id, r.status));
+                    requests.forEach(r => joinStatuses.set(r.trip_id, r.status));
                 }
             }
 
-            const trips: GroupTrip[] = data.map((row: any) => ({
-                id: row.id,
-                host_id: row.host_id,
-                host: {
-                    name: row.host_name || 'Host',
-                    avatar: row.host_avatar || `https://i.pravatar.cc/150?u=${row.host_id}`,
-                    verified: false,
-                    rating: 4.5,
-                    tripsHosted: 0,
-                },
-                destination: row.destination,
-                dates: row.dates || { start: '', end: '' },
-                duration: row.duration || '',
-                vibes: row.vibes || [],
-                spots: { filled: row.spots_filled || 0, total: row.spots_total || 4 },
-                price: { amount: row.price_amount || 0, currency: row.price_currency || 'USD' },
-                includes: row.includes || [],
-                description: row.description || '',
-                myJoinStatus: (joinStatuses.get(row.id) as any) || 'none',
-            }));
+            const trips: GroupTrip[] = data.map(row => {
+                const datesObj = typeof row.dates === 'string'
+                    ? JSON.parse(row.dates)
+                    : (row.dates || { start: '', end: '' });
+
+                return {
+                    id: row.id,
+                    host_id: row.host_id || undefined,
+                    host: {
+                        name: row.host_name || 'Host',
+                        avatar: row.host_avatar || `https://i.pravatar.cc/150?u=${row.host_id}`,
+                        verified: false,
+                        rating: 4.5,
+                        tripsHosted: 0,
+                    },
+                    destination: row.destination,
+                    dates: datesObj,
+                    duration: row.duration || '',
+                    vibes: row.vibes || [],
+                    spots: { filled: row.spots_filled || 0, total: row.spots_total || 4 },
+                    price: { amount: row.price_amount || 0, currency: row.price_currency || 'USD' },
+                    includes: row.includes || [],
+                    description: row.description || '',
+                    myJoinStatus: (joinStatuses.get(row.id) as any) || 'none',
+                };
+            });
 
             return { data: trips, error: null };
         } catch (error) {
@@ -423,7 +483,7 @@ export const communityService = {
                     description: data.description,
                     host_name: data.hostName || 'Host',
                     host_avatar: data.hostAvatar || '',
-                } as any)
+                })
                 .select()
                 .single();
 
@@ -454,7 +514,7 @@ export const communityService = {
         try {
             const { error } = await supabase
                 .from('trip_join_requests')
-                .insert({ trip_id: tripId, user_id: userId, message, status: 'pending' } as any);
+                .insert({ trip_id: tripId, user_id: userId, message, status: 'pending' });
             if (error) throw error;
             return { error: null };
         } catch (error) {
@@ -478,7 +538,7 @@ export const communityService = {
                 trip_id: row.trip_id,
                 user_id: row.user_id,
                 message: row.message || '',
-                status: row.status,
+                status: row.status as any,
                 created_at: row.created_at,
                 user: {
                     name: row.profiles?.username || 'Traveler',
@@ -497,14 +557,14 @@ export const communityService = {
         try {
             const { error } = await supabase
                 .from('trip_join_requests')
-                .update({ status, updated_at: new Date().toISOString() } as any)
+                .update({ status, updated_at: new Date().toISOString() })
                 .eq('id', requestId);
             if (error) throw error;
 
             // If accepted, increment spots_filled
             if (status === 'accepted' && tripId) {
-                const { data: trip } = await supabase.from('group_trips').select('spots_filled').eq('id', tripId).single();
-                await supabase.from('group_trips').update({ spots_filled: (trip?.spots_filled || 0) + 1 } as any).eq('id', tripId);
+                const { data: trip } = await supabase.from('group_trips').select('spots_filled').eq('id', tripId).maybeSingle();
+                await supabase.from('group_trips').update({ spots_filled: (trip?.spots_filled || 0) + 1 }).eq('id', tripId);
             }
 
             return { error: null };

@@ -1,35 +1,37 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { BottomNav } from './components/layout/BottomNav';
 import { HomeView } from './features/home/HomeView';
-import { ExploreView } from './features/explore/ExploreView';
-import { CommunityView } from './features/community/CommunityView';
-import { PlannerView } from './features/planner/PlannerView';
-import { WalletView } from './features/wallet/WalletView';
-import { SafetyView } from './features/safety/SafetyView';
-import { ProfileView } from './features/profile/ProfileView';
-import { GuidesView } from './features/guides/GuidesView';
-import CabBookingView from './features/cabs/CabBookingView';
-import { HotelsView } from './features/hotels/HotelsView';
-import { FlightsView } from './features/flights/FlightsView';
-import TrainsView from './features/trains/TrainsView';
-import BusView from './features/buses/BusView';
-import { VisaView } from './features/visa/VisaView';
-import { PackingView } from './features/packing/PackingView';
-import { DocumentsView } from './features/documents/DocumentsView';
 import { LoginView } from './features/login/LoginView';
 import { EnvironmentProvider } from './context/EnvironmentContext';
 import { AIAgentProvider } from './context/AIAgentContext';
 import { OfflineProvider } from './context/OfflineContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './components/ui/Toast';
 import { OnboardingOverlay } from './components/Onboarding';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { PlanOnTheGoDrawer } from './components/PlanOnTheGoDrawer';
-import { AIChat } from './components/AIChat';
+import { AIChat, AIFloatingButton } from './components/AIChat';
 import { OfflineIndicator } from './components/ui/OfflineManager';
+
+// ── Lazy-loaded views for code splitting (reduces initial bundle from 2.3MB) ──
+const ExploreView = lazy(() => import('./features/explore/ExploreView').then(m => ({ default: m.ExploreView })));
+const CommunityView = lazy(() => import('./features/community/CommunityView').then(m => ({ default: m.CommunityView })));
+const PlannerView = lazy(() => import('./features/planner/PlannerView').then(m => ({ default: m.PlannerView })));
+const WalletView = lazy(() => import('./features/wallet/WalletView').then(m => ({ default: m.WalletView })));
+const SafetyView = lazy(() => import('./features/safety/SafetyView').then(m => ({ default: m.SafetyView })));
+const ProfileView = lazy(() => import('./features/profile/ProfileView').then(m => ({ default: m.ProfileView })));
+const GuidesView = lazy(() => import('./features/guides/GuidesView').then(m => ({ default: m.GuidesView })));
+const CabBookingView = lazy(() => import('./features/cabs/CabBookingView'));
+const HotelsView = lazy(() => import('./features/hotels/HotelsView').then(m => ({ default: m.HotelsView })));
+const FlightsView = lazy(() => import('./features/flights/FlightsView').then(m => ({ default: m.FlightsView })));
+const TrainsView = lazy(() => import('./features/trains/TrainsView'));
+const BusView = lazy(() => import('./features/buses/BusView'));
+const VisaView = lazy(() => import('./features/visa/VisaView').then(m => ({ default: m.VisaView })));
+const PackingView = lazy(() => import('./features/packing/PackingView').then(m => ({ default: m.PackingView })));
+const DocumentsView = lazy(() => import('./features/documents/DocumentsView').then(m => ({ default: m.DocumentsView })));
 
 const pageTransition = {
   initial: { opacity: 0, y: 12 },
@@ -61,10 +63,17 @@ type TabType = 'home' | 'explore' | 'community' | 'planner' | 'wallet' | 'safety
 
 function AppContent() {
   const { user, isLoading, isGuest } = useAuth();
-  const { isDarkMode, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    // Only show onboarding if user hasn't completed it before
+    try { return !localStorage.getItem('faio_onboarding_done'); } catch { return true; }
+  });
+
+  const completeOnboarding = () => {
+    setShowOnboarding(false);
+    try { localStorage.setItem('faio_onboarding_done', '1'); } catch { /* ignore */ }
+  };
 
   // Loading state while checking auth
   if (isLoading) {
@@ -105,39 +114,35 @@ function AppContent() {
         
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto no-scrollbar pb-28 relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              {...pageTransition}
-            >
-              <CurrentView {...viewProps} />
-            </motion.div>
-          </AnimatePresence>
+          <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+            </div>
+          }>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                {...pageTransition}
+              >
+                <CurrentView {...viewProps} />
+              </motion.div>
+            </AnimatePresence>
+          </Suspense>
         </main>
 
         {/* BOTTOM NAVIGATION - Stays relative to simulated screen bottom */}
         <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-        {/* FLOATING THEME TOGGLE BUTTON - Stays relative inside phone mockup */}
-        {!isChatOpen && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={toggleTheme}
-            className="absolute bottom-24 right-6 w-12 h-12 rounded-full glass-card-premium flex items-center justify-center text-primary z-40 transition-colors shadow-lg"
-            title={isDarkMode ? "Toggle Light Mode" : "Toggle Dark Mode"}
-          >
-            {isDarkMode ? <Sun className="w-5 h-5 text-amber-500 animate-pulse" /> : <Moon className="w-5 h-5 text-indigo-400" />}
-          </motion.button>
-        )}
-
         <PlanOnTheGoDrawer />
 
         {/* AI Chat drawer overlay for mobile */}
+        {!isChatOpen && (
+          <AIFloatingButton onClick={() => setIsChatOpen(true)} />
+        )}
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
 
         {/* Onboarding & PWA prompts */}
-        {showOnboarding && <OnboardingOverlay onComplete={() => setShowOnboarding(false)} />}
+        {showOnboarding && <OnboardingOverlay onComplete={completeOnboarding} />}
         <PWAInstallPrompt />
       </div>
     </div>

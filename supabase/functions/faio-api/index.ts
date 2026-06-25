@@ -18,6 +18,8 @@ import { Hono } from 'https://deno.land/x/hono@v4.3.11/mod.ts';
 import { cors } from 'https://deno.land/x/hono@v4.3.11/middleware.ts';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
+import { rateLimiter } from './middleware/rateLimiter.ts';
+
 import aiRoutes from './routes/ai.ts';
 import weatherRoutes from './routes/weather.ts';
 import placesRoutes from './routes/places.ts';
@@ -30,10 +32,26 @@ const app = new Hono().basePath('/faio-api');
 // ━━━ Global Middleware ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 app.use('*', cors({
-  origin: '*',
+  origin: (origin) => {
+    // Dynamic Origin Check: allow localhost for local testing, or the production APP_URL secret
+    const appUrl = Deno.env.get('APP_URL');
+    if (!origin) return '*';
+    if (
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:') ||
+      (appUrl && origin === appUrl)
+    ) {
+      return origin;
+    }
+    return appUrl || origin; // Fallback
+  },
   allowHeaders: ['Authorization', 'x-client-info', 'apikey', 'content-type'],
   allowMethods: ['GET', 'POST', 'OPTIONS'],
 }));
+
+// Apply Rate Limiting to resource-heavy AI endpoints (max 30 requests per minute)
+app.use('/ai/*', rateLimiter({ windowMs: 60 * 1000, max: 30 }));
+
 
 // ━━━ Health Check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

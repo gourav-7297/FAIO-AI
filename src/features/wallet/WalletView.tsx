@@ -260,7 +260,7 @@ export function WalletView() {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
                         className={cn(
-                            "flex items-center gap-2 px-5 py-2.5 rounded-2xl transition-all whitespace-nowrap text-[10px] font-black tracking-widest",
+                            "flex items-center gap-2 px-5 py-3.5 rounded-2xl transition-all whitespace-nowrap text-[10px] font-black tracking-widest",
                             activeTab === tab.id
                                 ? "bg-stone-900 text-white shadow-lg"
                                 : "bg-white text-stone-400 border border-stone-100"
@@ -445,7 +445,7 @@ function AddExpenseModal({ onClose, onAdd }: { onClose: () => void; onAdd: (cate
                                 key={cat}
                                 onClick={() => setCategory(cat)}
                                 className={cn(
-                                    "px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border",
+                                    "px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border",
                                     category === cat 
                                         ? "bg-stone-900 text-white border-stone-900 shadow-lg" 
                                         : "bg-white text-stone-400 border-stone-100 hover:border-stone-200"

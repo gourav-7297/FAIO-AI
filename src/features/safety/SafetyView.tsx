@@ -316,7 +316,7 @@ export function SafetyView() {
                     { id: 'tips', label: 'Night Tips', icon: Moon },
                 ].map(tab => (
                     <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
-                        className={cn("flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap", activeTab === tab.id ? "bg-primary text-stone-800 shadow-sm" : "bg-stone-100 text-stone-500 hover:text-stone-700")}>
+                        className={cn("flex items-center gap-2 px-4 py-3 rounded-xl transition-all whitespace-nowrap", activeTab === tab.id ? "bg-primary text-stone-800 shadow-sm" : "bg-stone-100 text-stone-500 hover:text-stone-700")}>
                         <tab.icon className="w-4 h-4" /><span className="text-sm font-medium">{tab.label}</span>
                     </button>
                 ))}

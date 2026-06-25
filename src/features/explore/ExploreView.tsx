@@ -465,7 +465,7 @@ export function ExploreView() {
                         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-2 px-2">
                             {VIBE_FILTERS.map(cat => (
                                 <button key={cat.id} onClick={() => setVibeCategory(cat.id)}
-                                    className={cn("flex items-center gap-2.5 px-5 py-3 rounded-2xl transition-all whitespace-nowrap flex-shrink-0 border",
+                                    className={cn("flex items-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all whitespace-nowrap flex-shrink-0 border",
                                         vibeCategory === cat.id ? "bg-stone-900 text-white border-stone-900 shadow-soft" : "bg-white text-stone-400 border-stone-100 hover:border-stone-200")}>
                                     <cat.icon className={cn("w-3.5 h-3.5", vibeCategory === cat.id ? "text-primary" : "text-stone-400")} />
                                     <span className="text-[10px] font-black uppercase tracking-widest">{cat.label}</span>
@@ -598,7 +598,7 @@ export function ExploreView() {
                         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-2 px-2">
                             {REAL_FILTERS.map(cat => (
                                 <button key={cat.id} onClick={() => setRealCategory(cat.id)}
-                                    className={cn("flex items-center gap-2.5 px-5 py-3 rounded-2xl transition-all whitespace-nowrap flex-shrink-0 border",
+                                    className={cn("flex items-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all whitespace-nowrap flex-shrink-0 border",
                                         realCategory === cat.id ? "bg-stone-900 text-white border-stone-900 shadow-soft" : "bg-white text-stone-400 border-stone-100 hover:border-stone-200")}>
                                     <cat.icon className={cn("w-3.5 h-3.5", realCategory === cat.id ? "text-blue-500" : "text-stone-400")} />
                                     <span className="text-[10px] font-black uppercase tracking-widest">{cat.label}</span>
@@ -703,12 +703,12 @@ function NearbySection({ nearbyPlaces, isLoadingNearby, showNearbyMap, setShowNe
                 </div>
                 <div className="flex gap-2">
                     <button onClick={() => setShowNearbyMap(!showNearbyMap)}
-                        className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        className={cn("px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                             showNearbyMap ? "bg-stone-900 text-white shadow-lg" : "bg-stone-50 text-stone-400")}>
                         <MapPinned className="w-3.5 h-3.5" />
                     </button>
                     <motion.button whileTap={{ scale: 0.95 }} onClick={discoverNearby} disabled={isLoadingNearby}
-                        className="px-4 py-2 bg-primary rounded-xl text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-50 shadow-lg shadow-primary/20">
+                        className="px-4 py-3 bg-primary rounded-xl text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-50 shadow-lg shadow-primary/20">
                         {isLoadingNearby ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Refresh'}
                     </motion.button>
                 </div>

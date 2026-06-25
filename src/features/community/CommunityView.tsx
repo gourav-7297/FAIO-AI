@@ -101,7 +101,7 @@ export function CommunityView() {
                     </div>
                     <button
                         onClick={() => activeTab === 'groups' ? setShowCreateTrip(true) : setShowCreatePost(true)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-action text-white rounded-xl text-sm font-medium"
+                        className="flex items-center gap-1 px-3.5 py-2.5 bg-action text-white rounded-xl text-sm font-medium"
                     >
                         <Plus className="w-4 h-4" />
                         {activeTab === 'groups' ? 'Host Trip' : 'Post'}
@@ -148,7 +148,7 @@ export function CommunityView() {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap",
+                            "flex items-center gap-2 px-4 py-3 rounded-xl transition-all whitespace-nowrap",
                             activeTab === tab.id ? "bg-action text-white" : "bg-surface/80 text-secondary"
                         )}
                     >

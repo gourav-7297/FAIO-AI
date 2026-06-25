@@ -334,7 +334,7 @@ export function AIFloatingButton({ onClick, hasUnread }: { onClick: () => void; 
             whileHover={{ scale: 1.05, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
             onClick={onClick}
-            className="fixed bottom-24 right-6 w-16 h-16 bg-white border border-stone-200 rounded-[24px] flex items-center justify-center shadow-2xl z-40 group"
+            className="absolute bottom-24 right-6 w-16 h-16 bg-white border border-stone-200 rounded-[24px] flex items-center justify-center shadow-2xl z-40 group"
         >
             <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity rounded-[24px]" />
             <Sparkles className="w-7 h-7 text-primary" />
